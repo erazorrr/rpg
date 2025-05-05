@@ -6,6 +6,7 @@ export enum GameMessageType {
   Exit,
   Kill,
   Die,
+  PickUp,
   Move,
 }
 
@@ -33,5 +34,9 @@ export class GameMessage {
 
   static die(): GameMessage {
     return new GameMessage(GameMessageType.Die);
+  }
+
+  static pickUp(): GameMessage {
+    return new GameMessage(GameMessageType.PickUp);
   }
 }

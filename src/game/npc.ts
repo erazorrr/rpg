@@ -1,5 +1,6 @@
 import {CharacterGameObject} from "./character.game-object";
 import {Position} from "../io/position";
+import {MonsterModifier} from "./monster-modifier";
 
 export enum Action {
   Attack,
@@ -10,17 +11,29 @@ export enum Action {
 export abstract class Npc extends CharacterGameObject {
   abstract decideAction(): Action;
   abstract getXp(): number;
+  abstract getBaseLootCost(): number;
+
+  getMultiplier() {
+    return this.modifiers.reduce((acc, m) => acc * m.costMultiplicator, 1);
+  }
+
+  getLootCost(): number {
+    const base = this.getBaseLootCost();
+    return base * this.getMultiplier();
+  }
 
   protected previousAction: Action = Action.Nothing;
 
-  private step(path: Position[]) {
+  private step(path: Position[]): boolean {
     let speed = this.getSpeed() - 1;
     while (!path[speed] && speed > 0) {
       speed--;
     }
     if (path[speed]) {
       this.position = path[speed];
+      return true;
     }
+    return false;
   }
 
   public tick() {
@@ -45,6 +58,13 @@ export abstract class Npc extends CharacterGameObject {
         const start = this.position;
         const isRational = Math.random() < 0.8;
         if (isRational) {
+          for (let i = 20; i >= 5; i--) {
+            const goal = new Position(this.position.x + (this.position.x - player.position.x) * i, this.position.y + (this.position.y - player.position.y) * i);
+            const path = this.context.buildPath(start, goal, 2 * i);
+            if (this.step(path)) {
+              break;
+            }
+          }
           const goal = new Position(this.position.x + (this.position.x - player.position.x) * 10, this.position.y + (this.position.y - player.position.y) * 10);
           const path = this.context.buildPath(start, goal, 20);
           this.step(path);

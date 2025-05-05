@@ -1,14 +1,16 @@
 import {Action, Npc} from "../npc";
+import {Context} from "../context";
+import {Position} from "../../io/position";
 import {Char} from "../../io/char";
 import {ForegroundColor} from "../../io/foreground.color";
 import {BackgroundColor} from "../../io/background.color";
-import {Context} from "../context";
-import {Position} from "../../io/position";
+import {ShortSword} from "../items/weapons/short-sword";
+import {SteelModifier} from "../item-modifiers/weapon/material/steel";
 
-export class Wolf extends Npc {
-  protected strength = 8;
-  protected dexterity = 12;
-  protected endurance = 2;
+export class Skeleton extends Npc {
+  protected strength = 12;
+  protected dexterity = 6;
+  protected endurance = 4;
 
   constructor(context: Context, public position: Position) {
     super(context);
@@ -16,15 +18,9 @@ export class Wolf extends Npc {
 
   decideAction(): Action {
     const player = this.context.getPlayer();
-    if (player.position.distanceTo(this.position) < 60) {
-      if (this.hp < this.getMaxHp() * 0.1) {
-        if (this.previousAction !== Action.Flee) {
-          this.context.log(`${this.getName()} tries to run!`);
-        }
-        return Action.Flee;
-      }
+    if (player.position.distanceTo(this.position) < 30) {
       if (this.previousAction !== Action.Attack) {
-        this.context.log(`${this.getName()} barks!`);
+        this.context.log(`${this.getName()} shrieks!`);
       }
       return Action.Attack;
     }
@@ -33,25 +29,29 @@ export class Wolf extends Npc {
 
   getChar(): Char {
     return {
-      char: 'w',
-      color: ForegroundColor.Grey35,
+      char: 'S',
+      color: ForegroundColor.Yellow,
       backgroundColor: BackgroundColor.Green,
     };
   }
 
   getBaseName(): string {
-    return 'Wolf';
+    return 'Skeleton';
   }
 
   getXp(): number {
-    return 100;
+    return 450;
   }
 
   getBaseLootCost(): number {
-    return 5;
+    return 9;
   }
 
+  public equipment = {
+    weapon: new ShortSword(this.context).applyModifier(new SteelModifier()),
+  };
+
   getIsBloody(): boolean {
-    return true;
+    return false;
   }
 }

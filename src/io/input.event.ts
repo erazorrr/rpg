@@ -6,4 +6,9 @@ export enum InputEvent {
   ENTER = 'Enter',
   BACKSPACE = 'Backspace',
   ESCAPE = 'Escape',
+  P = 'p',
+  I = 'i',
+  E = 'e',
+  D = 'd',
+  SPACE = 'Space',
 }

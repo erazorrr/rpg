@@ -8,6 +8,11 @@ import {InputEvent} from "../io/input.event";
 import {InputEmitter} from "../io/input.emitter";
 import {Context} from "./context";
 import {CharacterGameObject} from "./character.game-object";
+import {GameMessage} from "./game-message";
+import {Item} from "./item";
+import {Equipment} from "./equipment";
+import {ShortSword} from "./items/weapons/short-sword";
+import {CopperModifier} from "./item-modifiers/weapon/material/copper";
 
 export class Player extends CharacterGameObject implements Renderable, Interactive {
   private inputEmitter = new InputEmitter();
@@ -50,6 +55,9 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
       this.attack(this.context.getCharacter(targetPosition));
     } else if (this.context.getCurrentMap().isNavigable(targetPosition)) {
       this.position = targetPosition;
+      if (this.context.getItem(targetPosition)) {
+        this.context.log(`${this.getName()} sees ${this.context.getItem(targetPosition).getName()}. [p] to pick it up.`);
+      }
     }
     this.context.tick();
   }
@@ -71,6 +79,9 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
       const targetPosition = this.position.right();
       this.moveTo(targetPosition);
     });
+    this.inputEmitter.on(InputEvent.P, this, () => {
+      this.context.postGameMessage(GameMessage.pickUp());
+    })
   }
 
   makeUninteractive(): void {
@@ -87,7 +98,18 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
     return this.c;
   }
 
-  getName(): string {
+  getBaseName(): string {
     return 'Hero';
+  }
+
+  public inventory: Item[] = [
+    new ShortSword(this.context).applyModifier(new CopperModifier()),
+  ];
+  public equipment: Equipment = {
+    weapon: this.inventory[0],
+  };
+
+  getIsBloody(): boolean {
+    return true;
   }
 }

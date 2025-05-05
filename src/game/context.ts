@@ -4,6 +4,7 @@ import {GameMessage} from "./game-message";
 import {Renderer} from "../io/renderer";
 import {Position} from "../io/position";
 import {CharacterGameObject} from "./character.game-object";
+import {Item} from "./item";
 
 export interface Context {
   getPlayer(): Player;
@@ -12,7 +13,8 @@ export interface Context {
   getRenderer(): Renderer;
   tick(): void;
   getIsFree(position: Position): boolean;
-  getCharacter(position: Position): CharacterGameObject;
+  getCharacter(position: Position): CharacterGameObject | undefined;
+  getItem(position: Position): Item | undefined;
   buildPath(start: Position, end: Position, maxRadius: number): Position[];
   log(message: string): void;
 }

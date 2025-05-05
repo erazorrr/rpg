@@ -1,16 +1,18 @@
 import {Action, Npc} from "../npc";
+import {Context} from "../context";
+import {Position} from "../../io/position";
 import {Char} from "../../io/char";
 import {ForegroundColor} from "../../io/foreground.color";
 import {BackgroundColor} from "../../io/background.color";
-import {Context} from "../context";
-import {Position} from "../../io/position";
 import {ShortSword} from "../items/weapons/short-sword";
 import {CopperModifier} from "../item-modifiers/weapon/material/copper";
+import {GreatAxe} from "../items/weapons/great-axe";
+import {IronModifier} from "../item-modifiers/weapon/material/iron";
 
-export class Goblin extends Npc {
-  protected strength = 6;
-  protected dexterity = 10;
-  protected endurance = 3;
+export class Ogre extends Npc {
+  protected strength = 14;
+  protected dexterity = 6;
+  protected endurance = 5;
 
   constructor(context: Context, public position: Position) {
     super(context);
@@ -18,13 +20,7 @@ export class Goblin extends Npc {
 
   decideAction(): Action {
     const player = this.context.getPlayer();
-    if (player.position.distanceTo(this.position) < 40) {
-      if (this.hp < this.getMaxHp() * 0.3) {
-        if (this.previousAction !== Action.Flee) {
-          this.context.log(`${this.getName()} tries to run!`);
-        }
-        return Action.Flee;
-      }
+    if (player.position.distanceTo(this.position) < 20) {
       if (this.previousAction !== Action.Attack) {
         this.context.log(`${this.getName()} shouts!`);
       }
@@ -35,26 +31,26 @@ export class Goblin extends Npc {
 
   getChar(): Char {
     return {
-      char: 'g',
-      color: ForegroundColor.Green,
+      char: 'O',
+      color: ForegroundColor.Yellow,
       backgroundColor: BackgroundColor.Green,
     };
   }
 
   getBaseName(): string {
-    return 'Goblin';
+    return 'Orge';
   }
 
   getXp(): number {
-    return 100;
+    return 500;
   }
 
   getBaseLootCost(): number {
-    return 6;
+    return 10;
   }
 
   public equipment = {
-    weapon: new ShortSword(this.context).applyModifier(new CopperModifier()),
+    weapon: new GreatAxe(this.context).applyModifier(new IronModifier()),
   };
 
   getIsBloody(): boolean {

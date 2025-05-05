@@ -1,3 +1,5 @@
+export type SerializedPosition = string;
+
 export class Position {
   constructor(public x: number, public y: number) {
   }
@@ -28,5 +30,14 @@ export class Position {
 
   equals(p: Position): boolean {
     return this.x === p.x && this.y === p.y;
+  }
+
+  serialize(): SerializedPosition {
+    return `${this.x},${this.y}`;
+  }
+
+  static deserialize(p: SerializedPosition): Position {
+    const [x, y] = p.split(',');
+    return new Position(+x, +y);
   }
 }

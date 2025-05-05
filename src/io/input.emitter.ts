@@ -21,6 +21,11 @@ process.stdin.on('data', (_key) => {
 
     case '\r': queue.get(InputEvent.ENTER)?.forEach(c => c(key)); break;
     case '\x7f': queue.get(InputEvent.BACKSPACE)?.forEach(c => c(key)); break;
+    case 'p': queue.get(InputEvent.P)?.forEach(c => c(key)); break;
+    case 'i': queue.get(InputEvent.I)?.forEach(c => c(key)); break;
+    case 'e': queue.get(InputEvent.E)?.forEach(c => c(key)); break;
+    case ' ': queue.get(InputEvent.SPACE)?.forEach(c => c(key)); break;
+    case 'd': queue.get(InputEvent.D)?.forEach(c => c(key)); break;
     default:
   }
 
@@ -31,6 +36,8 @@ process.stdin.on('data', (_key) => {
       escTimeout = null;
     }, 50);
     return;
+  } else {
+    if (escTimeout) clearTimeout(escTimeout);
   }
 });
 

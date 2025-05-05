@@ -7,7 +7,7 @@ import {InputEmitter} from "./input.emitter";
 import {InputEvent} from "./input.event";
 
 export class List extends Field {
-  private activeId: string;
+  private activeId: string | undefined;
   private emitter = new InputEmitter();
 
   constructor(
@@ -18,11 +18,14 @@ export class List extends Field {
     bordered: boolean = true,
   ) {
     super(title, ltPosition, rbPosition, bordered);
-    this.activeId = items[0].id;
+    this.activeId = items[0]?.id;
   }
 
   public makeInteractive(renderer: Renderer): void {
     this.emitter.on(InputEvent.ARROW_UP, this, () => {
+      if (this.items.length === 0) {
+        return;
+      }
       if (this.activeId === this.items[0].id) {
         this.activeId = this.items[this.items.length - 1].id;
       } else {
@@ -33,6 +36,9 @@ export class List extends Field {
     });
 
     this.emitter.on(InputEvent.ARROW_DOWN, this, () => {
+      if (this.items.length === 0) {
+        return;
+      }
       if (this.activeId === this.items[this.items.length - 1].id) {
         this.activeId = this.items[0].id;
       } else {
@@ -43,6 +49,9 @@ export class List extends Field {
     });
 
     this.emitter.on(InputEvent.ENTER, this, () => {
+      if (this.items.length === 0) {
+        return;
+      }
       this.items.find(i => i.id === this.activeId)?.onSelect();
     });
   }
@@ -68,5 +77,9 @@ export class List extends Field {
     }
 
     renderer.flush();
+  }
+
+  getActiveId() {
+    return this.activeId;
   }
 }

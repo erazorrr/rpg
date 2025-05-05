@@ -88,14 +88,14 @@ export class Field extends Renderer implements Renderable  {
       for (let x = this.ltPosition.x + 1; x < this.rbPosition.x; x++) {
         renderer.put(new Position(x, this.rbPosition.y), this.H);
       }
-      for (let y = this.ltPosition.y + 1; y < this.rbPosition.y - 1; y++) {
+      for (let y = this.ltPosition.y + 1; y < this.rbPosition.y; y++) {
         renderer.put(new Position(this.ltPosition.x, y), this.V);
         renderer.put(new Position(this.rbPosition.x, y), this.V);
       }
     }
 
     for (let x = this.ltPosition.x + 1; x < this.rbPosition.x; x++) {
-      for (let y = this.ltPosition.y + 1; y < this.rbPosition.y - 1; y++) {
+      for (let y = this.ltPosition.y + 1; y < this.rbPosition.y; y++) {
         renderer.put(new Position(x, y), {
           char: ' ',
           color: this.color,

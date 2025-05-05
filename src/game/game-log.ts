@@ -10,6 +10,11 @@ export class GameLog implements Renderable {
 
   constructor(public width: number) {}
 
+  clear(): void {
+    this.buffer = [];
+    this.isStale = false;
+  }
+
   log(message: string): void {
     if (this.isStale) {
       this.buffer = [];
@@ -27,7 +32,7 @@ export class GameLog implements Renderable {
 
     let j = 1;
     for (const word of line.split(' ')) {
-      if (j + word.length >= this.width) {
+      if (j + word.length >= this.width - 1) {
         i++;
         j = 0;
       }

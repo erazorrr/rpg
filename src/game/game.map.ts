@@ -92,8 +92,8 @@ export class GameMap extends GameObject implements Renderable {
     const startX = topLeftCorner.x;
     const startY = topLeftCorner.y;
 
-    for (let i = startX; i < startX + this.containerWidth; i++) {
-      for (let j = startY; j < startY + this.containerHeight; j++) {
+    for (let i = startX; i < Math.max(startX + this.containerWidth, this.WIDTH); i++) {
+      for (let j = startY; j < Math.min(startY + this.containerHeight, this.HEIGHT); j++) {
         renderer.put(new Position(i - startX, j - startY), this.tiles[i][j].getChar());
       }
     }
