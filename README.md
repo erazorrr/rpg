@@ -7,12 +7,10 @@ This is a simple roguelike game I put together in a spare time on my vacation.
 2. Run `npm start`
 
 ## Backlog
-- Make inventory save active position when equipping items
 - Items dropped should not destroy items that lay on the current tile
 - NPCs' fleeing. Right now it uses CPU a lot and has weird issues
 - Add more details to the game map
 - Add more monsters
-- Display current player's stats
 - Add ring items
 - Add amulet items
 - Add new weapon modifiers (e.g., leach live + anti-leach live)

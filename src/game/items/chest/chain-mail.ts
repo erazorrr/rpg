@@ -14,7 +14,7 @@ export class ChainMail extends Chest {
   }
 
   private static baseStats = {
-    armor: 13,
+    armor: 4,
   };
 
   constructor(context: Context) {

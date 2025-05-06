@@ -16,9 +16,10 @@ export class List extends Field {
     ltPosition: Position = new Position(0, 0),
     rbPosition: Position = new Position(process.stdout.columns - 1, process.stdout.rows),
     bordered: boolean = true,
+    activeId = items[0]?.id,
   ) {
     super(title, ltPosition, rbPosition, bordered);
-    this.activeId = items[0]?.id;
+    this.activeId = activeId;
   }
 
   public makeInteractive(renderer: Renderer): void {

@@ -57,6 +57,7 @@ import {LargeHealthPotion} from "./items/potions/large-health";
 import {Ogre} from "./monsters/ogre";
 import {SpectralHitMonsterModifier} from "./monster-modufiers/spectral-hit";
 import {Skeleton} from "./monsters/skeleton";
+import {PlayerStats} from "./player-stats";
 
 export class Game {
   private state = GameState.Menu;
@@ -88,6 +89,8 @@ export class Game {
     new Position(process.stdout.columns - 30, process.stdout.rows - 20),
     new Position(process.stdout.columns - 1, process.stdout.rows - 1),
   );
+
+  private playerStats = new PlayerStats(this.generateMenuFieldContext());
 
   private getItem(position: Position): Item | undefined {
     return this.items.get(position.serialize());
@@ -364,7 +367,17 @@ export class Game {
   }
 
   private buildInventory(): Inventory {
-    return new Inventory(this.generateGameObjectContext());
+    let defaultActiveIndex = 0;
+    if (this.inventory) {
+      const currentItem = this.inventory.getSelectedItem();
+      if (currentItem) {
+        const currentItemIndex = this.player.inventory.findIndex(i => i === currentItem);
+        if (currentItemIndex !== -1) {
+          defaultActiveIndex = currentItemIndex;
+        }
+      }
+    }
+    return new Inventory(this.generateGameObjectContext(), defaultActiveIndex);
   }
 
   private generateGameObjectContext(): Context {
@@ -465,7 +478,7 @@ export class Game {
       this.inventory = this.buildInventory();
       this.player.makeUninteractive();
       this.inventory.makeInteractive();
-      this.gameLog.log(`[Enter] to equip or consume, [d] to drop, [Escape] to exit inventory`);
+      this.gameLog.log(`[Enter] to equip/unequip or consume, [d] to drop, [Escape] to exit inventory`);
       this.render();
     });
 
@@ -490,27 +503,32 @@ export class Game {
       if (this.inventory) {
         const item = this.inventory.getSelectedItem();
         if (item) {
-          if (item instanceof Weapon) {
-            this.player.equipment.weapon = item;
-          } else if (item instanceof Chest) {
-            this.player.equipment.chest = item;
-          } else if (item instanceof Boots) {
-            this.player.equipment.boots = item;
-          } else if (item instanceof Gauntlets) {
-            this.player.equipment.gauntlets = item;
-          } else if (item instanceof Potion) {
-            this.gameLog.log(`You drank ${item.getName()}`);
-            for (const [stat, value] of Object.entries(item.stats)) {
-              switch (stat) {
-                case 'consumableHpReplenish':
-                  this.player.hp = Math.min(this.player.hp + (value as number), this.player.getMaxHp());
-                  this.gameLog.log(`You gained ${value} HP!`);
-                  break;
-                default:
-                  break;
+          const equippedSlot = Object.entries(this.player.equipment).find(([, value]) => value === item)?.[0];
+          if (equippedSlot) {
+            this.player.equipment[equippedSlot] = undefined;
+          } else {
+            if (item instanceof Weapon) {
+              this.player.equipment.weapon = item;
+            } else if (item instanceof Chest) {
+              this.player.equipment.chest = item;
+            } else if (item instanceof Boots) {
+              this.player.equipment.boots = item;
+            } else if (item instanceof Gauntlets) {
+              this.player.equipment.gauntlets = item;
+            } else if (item instanceof Potion) {
+              this.gameLog.log(`You drank ${item.getName()}`);
+              for (const [stat, value] of Object.entries(item.stats)) {
+                switch (stat) {
+                  case 'consumableHpReplenish':
+                    this.player.hp = Math.min(this.player.hp + (value as number), this.player.getMaxHp());
+                    this.gameLog.log(`You gained ${value} HP!`);
+                    break;
+                  default:
+                    break;
+                }
               }
+              this.player.inventory = this.player.inventory.filter(i => i !== item);
             }
-            this.player.inventory = this.player.inventory.filter(i => i !== item);
           }
           if (this.player.hp > this.player.getMaxHp()) {
             this.player.hp = this.player.getMaxHp();
@@ -557,6 +575,7 @@ export class Game {
     this.healthBar.render();
     this.levelBar.render();
     this.xpBar.render();
+    this.playerStats.render();
 
     this.map.render(this.gameField);
     for (const [serializedPosition, item] of this.items.entries()) {

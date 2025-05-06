@@ -48,13 +48,13 @@ export abstract class Item extends GameObject {
   abstract getBaseName(): string;
 
   private statsNames: Record<keyof ItemStats, string> = {
-    damageRoll: 'DMGROLL',
-    damageBonus: 'DMGBONUS',
-    armor: 'ARM',
-    maxHp: 'MAXHP',
-    strengthBonus: 'STR',
-    dexterityBonus: 'DEX',
-    enduranceBonus: 'END',
+    damageRoll: 'DmgRoll',
+    damageBonus: 'DmgBonus',
+    armor: 'Armor',
+    maxHp: 'MaxHP',
+    strengthBonus: 'Str',
+    dexterityBonus: 'Dex',
+    enduranceBonus: 'End',
     consumableHpReplenish: 'HP',
   }
   getName() {

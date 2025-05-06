@@ -14,7 +14,7 @@ export class LeatherArmor extends Chest {
   }
 
   private static baseStats = {
-    armor: 11,
+    armor: 2,
   };
 
   constructor(context: Context) {

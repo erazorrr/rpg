@@ -6,7 +6,6 @@ import {GameMessage} from "./game-message";
 import {Equipment} from "./equipment";
 import {MonsterModifier} from "./monster-modifier";
 import {SpectralHitMonsterModifier} from "./monster-modufiers/spectral-hit";
-import {Player} from "./player";
 
 export abstract class CharacterGameObject extends GameObject implements Renderable {
   abstract getIsBloody(): boolean;
@@ -38,17 +37,18 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
     return Math.max(1, Math.floor((this.getDexterity() - 10) / 2) + 1);
   }
 
-  public getMaxHp(): number {
+  public getMaxHp(multiplier = 2): number {
     const bonus = Object.values(this.equipment).reduce((acc, e) => acc + (e?.stats?.maxHp ? e.stats.maxHp : 0), 0);
-    return 8 + this.getEndurance() * 2 + bonus;
+    return 8 + this.getEndurance() * multiplier + bonus;
   }
   public hp = this.getMaxHp();
 
-  private getAC(): number {
-    const base = this.equipment.chest ? this.equipment.chest.stats.armor : 10;
+  getAC(): number {
+    const base = 10;
+    const armor = this.equipment.chest ? this.equipment.chest.stats.armor : 0;
     const boots = this.equipment.boots ? this.equipment.boots.stats.armor : 0;
     const gauntlets = this.equipment.gauntlets ? this.equipment.gauntlets.stats.armor : 0;
-    return base + boots + gauntlets + Math.floor((this.getDexterity() - 10) / 1.5);
+    return Math.min(this.MAX_AC, base + armor + boots + gauntlets + Math.floor(this.getDexterity() - 10));
   }
 
   public canAttack(p: Position): boolean {
@@ -94,16 +94,27 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
     });
   }
 
+  getDamageDice(): number {
+    return this.equipment.weapon ? this.equipment.weapon.stats.damageRoll : 4;
+  }
+
+  getDamageBonus(): number {
+    const strengthModifier = Math.floor((this.getStrength() - 10) / 2);
+    const weaponModifier =  this.equipment.weapon ? this.equipment.weapon.stats.damageBonus : 0;
+    return strengthModifier + weaponModifier;
+  }
+
+  private ATTACK_ROLL = 30;
+  public MAX_AC = this.ATTACK_ROLL - 5;
   attack(target: CharacterGameObject): void {
     const ac = target.getAC();
-    const attackRoll = Math.ceil(Math.random() * 30);
+    const attackRoll = Math.ceil(Math.random() * this.ATTACK_ROLL);
     if (attackRoll >= ac || this.modifiers.find(m => m instanceof SpectralHitMonsterModifier)) {
       // hit
-      const dice = this.equipment.weapon ? this.equipment.weapon.stats.damageRoll : 4;
-      const bonus = this.equipment.weapon ? this.equipment.weapon.stats.damageBonus : 0;
+      const dice = this.getDamageDice();
+      const bonus = this.getDamageBonus();
       const damageRoll = Math.ceil(Math.random() * dice);
-      const strengthModifier = Math.floor((this.getStrength() - 10) / 2);
-      const damage = Math.max(damageRoll + strengthModifier + bonus, 0);
+      const damage = Math.max(damageRoll + bonus, 0);
       if (damage === 0) {
         this.context.log(`${this.getName()} attacks ${target.getName()} for no damage!`);
       } else {
