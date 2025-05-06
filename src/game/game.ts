@@ -76,7 +76,7 @@ export class Game {
   private gameField = new Field(
     'RPG',
     new Position(0, 0),
-    new Position(process.stdout.columns - 31, process.stdout.rows),
+    new Position(process.stdout.columns - 31, process.stdout.rows - 1),
   );
   private menuField =  new Field(
     'Menu',
@@ -86,7 +86,7 @@ export class Game {
   private logField =  new Field(
     'Log',
     new Position(process.stdout.columns - 30, process.stdout.rows - 20),
-    new Position(process.stdout.columns - 1, process.stdout.rows),
+    new Position(process.stdout.columns - 1, process.stdout.rows - 1),
   );
 
   private getItem(position: Position): Item | undefined {

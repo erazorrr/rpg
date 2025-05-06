@@ -77,8 +77,8 @@ export class GameMap extends GameObject implements Renderable {
 
   getTopLeftCorner(): Position {
     const player = this.context.getPlayer().position;
-    const startX = Math.max(0, player.x - this.containerWidth / 2);
-    const startY = Math.max(0, player.y - this.containerHeight / 2);
+    const startX = Math.min(Math.max(0, Math.floor(player.x - this.containerWidth / 2)), this.WIDTH - this.containerWidth);
+    const startY = Math.min(Math.max(0, Math.floor(player.y - this.containerHeight / 2)), this.HEIGHT - this.containerHeight);
     return new Position(startX, startY);
   }
 
@@ -92,7 +92,7 @@ export class GameMap extends GameObject implements Renderable {
     const startX = topLeftCorner.x;
     const startY = topLeftCorner.y;
 
-    for (let i = startX; i < Math.max(startX + this.containerWidth, this.WIDTH); i++) {
+    for (let i = startX; i < Math.min(startX + this.containerWidth, this.WIDTH); i++) {
       for (let j = startY; j < Math.min(startY + this.containerHeight, this.HEIGHT); j++) {
         renderer.put(new Position(i - startX, j - startY), this.tiles[i][j].getChar());
       }
