@@ -33,7 +33,7 @@ export class GameMap extends GameObject implements Renderable {
       }
     }
 
-    for (let k = 0; k < 100; k++) {
+    for (let k = 0; k < 150; k++) {
       const lakePosition = new Position(Math.floor(Math.random() * this.WIDTH), Math.floor(Math.random() * this.HEIGHT));
       this.tiles[lakePosition.x][lakePosition.y] = new WaterTile();
       this.spreadLake(lakePosition);
