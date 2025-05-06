@@ -18,7 +18,6 @@ This is a simple roguelike game I put together in a spare time on my vacation.
 - Add amulet items
 - Add new weapon modifiers (e.g., leach live + anti-leach live)
 - Add new monster modifiers (e.g., leach life)
-- Fix a bug when a player might start in an ocean
 - Monsters' shouting should attract other monsters
 - Add idle animations
 - Add more levels - e.g. auto-scaling dungeons
