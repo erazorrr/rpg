@@ -7,7 +7,7 @@ This is a simple roguelike game I put together in a spare time on my vacation.
 2. Run `npm start`
 
 ## Backlog
-- Make inventory save active position when equiping items
+- Make inventory save active position when equipping items
 - Items dropped should not destroy items that lay on the current tile
 - Fast NPCs should be able to attack the player when the player is retreating
 - NPCs' fleeing. Right now it uses CPU a lot and has weird issues
