@@ -21,10 +21,10 @@ This is a simple roguelike game I put together in a spare time on my vacation.
   - Add doors and keys to the dungeons
 - Handle window resize
 - Handle game endings better (right now you have to Ctrl+C once the hero is dead + you have no idea if there are more monsters)
-- Add game save + load
+- Add game save and load
 
 ## References
-I took the games as inspirations. I had a lot of fun playing each one of them, and I highly recommend them. 
+I took these games as inspirations. I had a lot of fun playing each one of them, and I highly recommend them. 
 
 ### Dwarf Fortress
 - https://www.bay12games.com/dwarves/
