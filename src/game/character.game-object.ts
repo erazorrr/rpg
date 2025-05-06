@@ -6,6 +6,7 @@ import {GameMessage} from "./game-message";
 import {Equipment} from "./equipment";
 import {MonsterModifier} from "./monster-modifier";
 import {SpectralHitMonsterModifier} from "./monster-modufiers/spectral-hit";
+import {Player} from "./player";
 
 export abstract class CharacterGameObject extends GameObject implements Renderable {
   abstract getIsBloody(): boolean;
@@ -75,6 +76,24 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
     });
   };
 
+  spreadBlood() {
+    if (!this.getIsBloody()) {
+      return;
+    }
+
+    this.context.getCurrentMap().getTile(this.position).setBloody(true);
+    [
+      this.position.up(),
+      this.position.down(),
+      this.position.left(),
+      this.position.right(),
+    ].forEach(p => {
+      if (Math.random() < 0.15) {
+        this.context.getCurrentMap().getTile(p).setBloody(true);
+      }
+    });
+  }
+
   attack(target: CharacterGameObject): void {
     const ac = target.getAC();
     const attackRoll = Math.ceil(Math.random() * 30);
@@ -89,22 +108,13 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
         this.context.log(`${this.getName()} attacks ${target.getName()} for no damage!`);
       } else {
         this.context.log(`${this.getName()} attacks ${target.getName()} for ${damage} damage!`);
-        if (target.getIsBloody() && Math.random() < 0.5) {
-          this.context.getCurrentMap().getTile(target.position).setBloody(true);
-          [
-            target.position.up(),
-            target.position.down(),
-            target.position.left(),
-            target.position.right(),
-          ].forEach(p => {
-            if (Math.random() < 0.25) {
-              this.context.getCurrentMap().getTile(p).setBloody(true);
-            }
-          });
+        if (Math.random() * 10 < damage) {
+          target.spreadBlood();
         }
       }
       target.hp = Math.max(0, target.hp - damage);
       if (target.hp === 0) {
+        target.spreadBlood();
         if (target === this.context.getPlayer()) {
           this.context.postGameMessage(GameMessage.die());
           this.context.log(`${target.getName()} is dead! Game over!`);

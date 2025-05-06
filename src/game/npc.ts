@@ -59,6 +59,9 @@ export abstract class Npc extends CharacterGameObject {
         break;
       }
       case Action.Flee: {
+        if (Math.random() < 0.3) {
+          this.spreadBlood();
+        }
         const start = this.position;
         const isRational = Math.random() < 0.8;
         if (isRational) {
