@@ -1,6 +1,5 @@
 import {CharacterGameObject} from "./character.game-object";
 import {Position} from "../io/position";
-import {MonsterModifier} from "./monster-modifier";
 
 export enum Action {
   Attack,
@@ -24,16 +23,18 @@ export abstract class Npc extends CharacterGameObject {
 
   protected previousAction: Action = Action.Nothing;
 
-  private step(path: Position[]): boolean {
+  private step(path: Position[]): number {
     let speed = this.getSpeed() - 1;
+    let restSpeed = 0;
     while (!path[speed] && speed > 0) {
       speed--;
+      restSpeed++;
     }
     if (path[speed]) {
       this.position = path[speed];
-      return true;
+      return restSpeed;
     }
-    return false;
+    return restSpeed;
   }
 
   public tick() {
@@ -50,7 +51,10 @@ export abstract class Npc extends CharacterGameObject {
           const start = this.position;
           const goal = player.position;
           const path = this.context.buildPath(start, goal, 100);
-          this.step(path);
+          const restSpeed = this.step(path);
+          if (restSpeed > 0 && this.canAttack(player.position)) {
+            this.attack(player);
+          }
         }
         break;
       }
@@ -61,7 +65,7 @@ export abstract class Npc extends CharacterGameObject {
           for (let i = 20; i >= 5; i--) {
             const goal = new Position(this.position.x + (this.position.x - player.position.x) * i, this.position.y + (this.position.y - player.position.y) * i);
             const path = this.context.buildPath(start, goal, 2 * i);
-            if (this.step(path)) {
+            if (this.step(path) < this.getSpeed() - 1) {
               break;
             }
           }

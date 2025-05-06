@@ -4,8 +4,6 @@ import {Position} from "../../io/position";
 import {Char} from "../../io/char";
 import {ForegroundColor} from "../../io/foreground.color";
 import {BackgroundColor} from "../../io/background.color";
-import {ShortSword} from "../items/weapons/short-sword";
-import {CopperModifier} from "../item-modifiers/weapon/material/copper";
 import {GreatAxe} from "../items/weapons/great-axe";
 import {IronModifier} from "../item-modifiers/weapon/material/iron";
 

@@ -4,7 +4,6 @@ import {Renderable} from "../io/renderable.interface";
 import {Char} from "../io/char";
 import {GameMessage} from "./game-message";
 import {Equipment} from "./equipment";
-import {Debug} from "../debug";
 import {MonsterModifier} from "./monster-modifier";
 import {SpectralHitMonsterModifier} from "./monster-modufiers/spectral-hit";
 
