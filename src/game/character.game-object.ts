@@ -76,19 +76,16 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
     });
   };
 
-  private battleLog = new Debug('battle.txt');
   attack(target: CharacterGameObject): void {
     const ac = target.getAC();
     const attackRoll = Math.ceil(Math.random() * 30);
-    this.battleLog.log(`Attack\t${this.getName()}\t${target.getName()}\t${attackRoll}\t${ac}`);
     if (attackRoll >= ac || this.modifiers.find(m => m instanceof SpectralHitMonsterModifier)) {
       // hit
       const dice = this.equipment.weapon ? this.equipment.weapon.stats.damageRoll : 4;
       const bonus = this.equipment.weapon ? this.equipment.weapon.stats.damageBonus : 0;
       const damageRoll = Math.ceil(Math.random() * dice);
       const strengthModifier = Math.floor((this.getStrength() - 10) / 2);
-      const damage = Math.max(Math.ceil(Math.random() * dice) + strengthModifier + bonus, 0);
-      this.battleLog.log(`Damage\t${this.getName()}\t${target.getName()}\t${dice}\t${bonus}\t${damageRoll}\t${damage}`);
+      const damage = Math.max(damageRoll + strengthModifier + bonus, 0);
       if (damage === 0) {
         this.context.log(`${this.getName()} attacks ${target.getName()} for no damage!`);
       } else {
