@@ -6,20 +6,33 @@ import {BackgroundColor} from "../io/background.color";
 
 export class XpBar extends GameObject implements Renderable {
     render(): void {
-      this.context.getRenderer().put(new Position(0, 2), {
-        char: 'XP: ',
-        color: ForegroundColor.White,
-        backgroundColor: BackgroundColor.Black,
-      });
-      this.context.getRenderer().put(new Position(6, 2), {
-        char: this.context.getPlayer().xp + '',
-        color: ForegroundColor.White,
-        backgroundColor: BackgroundColor.Black,
-      });
-      this.context.getRenderer().put(new Position(6 + (this.context.getPlayer().xp + '').length, 2), {
-        char: ' / ' + this.context.getPlayer().nextLevelXp(),
-        color: ForegroundColor.White,
-        backgroundColor: BackgroundColor.Black,
-      });
+      let i = 0;
+      const label = 'XP: ';
+      for (const char of label) {
+        this.context.getRenderer().put(new Position(i, 2), {
+          char,
+          color: ForegroundColor.White,
+          backgroundColor: BackgroundColor.Black,
+        });
+        i++;
+      }
+      const xp = this.context.getPlayer().xp + '';
+      for (const char of xp) {
+        this.context.getRenderer().put(new Position(i, 2), {
+          char,
+          color: ForegroundColor.White,
+          backgroundColor: BackgroundColor.Black,
+        });
+        i++;
+      }
+      const rest = ' / ' + this.context.getPlayer().nextLevelXp();
+      for (const char of rest) {
+        this.context.getRenderer().put(new Position(i, 2), {
+          char,
+          color: ForegroundColor.White,
+          backgroundColor: BackgroundColor.Black,
+        });
+        i++;
+      }
     }
 }

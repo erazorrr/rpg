@@ -11,7 +11,7 @@ export class MainMenu extends GameObject implements Renderable, Interactive {
   private field = new Field(
     'Menu',
     new Position(0, 0),
-    new Position(process.stdout.columns - 1, process.stdout.rows),
+    new Position(process.stdout.columns - 1, process.stdout.rows - 1),
   );
   private mainMenu: List = new List(
     '',
@@ -46,8 +46,6 @@ export class MainMenu extends GameObject implements Renderable, Interactive {
 
   render(): void {
     this.field.render(this.context.getRenderer());
-    this.context.getRenderer().flush();
     this.mainMenu.render(this.field);
-    this.field.flush();
   }
 }

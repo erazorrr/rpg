@@ -551,15 +551,12 @@ export class Game {
     this.gameField.render(this.renderer);
     this.menuField.render(this.renderer);
     this.logField.render(this.renderer);
-    this.renderer.flush();
 
     this.gameLog.render(this.logField);
-    this.logField.flush();
 
     this.healthBar.render();
     this.levelBar.render();
     this.xpBar.render();
-    this.menuField.flush();
 
     this.map.render(this.gameField);
     for (const [serializedPosition, item] of this.items.entries()) {
@@ -572,7 +569,6 @@ export class Game {
     if (this.inventory) {
       this.inventory.render();
     }
-    this.gameField.flush();
   }
 
   private render() {
@@ -584,6 +580,7 @@ export class Game {
         this.renderMenu();
         break;
     }
+    this.renderer.flush();
   }
 
 

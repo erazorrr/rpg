@@ -6,20 +6,33 @@ import {BackgroundColor} from "../io/background.color";
 
 export class HealthBar extends GameObject implements Renderable {
     render(): void {
-      this.context.getRenderer().put(new Position(0, 0), {
-        char: 'HP: ',
-        color: ForegroundColor.White,
-        backgroundColor: BackgroundColor.Black,
-      });
-      this.context.getRenderer().put(new Position(6, 0), {
-        char: this.context.getPlayer().hp + '',
-        color: ForegroundColor.Red,
-        backgroundColor: BackgroundColor.Black,
-      });
-      this.context.getRenderer().put(new Position(6 + (this.context.getPlayer().hp + '').length, 0), {
-        char: ' / ' + this.context.getPlayer().getMaxHp(),
-        color: ForegroundColor.White,
-        backgroundColor: BackgroundColor.Black,
-      });
+      let i = 0;
+      const label = 'HP: ';
+      for (const char of label) {
+        this.context.getRenderer().put(new Position(i, 0), {
+          char,
+          color: ForegroundColor.White,
+          backgroundColor: BackgroundColor.Black,
+        });
+        i++;
+      }
+      const currentHp = this.context.getPlayer().hp + '';
+      for (const char of currentHp) {
+        this.context.getRenderer().put(new Position(i, 0), {
+          char,
+          color: ForegroundColor.Red,
+          backgroundColor: BackgroundColor.Black,
+        });
+        i++;
+      }
+      const rest = ' / ' + this.context.getPlayer().getMaxHp();
+      for (const char of rest) {
+        this.context.getRenderer().put(new Position(i, 0), {
+          char,
+          color: ForegroundColor.White,
+          backgroundColor: BackgroundColor.Black,
+        });
+        i++;
+      }
     }
 }
