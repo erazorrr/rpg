@@ -404,9 +404,9 @@ export class Game {
 
   private areas = [
     [30, 1, [Goblin, Wolf], []],
-    [100, 150, [Goblin, Wolf], []],
-    [300, 500, [Ogre, Goblin, Wolf], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier]],
-    [500, 600, [Ogre, Skeleton, Goblin], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier, SpectralHitMonsterModifier]],
+    [100, 100, [Goblin, Wolf], []],
+    [300, 250, [Ogre, Goblin, Wolf], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier]],
+    [500, 300, [Ogre, Skeleton, Goblin], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier, SpectralHitMonsterModifier]],
   ] as const;
 
   private generateNpcs() {
