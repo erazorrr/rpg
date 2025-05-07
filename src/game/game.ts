@@ -219,7 +219,7 @@ export class Game {
     const instance = new mod();
     for (const otherMod of this.commonModifiers) {
       for (const [key, value] of Object.entries(new otherMod().stats)) {
-        if (instance.stats[key] && instance.stats[key] * value < 0) { // different signs
+        if (value && instance.stats[key]) {
           acc.get(mod)!.add(otherMod);
         }
       }
