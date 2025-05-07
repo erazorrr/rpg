@@ -20,7 +20,7 @@ export class Goblin extends Npc {
     const player = this.context.getPlayer();
     if (player.position.distanceTo(this.position) < 40) {
       if (this.hp < this.getMaxHp() * 0.3) {
-        if (this.previousAction !== Action.Flee) {
+        if (this.previousAction === Action.Attack) {
           this.context.log(`${this.getName()} tries to run!`);
         }
         return Action.Flee;

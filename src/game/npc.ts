@@ -66,15 +66,13 @@ export abstract class Npc extends CharacterGameObject {
         const isRational = Math.random() < 0.8;
         if (isRational) {
           for (let i = 20; i >= 5; i--) {
-            const goal = new Position(this.position.x + (this.position.x - player.position.x) * i, this.position.y + (this.position.y - player.position.y) * i);
+            const vector = new Position(this.position.x - player.position.x, this.position.y - player.position.y).normalize();
+            const goal = new Position(this.position.x + vector.x * i, this.position.y + vector.y * i);
             const path = this.context.buildPath(start, goal, 2 * i);
             if (this.step(path) < this.getSpeed() - 1) {
               break;
             }
           }
-          const goal = new Position(this.position.x + (this.position.x - player.position.x) * 10, this.position.y + (this.position.y - player.position.y) * 10);
-          const path = this.context.buildPath(start, goal, 20);
-          this.step(path);
         } else {
           let newPosition;
           switch (Math.floor(Math.random() * 4)) {

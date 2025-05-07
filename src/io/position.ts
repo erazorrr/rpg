@@ -40,4 +40,12 @@ export class Position {
     const [x, y] = p.split(',');
     return new Position(+x, +y);
   }
+
+  length(): number {
+    return Math.sqrt(this.x * this.x + this.y * this.y);
+  }
+
+  normalize(): Position {
+    return new Position(Math.round(this.x / this.length()), Math.round(this.y / this.length()));
+  }
 }

@@ -8,7 +8,6 @@ This is a simple roguelike game I put together in a spare time on my vacation.
 
 ## Backlog
 - Items dropped should not destroy items that lay on the current tile
-- NPCs' fleeing. Right now it uses CPU a lot and has weird issues
 - Add more details to the game map
 - Add more monsters
 - Add ring items

@@ -18,7 +18,7 @@ export class Wolf extends Npc {
     const player = this.context.getPlayer();
     if (player.position.distanceTo(this.position) < 60) {
       if (this.hp < this.getMaxHp() * 0.1) {
-        if (this.previousAction !== Action.Flee) {
+        if (this.previousAction === Action.Attack) {
           this.context.log(`${this.getName()} tries to run!`);
         }
         return Action.Flee;
