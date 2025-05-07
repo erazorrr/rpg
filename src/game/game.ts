@@ -58,6 +58,14 @@ import {Ogre} from "./monsters/ogre";
 import {SpectralHitMonsterModifier} from "./monster-modufiers/spectral-hit";
 import {Skeleton} from "./monsters/skeleton";
 import {PlayerStats} from "./player-stats";
+import {ChampionStrength} from "./item-modifiers/champion-strength";
+import {ChampionDexterity} from "./item-modifiers/champion-dexterity";
+import {ChampionEndurance} from "./item-modifiers/champion-endurance";
+import {ChampionHealth} from "./item-modifiers/champion-health";
+import {GiantDexterity} from "./item-modifiers/giant-dexterity";
+import {GiantHealth} from "./item-modifiers/giant-health";
+import {GiantEndurance} from "./item-modifiers/giant-endurance";
+import {GiantStrength} from "./item-modifiers/giant-strength";
 
 export class Game {
   private state = GameState.Menu;
@@ -193,43 +201,42 @@ export class Game {
     this.gameLog.log(`Dropped ${item.getName()}`);
   }
 
+  private commonModifiers = [Health ,Endurance, Dexterity, Strength, AntiEndurance, AntiDexterity, AntiStrength, AntiHealth, ChampionStrength, ChampionDexterity, ChampionEndurance, ChampionHealth, GiantDexterity, GiantHealth, GiantEndurance, GiantStrength];
   private _items: Array<[Array<new (ctx: Context) => Item>, Array<new () => ItemModifier>, Array<new () => ItemModifier>]> = [
-    [[ShortSword, GreatAxe], [CopperModifier, IronModifier, SteelModifier], [Health ,Endurance, Dexterity, Strength, AntiEndurance, AntiDexterity, AntiStrength, AntiHealth]],
-    [[LeatherArmor], [NopModifier], [Health, Endurance, Dexterity, Strength, AntiEndurance, AntiDexterity, AntiStrength, AntiHealth]],
-    [[ChainMail], [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], [Health, Endurance, Dexterity, Strength, AntiEndurance, AntiDexterity, AntiStrength, AntiHealth]],
-    [[HealthPotion], [NopModifier], [NopModifier, NopModifier, NopModifier, NopModifier, NopModifier, NopModifier]],
-    [[SmallHealthPotion], [NopModifier], [NopModifier, NopModifier, NopModifier, NopModifier, NopModifier, NopModifier]],
-    [[LargeHealthPotion], [NopModifier], [NopModifier, NopModifier, NopModifier, NopModifier, NopModifier, NopModifier]],
-    [[LeatherBoots], [NopModifier], [Health, Endurance, Dexterity, Strength, AntiEndurance, AntiDexterity, AntiStrength, AntiHealth]],
-    [[MetalBoots], [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], [Health, Endurance, Dexterity, Strength, AntiEndurance, AntiDexterity, AntiStrength, AntiHealth]],
-    [[LeatherGauntlets], [NopModifier], [Health, Endurance, Dexterity, Strength, AntiEndurance, AntiDexterity, AntiStrength, AntiHealth]],
-    [[MetalGauntlets], [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], [Health, Endurance, Dexterity, Strength, AntiEndurance, AntiDexterity, AntiStrength, AntiHealth]],
+    [[ShortSword, GreatAxe], [CopperModifier, IronModifier, SteelModifier], this.commonModifiers],
+    [[LeatherArmor], [NopModifier], this.commonModifiers],
+    [[ChainMail], [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
+    [[HealthPotion], [NopModifier], new Array(this.commonModifiers.length).fill(NopModifier)],
+    [[SmallHealthPotion], [NopModifier], new Array(this.commonModifiers.length).fill(NopModifier)],
+    [[LargeHealthPotion], [NopModifier], new Array(this.commonModifiers.length).fill(NopModifier)],
+    [[LeatherBoots], [NopModifier], this.commonModifiers],
+    [[MetalBoots], [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
+    [[LeatherGauntlets], [NopModifier], this.commonModifiers],
+    [[MetalGauntlets], [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
   ];
-  // TODO fix that
+  private opposites: Map<ItemModifier, Set<ItemModifier>> = this.commonModifiers.reduce((acc, mod) => {
+    acc.set(mod, new Set());
+    const instance = new mod();
+    for (const otherMod of this.commonModifiers) {
+      for (const [key, value] of Object.entries(new otherMod().stats)) {
+        if (instance.stats[key] && instance.stats[key] * value < 0) { // different signs
+          acc.get(mod)!.add(otherMod);
+        }
+      }
+    }
+    return acc;
+  }, new Map());
   private hasOpposites(arr: Array<ItemModifier>): boolean {
-    const opposingModifiers: Record<string, string> = {
-      Health: 'AntiHealth',
-      AntiHealth: 'Health',
-      Strength: 'AntiStrength',
-      AntiStrength: 'Strength',
-      Endurance: 'AntiEndurance',
-      AntiEndurance: 'Endurance',
-      Dexterity: 'AntiDexterity',
-      AntiDexterity: 'Dexterity',
-    };
-    // Prevent adding both a modifier and its opposite
     let hasOpposites = false;
-    for (let i = 0; i < arr.length; i++) {
-      const modName = arr[i].name;
-      const opposite = opposingModifiers[modName];
-      if (
-        opposite &&
-        arr.some(
-          (m, idx) => idx !== i && m.name === opposite
-        )
-      ) {
-        hasOpposites = true;
-        break;
+    outer: for (let i = 0; i < arr.length; i++) {
+      const opposites = this.opposites.get(arr[i]);
+      if (opposites) {
+        for (const opposite of opposites) {
+          if (arr.some(m => m === opposite)) {
+            hasOpposites = true;
+            break outer;
+          }
+        }
       }
     }
     return hasOpposites;
@@ -397,9 +404,9 @@ export class Game {
 
   private areas = [
     [30, 1, [Goblin, Wolf], []],
-    [100, 30, [Goblin, Wolf], []],
-    [300, 250, [Ogre, Goblin, Wolf], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier]],
-    [500, 400, [Ogre, Skeleton, Goblin], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier, SpectralHitMonsterModifier]],
+    [100, 150, [Goblin, Wolf], []],
+    [300, 500, [Ogre, Goblin, Wolf], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier]],
+    [500, 600, [Ogre, Skeleton, Goblin], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier, SpectralHitMonsterModifier]],
   ] as const;
 
   private generateNpcs() {
