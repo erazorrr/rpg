@@ -215,6 +215,16 @@ export class Game {
     this.render();
   }
 
+  private returnToMainMenu() {
+    this.player = null;
+    this.inventory = null;
+    this.levels = [];
+    this.currentLevelIndex = 0;
+    this.gameLog.clear();
+    this.inputEmitter.clear(this);
+    this.goToMainMenu();
+  }
+
   private buildInventory(): Inventory {
     let defaultActiveIndex = 0;
     if (this.inventory) {
@@ -348,6 +358,8 @@ export class Game {
       } else if (this.getCurrentLevel().map.getTile(this.player.position) instanceof StairsUpTile) {
         this.currentLevelIndex--;
         this.render();
+      } else if (this.player.hp === 0) {
+        this.returnToMainMenu();
       }
     });
 

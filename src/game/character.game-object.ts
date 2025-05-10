@@ -129,6 +129,7 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
         if (target === this.context.getPlayer()) {
           this.context.postGameMessage(GameMessage.die());
           this.context.log(`${target.getName()} is dead! Game over!`);
+          this.context.log(`Press [Enter] to continue...`);
         } else {
           this.context.postGameMessage(GameMessage.kill(target));
           this.context.log(`${target.getName()} is dead!`);
