@@ -34,6 +34,10 @@ export class GameMap extends GameObject implements Renderable {
     return new Position(tlc.x + this.containerWidth, tlc.y + this.containerHeight);
   }
 
+  setTile(position: Position, tile: Tile): void {
+    this.tiles[position.x][position.y] = tile;
+  }
+
   render(renderer: Renderer) {
     const topLeftCorner = this.getTopLeftCorner();
     const startX = topLeftCorner.x;

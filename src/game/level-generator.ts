@@ -19,7 +19,6 @@ import {SpectralHitMonsterModifier} from "./monster-modufiers/spectral-hit";
 import {StairsDownTile} from "./tiles/stairs-down.tile";
 import {StairsUpTile} from "./tiles/stairs-up.tile";
 import {FloorTile} from "./tiles/floor.tile";
-import {Debug} from "../debug";
 import {WallTile} from "./tiles/wall.tile";
 
 enum Direction {
@@ -34,25 +33,22 @@ export class LevelGenerator extends GameObject {
     super(context);
   }
 
-  private surfaceNpcAreas = [
-    [30, 1, [Goblin, Wolf], [] as any[]],
-    [150, 100, [Goblin, Wolf], []],
-  ]
+  private startingAreaSize = 50;
   private generateSurfaceAreaNpcs(level: Level) {
     const startingPosition = level.map.getInitialPosition();
     let position: Position;
     do {
       let x;
       if (Math.random() < 0.5) {
-        x = startingPosition.x + Math.floor(Math.random() * 30);
+        x = startingPosition.x + Math.floor(Math.random() * this.startingAreaSize);
       } else {
-        x = startingPosition.x - Math.floor(Math.random() * 30);
+        x = startingPosition.x - Math.floor(Math.random() * this.startingAreaSize);
       }
       let y;
       if (Math.random() < 0.5) {
-        y = startingPosition.y + Math.floor(Math.random() * 30);
+        y = startingPosition.y + Math.floor(Math.random() * this.startingAreaSize);
       } else {
-        y = startingPosition.y - Math.floor(Math.random() * 30);
+        y = startingPosition.y - Math.floor(Math.random() * this.startingAreaSize);
       }
       position = new Position(x, y);
     } while (!level.map.isNavigable(position) || level.getNpcAt(position) || level.map.getInitialPosition().equals(position));
@@ -64,15 +60,15 @@ export class LevelGenerator extends GameObject {
       do {
         let x;
         if (Math.random() < 0.5) {
-          x = startingPosition.x + 30 + Math.floor(Math.random() * (level.map.width - 60 - startingPosition.x));
+          x = startingPosition.x + this.startingAreaSize + Math.floor(Math.random() * (level.map.width - this.startingAreaSize * 2 - startingPosition.x));
         } else {
-          x = startingPosition.x - 30 - Math.floor(Math.random() * (startingPosition.x - 30));
+          x = startingPosition.x - this.startingAreaSize - Math.floor(Math.random() * (startingPosition.x - this.startingAreaSize));
         }
         let y;
         if (Math.random() < 0.5) {
-          y = startingPosition.y + 30 + Math.floor(Math.random() * (level.map.height - 60 - startingPosition.y));
+          y = startingPosition.y + this.startingAreaSize + Math.floor(Math.random() * (level.map.height - this.startingAreaSize * 2 - startingPosition.y));
         } else {
-          y = startingPosition.y - 30 - Math.floor(Math.random() * (startingPosition.y - 30));
+          y = startingPosition.y - this.startingAreaSize - Math.floor(Math.random() * (startingPosition.y - this.startingAreaSize));
         }
         position = new Position(x, y);
       } while (!level.map.isNavigable(position) || level.getNpcAt(position) || level.map.getInitialPosition().equals(position));
@@ -93,7 +89,7 @@ export class LevelGenerator extends GameObject {
       return;
     }
 
-    const npcCount = 500;
+    const npcCount = 700;
     const [npcs, _modifiers] = this.npcs[level.levelNo];
     for (let i = 0; i < npcCount; i++) {
       let position: Position;
@@ -136,11 +132,7 @@ export class LevelGenerator extends GameObject {
         path = this.context.buildPath(level.map.getInitialPosition(), level.findTile(StairsDownTile), 1000, level.map);
       } while (path.length === 0);
     } else {
-      let path: Position[];
-      do {
-        level = this.generateDungeonLevel(i, previousLevel);
-        path = this.context.buildPath(level.findTile(StairsUpTile), level.findTile(StairsDownTile), 1000, level.map);
-      } while (path.length === 0);
+      level = this.generateDungeonLevel(i, previousLevel);
     }
     this.generateNpcs(level);
     return level;
@@ -180,14 +172,16 @@ export class LevelGenerator extends GameObject {
     let roomsCount = 1;
     let lastDoor: Position;
     while (doors.length > 0) {
-      const {position, direction} = doors.pop();
+      const {position, direction} = doors.shift();
       const newDoors = this.generateRoom(tiles, position, direction);
-      if (!newDoors) {
-        if (doors.length === 0) {
+      const wasRoomGenerated = newDoors !== null;
+      if (!wasRoomGenerated) {
+        if (doors.length === 0 && !lastDoor) {
+          // turning the door into a stairs
           tiles[position.x][position.y] = new StairsDownTile();
           lastDoor = position;
         } else {
-          // closing the door
+          // removing the door
           tiles[position.x][position.y] = undefined;
         }
       } else {
@@ -196,9 +190,14 @@ export class LevelGenerator extends GameObject {
       }
     }
 
-    if (!lastDoor) {
-      throw new Error(`Cannot create final door at ${i}`);
-    }
+    do {
+      const x = Math.floor(Math.random() * width);
+      const y = Math.floor(Math.random() * height);
+      if (tiles[x][y] instanceof FloorTile && new Position(x, y).distanceTo(initialPosition) > 200) {
+        tiles[x][y] = new StairsDownTile();
+        lastDoor = new Position(x, y);
+      }
+    } while (!lastDoor);
 
     for (let i = 0; i < width; i++) {
       for (let j = 0; j < height; j++) {
@@ -284,7 +283,7 @@ export class LevelGenerator extends GameObject {
       }
     }
 
-    const margin = 3;
+    const margin = 8;
     const canGenerateDoorInTopWall = topLeftCorner.y - 1 > margin;
     const canGenerateDoorInBottomWall = bottomRightCorner.y + 1 < tiles[0].length - margin;
     const canGenerateDoorInLeftWall = topLeftCorner.x - 1 > margin;
@@ -294,9 +293,9 @@ export class LevelGenerator extends GameObject {
 
     let outDoorsCount;
     let roll = Math.random();
-    if (roll < 0.5) {
+    if (roll < 0.3) {
       outDoorsCount = 1;
-    } else if (roll < 0.85) {
+    } else if (roll < 0.75) {
       outDoorsCount = 2;
     } else {
       outDoorsCount = 3;

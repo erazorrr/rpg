@@ -27,6 +27,7 @@ import {LevelGenerator} from "./level-generator";
 import {LootGenerator} from "./loot-generator";
 import {StairsDownTile} from "./tiles/stairs-down.tile";
 import {StairsUpTile} from "./tiles/stairs-up.tile";
+import {FloorTile} from "./tiles/floor.tile";
 
 export class Game {
   private state = GameState.Menu;
@@ -258,10 +259,7 @@ export class Game {
       log: this.gameLog.log.bind(this.gameLog),
       getItem: (position: Position) => this.getCurrentLevel()?.getItem(position),
     }, this.gameField.getWidth(), this.gameField.getHeight());
-    for (let i = 0; i < 4; i++) {
-      // TODO remove last stairs
-      this.levels.push(levelGenerator.generateLevel(i, i === 0 ? undefined : this.levels[i - 1]));
-    }
+    this.levels.push(levelGenerator.generateLevel(0));
     this.player = new Player(this.generateGameObjectContext(), this.getCurrentLevel().map.getInitialPosition());
 
     this.player.makeInteractive();
@@ -338,8 +336,15 @@ export class Game {
         this.inventory.makeInteractive();
         this.render();
       } else if (this.getCurrentLevel().map.getTile(this.player.position) instanceof StairsDownTile) {
-        this.currentLevelIndex++;
-        this.render();
+        if (this.currentLevelIndex === this.levels.length - 1 && this.levels.length < 4) {
+          this.levels.push(levelGenerator.generateLevel(this.levels.length, this.levels[this.levels.length - 1]));
+          this.currentLevelIndex++;
+          if (this.currentLevelIndex === 3) { // last level
+            const position = this.levels[this.currentLevelIndex].findTile(StairsDownTile);
+            this.levels[this.currentLevelIndex].map.setTile(position, new FloorTile());
+          }
+          this.render();
+        }
       } else if (this.getCurrentLevel().map.getTile(this.player.position) instanceof StairsUpTile) {
         this.currentLevelIndex--;
         this.render();
