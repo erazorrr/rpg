@@ -13,6 +13,8 @@ import {Item} from "./item";
 import {Equipment} from "./equipment";
 import {ShortSword} from "./items/weapons/short-sword";
 import {CopperModifier} from "./item-modifiers/weapon/material/copper";
+import {StairsDownTile} from "./tiles/stairs-down.tile";
+import {StairsUpTile} from "./tiles/stairs-up.tile";
 
 export class Player extends CharacterGameObject implements Renderable, Interactive {
   private inputEmitter = new InputEmitter();
@@ -62,6 +64,12 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
       this.position = targetPosition;
       if (this.context.getItem(targetPosition)) {
         this.context.log(`${this.getName()} sees ${this.context.getItem(targetPosition).getName()}. [p] to pick it up.`);
+      }
+      if (this.context.getCurrentMap().getTile(targetPosition) instanceof StairsDownTile) {
+        this.context.log(`${this.getName()} sees the stairs down. [Enter] to descend.`);
+      }
+      if (this.context.getCurrentMap().getTile(targetPosition) instanceof StairsUpTile) {
+        this.context.log(`${this.getName()} sees the stairs down. [Enter] to ascend.`);
       }
     }
     this.context.tick();

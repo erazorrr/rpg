@@ -15,6 +15,6 @@ export interface Context {
   getIsFree(position: Position): boolean;
   getCharacter(position: Position): CharacterGameObject | undefined;
   getItem(position: Position): Item | undefined;
-  buildPath(start: Position, end: Position, maxRadius: number): Position[];
+  buildPath(start: Position, end: Position, maxRadius: number, map?: GameMap): Position[];
   log(message: string): void;
 }
