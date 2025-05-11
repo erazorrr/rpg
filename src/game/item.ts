@@ -39,10 +39,13 @@ export abstract class Item extends GameObject {
   renderAt(position: Position) {
     const map = this.context.getCurrentMap();
     const tile = map.getTile(position);
-    this.context.getRenderer().put(new Position(position.x - map.getTopLeftCorner().x, position.y - map.getTopLeftCorner().y), {
-      ...this.getChar(),
-      backgroundColor: tile.getChar().backgroundColor,
-    });
+    this.context.getRenderer().put(
+      new Position(position.x - map.getTopLeftCorner().x, position.y - map.getTopLeftCorner().y),
+      tile.isExplored() ? {
+        ...this.getChar(),
+        backgroundColor: tile.getChar().backgroundColor,
+      } : tile.getChar(),
+    );
   };
 
   abstract getBaseName(): string;

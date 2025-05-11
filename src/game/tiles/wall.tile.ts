@@ -4,11 +4,11 @@ import {ForegroundColor} from "../../io/foreground.color";
 import {BackgroundColor} from "../../io/background.color";
 
 export class WallTile extends Tile {
-  getChar(): Char {
+  getBaseChar(): Char {
     return {
       char: ' ',
       color: ForegroundColor.Pink1,
-      backgroundColor: BackgroundColor.Black,
+      backgroundColor: BackgroundColor.Grey50,
     };
   }
 

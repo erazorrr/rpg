@@ -3,7 +3,6 @@ import {Npc} from "./npc";
 import {Position, SerializedPosition} from "../io/position";
 import {Item} from "./item";
 import {Tile} from "./tiles/abstract.tile";
-import {StairsDownTile} from "./tiles/stairs-down.tile";
 
 export class Level {
   private npcs: Npc[] = [];

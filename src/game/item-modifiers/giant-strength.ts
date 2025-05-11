@@ -4,6 +4,6 @@ export class GiantStrength extends ItemModifier {
   constructor() {
     super('giant strength', {
       strengthBonus: 6,
-    }, 15, true);
+    }, 17, true);
   }
 }

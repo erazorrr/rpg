@@ -4,7 +4,7 @@ import {ForegroundColor} from "../../io/foreground.color";
 import {BackgroundColor} from "../../io/background.color";
 
 export class TreeTile extends Tile {
-  getChar(): Char {
+  getBaseChar(): Char {
     return {
       char: 'T',
       color: ForegroundColor.Orange4a,

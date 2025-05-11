@@ -1,40 +1,29 @@
-import {Action, Npc} from "../npc";
+import {Npc} from "../npc";
 import {Char} from "../../io/char";
 import {ForegroundColor} from "../../io/foreground.color";
 import {BackgroundColor} from "../../io/background.color";
-import {Context} from "../context";
-import {Position} from "../../io/position";
 
 export class Wolf extends Npc {
   protected strength = 8;
   protected dexterity = 12;
   protected endurance = 2;
 
-  constructor(context: Context, public position: Position) {
-    super(context);
+  protected getVisibilityRadius(): number {
+    return 60;
   }
 
-  decideAction(): Action {
-    const player = this.context.getPlayer();
-    if (player.position.distanceTo(this.position) < 60) {
-      if (this.hp < this.getMaxHp() * 0.1) {
-        if (this.previousAction === Action.Attack) {
-          this.context.log(`${this.getName()} tries to run!`);
-        }
-        return Action.Flee;
-      }
-      if (this.previousAction !== Action.Attack) {
-        this.context.log(`${this.getName()} barks!`);
-      }
-      return Action.Attack;
-    }
-    return Action.Nothing;
+  getCowardice(): number {
+    return 0.1;
+  }
+
+  getShout() {
+    return `${this.getName()} barks!`;
   }
 
   getChar(): Char {
     return {
       char: 'w',
-      color: ForegroundColor.Grey35,
+      color: ForegroundColor.White,
       backgroundColor: BackgroundColor.Green,
     };
   }

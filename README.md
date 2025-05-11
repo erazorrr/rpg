@@ -16,8 +16,6 @@ This is a simple roguelike game I put together in a spare time on my vacation.
 - Add new monster modifiers (e.g., leach life)
 - Monsters' shouting should attract other monsters
 - Add idle animations
-- Add more levels - e.g. auto-scaling dungeons
-  - Add doors and keys to the dungeons
 - Handle window resize
 - Add game save and load
 

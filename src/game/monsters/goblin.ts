@@ -1,36 +1,23 @@
-import {Action, Npc} from "../npc";
+import {Npc} from "../npc";
 import {Char} from "../../io/char";
 import {ForegroundColor} from "../../io/foreground.color";
 import {BackgroundColor} from "../../io/background.color";
-import {Context} from "../context";
-import {Position} from "../../io/position";
 import {ShortSword} from "../items/weapons/short-sword";
 import {CopperModifier} from "../item-modifiers/weapon/material/copper";
+import {ChainMail} from "../items/chest/chain-mail";
+import {IronModifier} from "../item-modifiers/weapon/material/iron";
 
 export class Goblin extends Npc {
   protected strength = 6;
   protected dexterity = 10;
   protected endurance = 3;
 
-  constructor(context: Context, public position: Position) {
-    super(context);
+  protected getVisibilityRadius(): number {
+    return 40;
   }
 
-  decideAction(): Action {
-    const player = this.context.getPlayer();
-    if (player.position.distanceTo(this.position) < 40) {
-      if (this.hp < this.getMaxHp() * 0.3) {
-        if (this.previousAction === Action.Attack) {
-          this.context.log(`${this.getName()} tries to run!`);
-        }
-        return Action.Flee;
-      }
-      if (this.previousAction !== Action.Attack) {
-        this.context.log(`${this.getName()} shouts!`);
-      }
-      return Action.Attack;
-    }
-    return Action.Nothing;
+  getCowardice(): number {
+    return 0.3;
   }
 
   getChar(): Char {
@@ -55,6 +42,7 @@ export class Goblin extends Npc {
 
   public equipment = {
     weapon: new ShortSword(this.context).applyModifier(new CopperModifier()),
+    chest: new ChainMail(this.context).applyModifier(new IronModifier()),
   };
 
   getIsBloody(): boolean {

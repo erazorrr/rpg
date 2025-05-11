@@ -36,8 +36,18 @@ import {MetalBoots} from "./items/boots/metal-boots";
 import {LeatherGauntlets} from "./items/gauntlets/leather-gauntlets";
 import {MetalGauntlets} from "./items/gauntlets/metal-gauntlets";
 import {GameObject} from "./abstract.game-object";
+import {LeviathanStrength} from "./item-modifiers/leviathan-strength";
+import {LeviathanEndurance} from "./item-modifiers/leviathan-endurance";
+import {ChampionAntiEndurance} from "./item-modifiers/champion-anti-endurance";
+import {ChampionAntiDexterity} from "./item-modifiers/champion-anti-dexterity";
+import {ChampionAntiStrength} from "./item-modifiers/champion-anti-strength";
+import {ChampionAntiHealth} from "./item-modifiers/champion-anti-health";
+import {Debug} from "../debug";
+import {ChampionHealthPotion} from "./items/potions/champion-health";
+import {GiantHealthPotion} from "./items/potions/giant-health";
 
 export class LootGenerator extends GameObject {
+  private debug: Debug = new Debug('loot-generator.log');
   private readonly commonModifiers: (new () => ItemModifier)[];
   private opposites: Map<ItemModifier, Set<ItemModifier>>;
   private readonly loot: Record<number, Array<Item>>;
@@ -45,19 +55,29 @@ export class LootGenerator extends GameObject {
   constructor(context: Context) {
     super(context);
 
-    this.commonModifiers = [Health, Endurance, Dexterity, Strength, AntiEndurance, AntiDexterity, AntiStrength, AntiHealth, ChampionStrength, ChampionDexterity, ChampionEndurance, ChampionHealth, GiantDexterity, GiantHealth, GiantEndurance, GiantStrength];
+    this.commonModifiers = [
+      Health, Endurance, Dexterity, Strength,
+      AntiEndurance, AntiDexterity, AntiStrength, AntiHealth,
+      ChampionAntiEndurance, ChampionAntiDexterity, ChampionAntiStrength, ChampionAntiHealth,
+      ChampionStrength, ChampionDexterity, ChampionEndurance, ChampionHealth,
+      GiantDexterity, GiantHealth, GiantEndurance, GiantStrength,
+      LeviathanStrength, LeviathanEndurance
+    ];
     const _items: Array<[Array<new (ctx: Context) => Item>, Array<new () => ItemModifier>, Array<new () => ItemModifier>]> = [
       [[ShortSword, GreatAxe], [CopperModifier, IronModifier, SteelModifier], this.commonModifiers],
       [[LeatherArmor], [NopModifier], this.commonModifiers],
       [[ChainMail], [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
-      [[HealthPotion], [NopModifier], new Array(this.commonModifiers.length).fill(NopModifier)],
-      [[SmallHealthPotion], [NopModifier], new Array(this.commonModifiers.length).fill(NopModifier)],
-      [[LargeHealthPotion], [NopModifier], new Array(this.commonModifiers.length).fill(NopModifier)],
+      [[HealthPotion], [NopModifier], new Array(Math.floor(this.commonModifiers.length * 0.8)).fill(NopModifier)],
+      [[SmallHealthPotion], [NopModifier], new Array(Math.floor(this.commonModifiers.length * 0.8)).fill(NopModifier)],
+      [[LargeHealthPotion], [NopModifier], new Array(Math.floor(this.commonModifiers.length * 0.8)).fill(NopModifier)],
+      [[ChampionHealthPotion], [NopModifier], new Array(Math.floor(this.commonModifiers.length * 0.8)).fill(NopModifier)],
+      [[GiantHealthPotion], [NopModifier], new Array(Math.floor(this.commonModifiers.length * 0.8)).fill(NopModifier)],
       [[LeatherBoots], [NopModifier], this.commonModifiers],
       [[MetalBoots], [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
       [[LeatherGauntlets], [NopModifier], this.commonModifiers],
       [[MetalGauntlets], [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
     ];
+    this.debug.log(`Building opposites...`);
     this.opposites = this.commonModifiers.reduce((acc, mod) => {
       acc.set(mod, new Set());
       const instance = new mod();
@@ -70,14 +90,17 @@ export class LootGenerator extends GameObject {
       }
       return acc;
     }, new Map());
+    this.debug.log(`Building opposites done!`);
 
+    this.debug.log(`Constructing loot...`);
     this.loot = _items.reduce((acc, [items, modifiers, modifiers1]) => {
-      function* subsets(array, offset = 0) {
-        while (offset < array.length) {
-          let first = array[offset++];
-          for (let subset of subsets(array, offset)) {
-            subset.push(first);
-            yield subset;
+      function* pairs(array: any[]) {
+        for (let i = 0; i < array.length; i++) {
+          yield [array[i]];
+          for (let j = 0; j < array.length; j++) {
+            if (i != j) {
+              yield [array[i], array[j]];
+            }
           }
         }
         yield [];
@@ -94,10 +117,7 @@ export class LootGenerator extends GameObject {
           }
           acc[cost].push(res);
 
-          for (const additionalModifiers of subsets(modifiers1)) {
-            if (additionalModifiers.length > 2) {
-              continue;
-            }
+          for (const additionalModifiers of pairs(modifiers1)) {
             if (this.hasOpposites(additionalModifiers)) {
               continue;
             }
@@ -119,6 +139,7 @@ export class LootGenerator extends GameObject {
       }
       return acc;
     }, {});
+    this.debug.log(`Constructing loot done!`);
   }
 
   private hasOpposites(arr: Array<ItemModifier>): boolean {
@@ -138,17 +159,21 @@ export class LootGenerator extends GameObject {
   }
 
   public generateLoot(cost: number): Item | null {
+    this.debug.log(`Generating loot for ${cost}...`);
     let roll = Math.ceil(Math.random() * cost);
+    this.debug.log(`Roll: ${roll}`);
     let possibleItems: Item[];
-    let change = 0;
     do {
+      this.debug.log(`Finding items for ${roll}...`);
       possibleItems = this.loot[roll];
       roll--;
-      change++;
     } while (roll > 0 && !possibleItems);
     if (possibleItems) {
-      return possibleItems[Math.floor(Math.random() * possibleItems.length)];
+      const item = possibleItems[Math.floor(Math.random() * possibleItems.length)];
+      this.debug.log(`Generated ${item.getName()}!`);
+      return item;
     }
+    this.debug.log(`Failed to generate!`);
     return null;
   }
 }

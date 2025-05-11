@@ -4,11 +4,11 @@ import {ForegroundColor} from "../../io/foreground.color";
 import {BackgroundColor} from "../../io/background.color";
 
 export class StairsUpTile extends Tile {
-  getChar(): Char {
+  getBaseChar(): Char {
     return {
       char: '<',
-      color: ForegroundColor.Blue,
-      backgroundColor: BackgroundColor.Grey11,
+      color: ForegroundColor.Grey50,
+      backgroundColor: BackgroundColor.Orange1,
     };
   }
   isNavigable(): boolean {

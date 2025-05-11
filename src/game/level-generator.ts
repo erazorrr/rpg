@@ -3,7 +3,7 @@ import {Level} from "./level";
 import {GameMap} from "./game.map";
 import {TreeTile} from "./tiles/tree.tile";
 import {GrassTile} from "./tiles/grass.tile";
-import {Position} from "../io/position";
+import {Position, SerializedPosition} from "../io/position";
 import {WaterTile} from "./tiles/water.tile";
 import {Tile} from "./tiles/abstract.tile";
 import {ShallowWaterTile} from "./tiles/shallow-water.tile";
@@ -20,6 +20,8 @@ import {StairsDownTile} from "./tiles/stairs-down.tile";
 import {StairsUpTile} from "./tiles/stairs-up.tile";
 import {FloorTile} from "./tiles/floor.tile";
 import {WallTile} from "./tiles/wall.tile";
+import {TreasureGoblin} from "./monsters/treasure-goblin";
+import {Debug} from "../debug";
 
 enum Direction {
   Up = 'up',
@@ -28,14 +30,22 @@ enum Direction {
   Right = 'right',
 }
 
+type LevelTemplate = {
+  level: Level;
+  freeTiles: Position[];
+}
+
 export class LevelGenerator extends GameObject {
+  private debug: Debug = new Debug('level-generator.log');
+
   constructor(context: Context, private containerWidth, private containerHeight) {
     super(context);
   }
 
   private startingAreaSize = 50;
-  private generateSurfaceAreaNpcs(level: Level) {
-    const startingPosition = level.map.getInitialPosition();
+  private generateSurfaceAreaNpcs(template: LevelTemplate) {
+    this.debug.log(`generateSurfaceAreaNpcs start...`);
+    const startingPosition = template.level.map.getInitialPosition();
     let position: Position;
     do {
       let x;
@@ -51,54 +61,57 @@ export class LevelGenerator extends GameObject {
         y = startingPosition.y - Math.floor(Math.random() * this.startingAreaSize);
       }
       position = new Position(x, y);
-    } while (!level.map.isNavigable(position) || level.getNpcAt(position) || level.map.getInitialPosition().equals(position));
+    } while (!template.level.map.isNavigable(position) || template.level.getNpcAt(position) || template.level.map.getInitialPosition().equals(position));
 
-    const initialMonster = new Goblin(this.context, position);
-    level.putNpc(initialMonster);
+    const initialMonster = new Goblin(this.context, template.level, position);
+    template.level.putNpc(initialMonster);
 
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 10; i++) {
       do {
         let x;
         if (Math.random() < 0.5) {
-          x = startingPosition.x + this.startingAreaSize + Math.floor(Math.random() * (level.map.width - this.startingAreaSize * 2 - startingPosition.x));
+          x = startingPosition.x + this.startingAreaSize + Math.floor(Math.random() * (template.level.map.width - this.startingAreaSize * 2 - startingPosition.x));
         } else {
           x = startingPosition.x - this.startingAreaSize - Math.floor(Math.random() * (startingPosition.x - this.startingAreaSize));
         }
         let y;
         if (Math.random() < 0.5) {
-          y = startingPosition.y + this.startingAreaSize + Math.floor(Math.random() * (level.map.height - this.startingAreaSize * 2 - startingPosition.y));
+          y = startingPosition.y + this.startingAreaSize + Math.floor(Math.random() * (template.level.map.height - this.startingAreaSize * 2 - startingPosition.y));
         } else {
           y = startingPosition.y - this.startingAreaSize - Math.floor(Math.random() * (startingPosition.y - this.startingAreaSize));
         }
         position = new Position(x, y);
-      } while (!level.map.isNavigable(position) || level.getNpcAt(position) || level.map.getInitialPosition().equals(position));
-      const monster = Math.random() < 0.5 ? new Goblin(this.context, position) : new Wolf(this.context, position);
-      level.putNpc(monster);
+      } while (!template.level.map.isNavigable(position) || template.level.getNpcAt(position) || template.level.map.getInitialPosition().equals(position));
+      const monster = Math.random() < 0.5 ? new Goblin(this.context, template.level, position) : new Wolf(this.context, template.level, position);
+      template.level.putNpc(monster);
     }
+    this.debug.log(`generateSurfaceAreaNpcs done!`);
   }
 
   private npcs = [
     [[] as any, [] as any[]],
     [[Goblin, Wolf], []],
-    [[Ogre, Goblin, Wolf], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier]],
+    [[Ogre, Goblin], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier]],
     [[Ogre, Skeleton, Goblin], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier, SpectralHitMonsterModifier]],
   ] as const;
-  private generateNpcs(level: Level) {
-    if (level.levelNo === 0) {
-      this.generateSurfaceAreaNpcs(level);
+  private generateNpcs(template: LevelTemplate) {
+    this.debug.log(`generateNpcs for ${template.level.levelNo}...`);
+    if (template.level.levelNo === 0) {
+      this.generateSurfaceAreaNpcs(template);
       return;
     }
 
-    const npcCount = 700;
-    const [npcs, _modifiers] = this.npcs[level.levelNo];
+    const npcCount = 475;
+    const [npcs, _modifiers] = this.npcs[template.level.levelNo];
     for (let i = 0; i < npcCount; i++) {
       let position: Position;
+      let freePositionIdx: number;
       do {
-        const x = Math.floor(Math.random() * level.map.width);
-        const y = Math.floor(Math.random() * level.map.height);
-        position = new Position(x, y);
-      } while (!level.map.isNavigable(position) || level.getNpcAt(position) || level.findTile(StairsUpTile).equals(position));
-      const npc = new npcs[Math.floor(Math.random() * npcs.length)](this.context, position);
+        freePositionIdx = Math.floor(Math.random() * template.freeTiles.length);
+        position = template.freeTiles[freePositionIdx];
+      } while (template.level.getNpcAt(position));
+      template.freeTiles.splice(freePositionIdx, 1);
+      const npc = new npcs[Math.floor(Math.random() * npcs.length)](this.context, template.level, position);
       const modifiersRoll = Math.floor(Math.random() * 100);
       let modifiersCount;
       if (modifiersRoll < 50) {
@@ -119,35 +132,49 @@ export class LevelGenerator extends GameObject {
         const modifier = new (modifiers.splice(idx, 1)[0])();
         npc.applyModifier(modifier);
       }
-      level.putNpc(npc);
+      template.level.putNpc(npc);
     }
+    for (let i = 0; i < 2; i++) {
+      let position: Position;
+      let freePositionIdx: number;
+      do {
+        freePositionIdx = Math.floor(Math.random() * template.freeTiles.length);
+        position = template.freeTiles[freePositionIdx];
+      } while (template.level.getNpcAt(position));
+      const treasureGoblin = new TreasureGoblin(this.context, template.level, position, 12 + 5 * (template.level.levelNo - 1));
+      template.level.putNpc(treasureGoblin);
+    }
+    this.debug.log(`generateNpcs for ${template.level.levelNo} done!`);
   }
 
   public generateLevel(i: number, previousLevel?: Level): Level {
-    let level: Level;
+    this.debug.log(`generateLevel for ${i}...`);
+    let template: LevelTemplate;
     if (i === 0) {
       let path: Position[];
       do {
-        level = this.generateSurfaceLevel();
-        path = this.context.buildPath(level.map.getInitialPosition(), level.findTile(StairsDownTile), 1000, level.map);
+        template = this.generateSurfaceLevel();
+        path = this.context.buildPath(template.level.map.getInitialPosition(), template.level.findTile(StairsDownTile), 1000, template.level.map);
       } while (path.length === 0);
     } else {
-      level = this.generateDungeonLevel(i, previousLevel);
+      template = this.generateDungeonLevel(i, previousLevel);
     }
-    this.generateNpcs(level);
-    return level;
+    this.generateNpcs(template);
+    this.debug.log(`generateLevel for ${i} done!`);
+    return template.level;
   }
 
-  private generateDungeonLevel(i: number, previousLevel: Level): Level {
-    const width = 1000;
-    const height = 1000;
+  private generateDungeonLevel(i: number, previousLevel: Level): LevelTemplate {
+    this.debug.log(`generateDungeonLevel for ${i}...`);
+    const width = 250;
+    const height = 250;
 
     const stairsPosition: Position = previousLevel.findTile(StairsDownTile);
     if (!stairsPosition) {
       throw new Error(`No stairs down found during ${i} generation`);
     }
     const initialPosition = stairsPosition;
-    const tiles: Tile[][] = []
+    const tiles: Tile[][] = [];
     for (let i = 0; i < width; i++) {
       tiles[i] = [];
       for (let j = 0; j < height; j++) {
@@ -157,11 +184,14 @@ export class LevelGenerator extends GameObject {
 
     tiles[initialPosition.x][initialPosition.y] = new StairsUpTile();
 
+    const freeTiles: Position[] = [];
+
     let doors: Array<{position: Position, direction: Direction}>;
     for (const direction of [Direction.Up, Direction.Down, Direction.Left, Direction.Right]) {
-      const initial = this.generateRoom(tiles, initialPosition, direction, 1000);
-      if (initial) {
-        doors = initial;
+      const initialRoom = this.generateRoom(tiles, initialPosition, direction, 1000);
+      if (initialRoom) {
+        doors = initialRoom.doors;
+        freeTiles.push(...initialRoom.freeTiles);
         break;
       }
     }
@@ -173,9 +203,8 @@ export class LevelGenerator extends GameObject {
     let lastDoor: Position;
     while (doors.length > 0) {
       const {position, direction} = doors.shift();
-      const newDoors = this.generateRoom(tiles, position, direction);
-      const wasRoomGenerated = newDoors !== null;
-      if (!wasRoomGenerated) {
+      const room = this.generateRoom(tiles, position, direction);
+      if (!room) {
         if (doors.length === 0 && !lastDoor) {
           // turning the door into a stairs
           tiles[position.x][position.y] = new StairsDownTile();
@@ -185,7 +214,8 @@ export class LevelGenerator extends GameObject {
           tiles[position.x][position.y] = undefined;
         }
       } else {
-        doors.push(...newDoors);
+        doors.push(...room.doors);
+        freeTiles.push(...room.freeTiles);
         roomsCount++;
       }
     }
@@ -208,7 +238,8 @@ export class LevelGenerator extends GameObject {
     }
 
     const map = new GameMap(this.context, tiles, initialPosition, width, height, this.containerWidth, this.containerHeight);
-    return new Level(i, map);
+    this.debug.log(`generateDungeonLevel for ${i} done!`);
+    return {level: new Level(i, map), freeTiles};
   }
 
   private checkIfRoomIsPossible(tiles: Tile[][], topLeftCorner: Position, bottomRightCorner: Position): boolean {
@@ -226,18 +257,20 @@ export class LevelGenerator extends GameObject {
     return true;
   }
 
-  private generateRoom(tiles: Tile[][], entrance: Position, direction: Direction, tries = 20): Array<{position: Position, direction: Direction}> | null {
+  private generateRoom(tiles: Tile[][], entrance: Position, direction: Direction, tries = 20): {doors: Array<{position: Position, direction: Direction}>, freeTiles: Position[]} | null {
+    this.debug.log(`generateRoom from ${entrance.serialize()}, direction: ${direction}...`);
     let triesLeft = tries;
     let width: number;
     let height: number;
     let topLeftCorner: Position;
     let bottomRightCorner: Position;
+    this.debug.log(`Picking sizes...`);
     do {
       if (triesLeft-- === 0) {
+        this.debug.log(`Failed to generate room!`);
         return null;
       }
       if (Math.random() < 0.2) {
-        // corridor
         if (direction === Direction.Up || direction === Direction.Down) {
           width = 1;
           height = Math.floor(Math.random() * 5) + 5;
@@ -277,9 +310,13 @@ export class LevelGenerator extends GameObject {
       }
     } while (!this.checkIfRoomIsPossible(tiles, topLeftCorner, bottomRightCorner));
 
+    this.debug.log(`Sizing is ok: ${topLeftCorner.serialize()}, ${bottomRightCorner.serialize()}`);
+
+    const freeTiles: Position[] = [];
     for (let i = topLeftCorner.x; i <= bottomRightCorner.x; i++) {
       for (let j = topLeftCorner.y; j <= bottomRightCorner.y; j++) {
         tiles[i][j] = new FloorTile();
+        freeTiles.push(new Position(i, j));
       }
     }
 
@@ -300,12 +337,14 @@ export class LevelGenerator extends GameObject {
     } else {
       outDoorsCount = 3;
     }
+    this.debug.log(`Trying to generate ${outDoorsCount} doors...`);
     const allowedWalls: Direction[] = [
       canGenerateDoorInTopWall && direction !== Direction.Down ? Direction.Up : null,
       canGenerateDoorInBottomWall && direction !== Direction.Up ? Direction.Down : null,
       canGenerateDoorInLeftWall && direction !== Direction.Right ? Direction.Left : null,
       canGenerateDoorInRightWall && direction !== Direction.Left ? Direction.Right : null
     ].filter(Boolean) as Direction[];
+    this.debug.log(`allowedWalls: ${JSON.stringify(allowedWalls)}`);
     for (let i = 0; i < outDoorsCount; i++) {
       const idx = Math.floor(Math.random() * allowedWalls.length);
       const wall = allowedWalls.splice(idx, 1)[0];
@@ -345,15 +384,19 @@ export class LevelGenerator extends GameObject {
       }
     }
 
-    return doors;
+    this.debug.log(`doors: ${JSON.stringify(doors)}`);
+    this.debug.log(`generateRoom from ${entrance.serialize()}, direction: ${direction} done!`);
+    return {doors, freeTiles};
   }
 
-  private generateSurfaceLevel(): Level {
-    const width = 400;
+  private generateSurfaceLevel(): LevelTemplate {
+    this.debug.log(`generateSurfaceLevel...`);
+    const width = 250;
     const height = 120;
     const initialPosition = new Position(100, Math.floor(height / 2));
 
     const tiles: Tile[][] = [];
+    const freeTiles: Set<SerializedPosition> = new Set();
 
     for (let i = 0; i < width; i++) {
       tiles[i] = [];
@@ -362,7 +405,9 @@ export class LevelGenerator extends GameObject {
           tiles[i][j] = new TreeTile();
         } else {
           tiles[i][j] = new GrassTile();
+          freeTiles.add(new Position(i, j).serialize());
         }
+        tiles[i][j].setExplored(true);
       }
     }
 
@@ -372,23 +417,38 @@ export class LevelGenerator extends GameObject {
         continue;
       }
       tiles[lakePosition.x][lakePosition.y] = new WaterTile();
-      this.spreadLake(tiles, initialPosition, width, height, lakePosition);
+      tiles[lakePosition.x][lakePosition.y].setExplored(true);
+      freeTiles.delete(lakePosition.serialize());
+      this.spreadLake(tiles, freeTiles, initialPosition, width, height, lakePosition);
     }
 
-    // TODO better entrance
-    tiles[width - 1][Math.floor(Math.random() * height)] = new StairsDownTile();
+    const entrancePosition = new Position(width - 1, Math.floor(Math.random() * height));
+    tiles[entrancePosition.x][entrancePosition.y] = new StairsDownTile();
+    tiles[entrancePosition.x][entrancePosition.y].setExplored(true);
+
+    for (let i = entrancePosition.x - 3; i <= entrancePosition.x; i++) {
+      for (let j = Math.max(0, entrancePosition.y - 3); j <= Math.min(height - 1, entrancePosition.y + 3); j++) {
+        if ((i === entrancePosition.x - 3 || j === entrancePosition.y - 3 || j === entrancePosition.y + 3) && j !== entrancePosition.y) {
+          tiles[i][j] = new WallTile();
+          tiles[i][j].setExplored(true);
+        }
+      }
+    }
+
 
     const map = new GameMap(this.context, tiles, initialPosition, width, height, this.containerWidth, this.containerHeight);
 
-    return new Level(0, map);
+    this.debug.log(`generateSurfaceLevel done!`);
+    return {level: new Level(0, map), freeTiles: Array.from(freeTiles.values()).map(Position.deserialize)};
   }
 
-  private spreadLake(tiles: Tile[][], initialPosition: Position, width: number, height: number, position: Position, limit = 5): void {
+  private spreadLake(tiles: Tile[][], freeTiles: Set<SerializedPosition>, initialPosition: Position, width: number, height: number, position: Position, limit = 5): void {
     if (limit === 0 || Math.random() < 0.18) {
       for (let i = Math.max(position.x - 1, 0); i <= Math.min(position.x + 1, width - 1); i++) {
         for (let j = Math.max(position.y - 1, 0); j <= Math.min(position.y + 1, height - 1); j++) {
           if (!(tiles[i][j] instanceof WaterTile)) {
             tiles[i][j] = new ShallowWaterTile();
+            tiles[i][j].setExplored(true);
           }
         }
       }
@@ -399,7 +459,9 @@ export class LevelGenerator extends GameObject {
       for (let j = Math.max(position.y - Math.ceil(Math.random() * 3), 0); j <= Math.min(position.y + Math.ceil(Math.random() * 3), height - 1); j++) {
         if (Math.random() < 0.4 && new Position(i, j).distanceTo(initialPosition) > 20) {
           tiles[i][j] = new WaterTile();
-          this.spreadLake(tiles, initialPosition, width, height, new Position(i, j), limit - 1);
+          tiles[i][j].setExplored(true);
+          freeTiles.delete(new Position(i, j).serialize());
+          this.spreadLake(tiles, freeTiles, initialPosition, width, height, new Position(i, j), limit - 1);
         }
       }
     }

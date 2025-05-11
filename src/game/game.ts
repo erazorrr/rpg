@@ -76,6 +76,8 @@ export class Game {
       getCharacter: this.getCharacterAt.bind(this),
       log: this.gameLog.log.bind(this.gameLog),
       getItem: (position: Position) => this.getCurrentLevel()?.getItem(position),
+      destroyNpc: this.destroyNpc.bind(this),
+      getCurrentGameLevel: () => this.getCurrentLevel(),
     };
   }
   private healthBar = new HealthBar(this.generateMenuFieldContext());
@@ -93,7 +95,13 @@ export class Game {
     getCharacter: this.getCharacterAt.bind(this),
     log: this.gameLog.log.bind(this.gameLog),
     getItem: (position: Position) => this.getCurrentLevel()?.getItem(position),
+    destroyNpc: this.destroyNpc.bind(this),
+    getCurrentGameLevel: () => this.getCurrentLevel(),
   });
+
+  private destroyNpc(npc: Npc) {
+    this.getCurrentLevel()?.removeNpc(npc);
+  }
 
   private getCharacterAt(position: Position) {
     if (this.player && position.equals(this.player.position)) {
@@ -251,6 +259,8 @@ export class Game {
       getCharacter: this.getCharacterAt.bind(this),
       log: this.gameLog.log.bind(this.gameLog),
       getItem: (position: Position) => this.getCurrentLevel()?.getItem(position),
+      destroyNpc: this.destroyNpc.bind(this),
+      getCurrentGameLevel: () => this.getCurrentLevel(),
     };
   }
 
@@ -268,6 +278,8 @@ export class Game {
       getCharacter: this.getCharacterAt.bind(this),
       log: this.gameLog.log.bind(this.gameLog),
       getItem: (position: Position) => this.getCurrentLevel()?.getItem(position),
+      destroyNpc: this.destroyNpc.bind(this),
+      getCurrentGameLevel: () => this.getCurrentLevel(),
     }, this.gameField.getWidth(), this.gameField.getHeight());
     this.levels.push(levelGenerator.generateLevel(0));
     this.player = new Player(this.generateGameObjectContext(), this.getCurrentLevel().map.getInitialPosition());
@@ -303,7 +315,9 @@ export class Game {
     })
 
     this.inputEmitter.on(InputEvent.ENTER, this, () => {
-      if (this.inventory) {
+      if (this.player.hp === 0) {
+        this.returnToMainMenu();
+      } else if (this.inventory) {
         const item = this.inventory.getSelectedItem();
         if (item) {
           const equippedSlot = Object.entries(this.player.equipment).find(([, value]) => value === item)?.[0];
@@ -348,18 +362,24 @@ export class Game {
       } else if (this.getCurrentLevel().map.getTile(this.player.position) instanceof StairsDownTile) {
         if (this.currentLevelIndex === this.levels.length - 1 && this.levels.length < 4) {
           this.levels.push(levelGenerator.generateLevel(this.levels.length, this.levels[this.levels.length - 1]));
-          this.currentLevelIndex++;
-          if (this.currentLevelIndex === 3) { // last level
-            const position = this.levels[this.currentLevelIndex].findTile(StairsDownTile);
-            this.levels[this.currentLevelIndex].map.setTile(position, new FloorTile());
+          if (this.levels.length === 4) { // last level
+            const position = this.levels[this.levels.length - 1].findTile(StairsDownTile);
+            this.levels[this.levels.length - 1].map.setTile(position, new FloorTile());
           }
-          this.render();
         }
-      } else if (this.getCurrentLevel().map.getTile(this.player.position) instanceof StairsUpTile) {
-        this.currentLevelIndex--;
+        this.currentLevelIndex++;
+        this.player.explore();
+        if (this.currentLevelIndex === 1) {
+          this.gameLog.log(`${this.player.getName()} has never seen such a dark place before!`);
+        }
         this.render();
-      } else if (this.player.hp === 0) {
-        this.returnToMainMenu();
+      } else if (this.getCurrentLevel().map.getTile(this.player.position) instanceof StairsUpTile) {
+        this.gameLog.log(`${this.player.getName()} is ascending...`);
+        this.currentLevelIndex--;
+        if (this.currentLevelIndex === 0) {
+          this.gameLog.log(`Bright light hurts ${this.player.getName()}'s eyes!`);
+        }
+        this.render();
       }
     });
 
