@@ -3,16 +3,16 @@ import {Char} from "../../io/char";
 import {ForegroundColor} from "../../io/foreground.color";
 import {BackgroundColor} from "../../io/background.color";
 
-export class TreeTile extends Tile {
+export class FloorTile extends Tile {
   getBaseChar(): Char {
     return {
-      char: 'T',
-      color: ForegroundColor.Orange4a,
-      backgroundColor: BackgroundColor.SpringGreen2a,
+      char: ' ',
+      color: ForegroundColor.Pink1,
+      backgroundColor: this.isBloody ? BackgroundColor.DarkRed1 : BackgroundColor.Grey11,
     };
   }
 
   isNavigable(): boolean {
-    return false;
+    return true;
   }
 }

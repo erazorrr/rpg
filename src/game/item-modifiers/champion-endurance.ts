@@ -4,6 +4,6 @@ export class ChampionEndurance extends ItemModifier {
   constructor() {
     super('champion endurance', {
       enduranceBonus: 4,
-    }, 9, true);
+    }, 10, true);
   }
 }

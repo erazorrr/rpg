@@ -1,30 +1,22 @@
-import {Action, Npc} from "../npc";
-import {Context} from "../context";
-import {Position} from "../../io/position";
+import {Npc} from "../npc";
 import {Char} from "../../io/char";
 import {ForegroundColor} from "../../io/foreground.color";
 import {BackgroundColor} from "../../io/background.color";
 import {ShortSword} from "../items/weapons/short-sword";
 import {SteelModifier} from "../item-modifiers/weapon/material/steel";
+import {ChainMail} from "../items/chest/chain-mail";
 
 export class Skeleton extends Npc {
-  protected strength = 12;
-  protected dexterity = 6;
+  protected strength = 16;
+  protected dexterity = 10;
   protected endurance = 4;
 
-  constructor(context: Context, public position: Position) {
-    super(context);
+  getShout() {
+    return `${this.getName()} shrieks!`;
   }
 
-  decideAction(): Action {
-    const player = this.context.getPlayer();
-    if (player.position.distanceTo(this.position) < 30) {
-      if (this.previousAction !== Action.Attack) {
-        this.context.log(`${this.getName()} shrieks!`);
-      }
-      return Action.Attack;
-    }
-    return Action.Nothing;
+  getCowardice(): number {
+    return 0;
   }
 
   getChar(): Char {
@@ -44,11 +36,12 @@ export class Skeleton extends Npc {
   }
 
   getBaseLootCost(): number {
-    return 9;
+    return 13;
   }
 
   public equipment = {
     weapon: new ShortSword(this.context).applyModifier(new SteelModifier()),
+    chest: new ChainMail(this.context).applyModifier(new SteelModifier()),
   };
 
   getIsBloody(): boolean {

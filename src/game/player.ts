@@ -13,6 +13,9 @@ import {Item} from "./item";
 import {Equipment} from "./equipment";
 import {ShortSword} from "./items/weapons/short-sword";
 import {CopperModifier} from "./item-modifiers/weapon/material/copper";
+import {StairsDownTile} from "./tiles/stairs-down.tile";
+import {StairsUpTile} from "./tiles/stairs-up.tile";
+import {LeatherArmor} from "./items/chest/leather-armor";
 
 export class Player extends CharacterGameObject implements Renderable, Interactive {
   private inputEmitter = new InputEmitter();
@@ -25,7 +28,7 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
   }
 
   public getMaxHp(): number {
-    return super.getMaxHp(Math.floor(this.level / 2) + 1);
+    return super.getMaxHp(Math.floor(this.level / 2) + 1.2);
   }
   public hp = this.getMaxHp();
 
@@ -49,10 +52,11 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
   }
 
   constructor(
-    public context: Context,
-    public position: Position,
+    context: Context,
+    position: Position,
   ) {
-    super(context);
+    super(context, position);
+    this.explore();
   }
 
   private moveTo(targetPosition: Position): void {
@@ -63,6 +67,13 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
       if (this.context.getItem(targetPosition)) {
         this.context.log(`${this.getName()} sees ${this.context.getItem(targetPosition).getName()}. [p] to pick it up.`);
       }
+      if (this.context.getCurrentMap().getTile(targetPosition) instanceof StairsDownTile) {
+        this.context.log(`${this.getName()} sees the stairs down. [Enter] to descend.`);
+      }
+      if (this.context.getCurrentMap().getTile(targetPosition) instanceof StairsUpTile) {
+        this.context.log(`${this.getName()} sees the stairs down. [Enter] to ascend.`);
+      }
+      this.explore();
     }
     this.context.tick();
   }
@@ -109,12 +120,33 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
 
   public inventory: Item[] = [
     new ShortSword(this.context).applyModifier(new CopperModifier()),
+    new LeatherArmor(this.context),
   ];
   public equipment: Equipment = {
     weapon: this.inventory[0],
+    chest: this.inventory[1],
   };
 
   getIsBloody(): boolean {
     return true;
+  }
+
+  public explore() {
+    const map = this.context.getCurrentMap();
+
+    for (let dx = -this.getVisibilityRadius(); dx <= this.getVisibilityRadius(); dx++) {
+      for (let dy = -this.getVisibilityRadius(); dy <= this.getVisibilityRadius(); dy++) {
+        const targetPosition = this.position.shift(dx, dy);
+        const tile = map.getTile(targetPosition);
+
+        if (tile && !tile.isExplored()) {
+          if (this.position.distanceTo(targetPosition) <= this.getVisibilityRadius()) {
+            if (this.isVisible(targetPosition)) {
+              tile.setExplored(true);
+            }
+          }
+        }
+      }
+    }
   }
 }

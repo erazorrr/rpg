@@ -8,7 +8,7 @@ export class GrassTile extends Tile {
   private bgColor: BackgroundColor = BackgroundColor.SpringGreen2a;
   private color: ForegroundColor = Math.random() > 0.5 ? ForegroundColor.SpringGreen2b : ForegroundColor.DarkGreen;
 
-  getChar(): Char {
+  getBaseChar(): Char {
     return {
       char: this.char,
       color: this.color,

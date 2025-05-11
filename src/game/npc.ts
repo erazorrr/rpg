@@ -1,5 +1,7 @@
 import {CharacterGameObject} from "./character.game-object";
 import {Position} from "../io/position";
+import {Context} from "./context";
+import {Level} from "./level";
 
 export enum Action {
   Attack,
@@ -8,9 +10,12 @@ export enum Action {
 }
 
 export abstract class Npc extends CharacterGameObject {
-  abstract decideAction(): Action;
   abstract getXp(): number;
   abstract getBaseLootCost(): number;
+
+  public constructor(context: Context, public gameLevel: Level, position: Position) {
+    super(context, position);
+  }
 
   getMultiplier() {
     return this.modifiers.reduce((acc, m) => acc * m.costMultiplicator, 1);
@@ -38,6 +43,10 @@ export abstract class Npc extends CharacterGameObject {
   }
 
   public tick() {
+    if (!this.isActive()) {
+      return;
+    }
+
     const player = this.context.getPlayer();
 
     const action = this.decideAction();
@@ -48,9 +57,7 @@ export abstract class Npc extends CharacterGameObject {
         if (this.canAttack(player.position)) {
           this.attack(player);
         } else {
-          const start = this.position;
-          const goal = player.position;
-          const path = this.context.buildPath(start, goal, 100);
+          const path = this.context.buildPath(this.position, player.position, 100);
           const restSpeed = this.step(path);
           if (restSpeed > 0 && this.canAttack(player.position)) {
             this.attack(player);
@@ -59,6 +66,9 @@ export abstract class Npc extends CharacterGameObject {
         break;
       }
       case Action.Flee: {
+        if (!this.isVisible(player.position)) {
+          return;
+        }
         if (Math.random() < 0.3) {
           this.spreadBlood();
         }
@@ -85,9 +95,47 @@ export abstract class Npc extends CharacterGameObject {
             this.position = newPosition;
           }
         }
+        break;
       }
       case Action.Nothing:
         break;
     }
+  }
+
+  abstract getCowardice(): number;
+
+  protected getShout(): string {
+    return `${this.getName()} shouts!`;
+  }
+
+  decideAction(): Action {
+    const player = this.context.getPlayer();
+
+    switch (this.previousAction) {
+      case Action.Attack:
+        if (this.hp <= this.getMaxHp() * this.getCowardice()) {
+          this.context.log(`${this.getName()} tries to run!`);
+          return Action.Flee;
+        }
+        return Action.Attack;
+      case Action.Flee:
+        return Action.Flee;
+      default:
+      case Action.Nothing:
+        if (this.isVisible(player.position)) {
+          if (this.hp <= this.getMaxHp() * this.getCowardice()) {
+            this.context.log(`${this.getName()} tries to run!`);
+            return Action.Flee;
+          } else {
+            this.context.log(this.getShout());
+            return Action.Attack;
+          }
+        }
+        return Action.Nothing;
+    }
+  }
+
+  protected isActive() {
+    return this.context.getCurrentGameLevel() === this.gameLevel;
   }
 }
