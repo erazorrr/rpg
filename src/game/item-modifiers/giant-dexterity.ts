@@ -4,6 +4,6 @@ export class GiantDexterity extends ItemModifier {
   constructor() {
     super('giant dexterity', {
       dexterityBonus: 6,
-    }, 9, true);
+    }, 11, true);
   }
 }
