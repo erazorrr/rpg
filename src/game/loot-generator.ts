@@ -46,10 +46,12 @@ import {Debug} from "../debug";
 import {ChampionHealthPotion} from "./items/potions/champion-health";
 import {GiantHealthPotion} from "./items/potions/giant-health";
 
+type ItemModifierBuilder = new () => ItemModifier;
+
 export class LootGenerator extends GameObject {
   private debug: Debug = new Debug('loot-generator.log');
-  private readonly commonModifiers: (new () => ItemModifier)[];
-  private opposites: Map<ItemModifier, Set<ItemModifier>>;
+  private readonly commonModifiers: ItemModifierBuilder[];
+  private opposites: Map<ItemModifierBuilder, Set<ItemModifierBuilder>>;
   private readonly loot: Record<number, Array<Item>>;
 
   constructor(context: Context) {
@@ -63,7 +65,7 @@ export class LootGenerator extends GameObject {
       GiantDexterity, GiantHealth, GiantEndurance, GiantStrength,
       LeviathanStrength, LeviathanEndurance
     ];
-    const _items: Array<[Array<new (ctx: Context) => Item>, Array<new () => ItemModifier>, Array<new () => ItemModifier>]> = [
+    const _items: Array<[Array<new (ctx: Context) => Item>, ItemModifierBuilder[], ItemModifierBuilder[]]> = [
       [[ShortSword, GreatAxe], [CopperModifier, IronModifier, SteelModifier], this.commonModifiers],
       [[LeatherArmor], [NopModifier], this.commonModifiers],
       [[ChainMail], [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
@@ -94,7 +96,7 @@ export class LootGenerator extends GameObject {
 
     this.debug.log(`Constructing loot...`);
     this.loot = _items.reduce((acc, [items, modifiers, modifiers1]) => {
-      function* pairs(array: any[]) {
+      function* pairs(array: ItemModifierBuilder[]) {
         for (let i = 0; i < array.length; i++) {
           yield [array[i]];
           for (let j = 0; j < array.length; j++) {
@@ -142,7 +144,7 @@ export class LootGenerator extends GameObject {
     this.debug.log(`Constructing loot done!`);
   }
 
-  private hasOpposites(arr: Array<ItemModifier>): boolean {
+  private hasOpposites(arr: ItemModifierBuilder[]): boolean {
     let hasOpposites = false;
     outer: for (let i = 0; i < arr.length; i++) {
       const opposites = this.opposites.get(arr[i]);

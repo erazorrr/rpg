@@ -69,7 +69,7 @@ export abstract class Item extends GameObject {
       .filter(m => m.isSuffix)
       .filter(m => m.name.length > 0)
       .map(m => m.name).join(" and ");
-    let params = Object.entries(this.stats)
+    const params = Object.entries(this.stats)
       .map(([key, value]) => `${this.statsNames[key]}${+value >= 0 ? '+' : ''}${value}`)
       .join(' ');
     return `${prefix ? `${prefix} `: ''}${this.getBaseName()}${suffix ? ` of ${suffix}` : ''}${params ? ` (${params})` : ''}`;
@@ -94,7 +94,7 @@ export abstract class Item extends GameObject {
   }
 
   clone(): Item {
-    const res = new (this.constructor as any)(this.context, this.type, {...this.stats}, this.baseCost);
+    const res = new (this.constructor as (new (context: Context, type: ItemType, stats: ItemStats, cost: number) => Item))(this.context, this.type, {...this.stats}, this.baseCost);
     for (const modifier of this.modifiers) {
       res.applyModifier(modifier);
     }

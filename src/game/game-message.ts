@@ -13,7 +13,7 @@ export enum GameMessageType {
 export class GameMessage {
   constructor(
     public readonly type: GameMessageType,
-    public readonly payload?: any,
+    public readonly payload?: object,
   ) {}
 
   static newGame(): GameMessage {
