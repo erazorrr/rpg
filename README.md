@@ -3,8 +3,7 @@ This is a simple roguelike game I put together in a spare time on my vacation.
 ![Game screenshot](screenshot.png)
 
 ## How to launch
-1. You have to have [Node.js](https://nodejs.org/en) installed
-2. Run `npm start`
+Run the appropriate version from the "build" folder
 
 ## Backlog
 - Items dropped should not destroy items that lay on the current tile
