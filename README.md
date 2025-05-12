@@ -3,7 +3,13 @@ This is a simple roguelike game I put together in a spare time on my vacation.
 ![Game screenshot](screenshot.png)
 
 ## How to launch
-Run the appropriate version from the "build" folder
+Run the appropriate version from the `build` folder.
+
+### Hot to build it yourself
+- `npm run build`
+- `npm run package`
+
+After that, new executables will be in a `build` folder.
 
 ## Backlog
 - Items dropped should not destroy items that lay on the current tile
