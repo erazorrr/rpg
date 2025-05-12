@@ -50,8 +50,8 @@ export class InputEmitter {
     return InputEmitter.instance;
   }
 
-  private mapping: Map<Object, Set<(s?: string) => void>> = new Map();
-  on(event: InputEvent, o: Object, callback: (s?: string) => void) {
+  private mapping: Map<object, Set<(s?: string) => void>> = new Map();
+  on(event: InputEvent, o: object, callback: (s?: string) => void) {
     if (!queue.has(event)) {
       queue.set(event, []);
     }
@@ -63,7 +63,7 @@ export class InputEmitter {
     this.mapping.get(o).add(callback);
   }
 
-  clear(o: Object) {
+  clear(o: object) {
     for (const event of queue.keys()) {
       queue.set(event, queue.get(event).filter(c => !this.mapping.get(o).has(c)));
     }

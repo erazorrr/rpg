@@ -123,8 +123,8 @@ export class Game {
       case GameMessageType.Exit:
         this.exit();
         break;
-      case GameMessageType.Kill:
-        const target = message.payload.character as Npc;
+      case GameMessageType.Kill: {
+        const target = (message.payload as {character: Npc}).character;
         this.player.addXp(target.getXp() * target.getMultiplier());
         this.gameLog.log(`Earned ${target.getXp()} XP!`);
         this.getCurrentLevel()?.removeNpc(target);
@@ -135,6 +135,7 @@ export class Game {
           }
         }
         break;
+      }
       case GameMessageType.Die:
         this.player.makeUninteractive();
         break;
@@ -200,8 +201,11 @@ export class Game {
   }
 
   private tick() {
-    for (const npc of this.getCurrentLevel()?.getNpcs()) {
-      npc.tick();
+    const level = this.getCurrentLevel();
+    if (level) {
+      for (const npc of level.getNpcs()) {
+        npc.tick();
+      }
     }
     this.render();
   }
@@ -415,12 +419,13 @@ export class Game {
     this.xpBar.render();
     this.playerStats.render();
 
-    this.getCurrentLevel().map.render(this.gameField);
-    for (const [serializedPosition, item] of this.getCurrentLevel()?.getItemsAndPositions()) {
+    const level = this.getCurrentLevel();
+    level.map.render(this.gameField);
+    for (const [serializedPosition, item] of level.getItemsAndPositions()) {
       item.renderAt(Position.deserialize(serializedPosition));
     }
     this.player.render();
-    for (const npc of this.getCurrentLevel()?.getNpcs()) {
+    for (const npc of level.getNpcs()) {
       npc.render();
     }
     if (this.inventory) {

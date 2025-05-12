@@ -1,5 +1,3 @@
-import {ModifierStats} from "./item-modifier";
-
 export type MonsterModifierStats = {
   strength?: number;
   dexterity?: number;
@@ -7,6 +5,10 @@ export type MonsterModifierStats = {
 };
 
 export abstract class MonsterModifier {
-  constructor(public name: string, public stats: MonsterModifierStats, public costMultiplicator: number, public isSuffix: boolean = false) {
+  protected constructor(
+    public name: string,
+    public stats: MonsterModifierStats,
+    public costMultiplicator: number,
+    public isSuffix: boolean = false) {
   }
 }

@@ -89,7 +89,7 @@ export class LevelGenerator extends GameObject {
   }
 
   private npcs = [
-    [[] as any, [] as any[]],
+    [[], []],
     [[Goblin, Wolf], []],
     [[Ogre, Goblin], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier]],
     [[Ogre, Skeleton, Goblin], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier, SpectralHitMonsterModifier]],
@@ -199,7 +199,6 @@ export class LevelGenerator extends GameObject {
       throw new Error(`Cannot create initial room at ${i}`);
     }
 
-    let roomsCount = 1;
     let lastDoor: Position;
     while (doors.length > 0) {
       const {position, direction} = doors.shift();
@@ -216,7 +215,6 @@ export class LevelGenerator extends GameObject {
       } else {
         doors.push(...room.doors);
         freeTiles.push(...room.freeTiles);
-        roomsCount++;
       }
     }
 
@@ -329,7 +327,7 @@ export class LevelGenerator extends GameObject {
     const doors: Array<{position: Position, direction: Direction}> = [];
 
     let outDoorsCount;
-    let roll = Math.random();
+    const roll = Math.random();
     if (roll < 0.3) {
       outDoorsCount = 1;
     } else if (roll < 0.75) {
