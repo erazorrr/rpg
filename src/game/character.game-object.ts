@@ -98,7 +98,7 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
       this.position.right(),
     ].forEach(p => {
       if (Math.random() < 0.15) {
-        this.context.getCurrentMap().getTile(p).setBloody(true);
+        this.context.getCurrentMap().getTile(p)?.setBloody(true);
       }
     });
   }
