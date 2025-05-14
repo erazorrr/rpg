@@ -101,7 +101,7 @@ export class LevelGenerator extends GameObject {
       return;
     }
 
-    const npcCount = 475;
+    const npcCount = 350;
     const [npcs, _modifiers] = this.npcs[template.level.levelNo];
     for (let i = 0; i < npcCount; i++) {
       let position: Position;
@@ -166,8 +166,8 @@ export class LevelGenerator extends GameObject {
 
   private generateDungeonLevel(i: number, previousLevel: Level): LevelTemplate {
     this.debug.log(`generateDungeonLevel for ${i}...`);
-    const width = 250;
-    const height = 250;
+    const width = 200;
+    const height = 200;
 
     const stairsPosition: Position = previousLevel.findTile(StairsDownTile);
     if (!stairsPosition) {
@@ -389,9 +389,9 @@ export class LevelGenerator extends GameObject {
 
   private generateSurfaceLevel(): LevelTemplate {
     this.debug.log(`generateSurfaceLevel...`);
-    const width = 250;
-    const height = 120;
-    const initialPosition = new Position(100, Math.floor(height / 2));
+    const width = 200;
+    const height = 100;
+    const initialPosition = new Position(20, Math.floor(height / 2));
 
     const tiles: Tile[][] = [];
     const freeTiles: Set<SerializedPosition> = new Set();
