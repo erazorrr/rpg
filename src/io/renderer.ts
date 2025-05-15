@@ -36,9 +36,9 @@ export class Renderer {
     this.putChar(c.char);
   }
 
-  flush() {
+  flush(isBuffered = true): void {
     for (const key in buffer) {
-      if (prevBuffer[key] !== buffer[key]) {
+      if (!isBuffered || prevBuffer[key] !== buffer[key]) {
         const position = Position.deserialize(key);
         process.stdout.write(`\x1b[${position.y + 1};${position.x + 1}H`)
         process.stdout.write(buffer[key]);

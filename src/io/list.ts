@@ -12,9 +12,9 @@ export class List extends Field {
 
   constructor(
     title: string = '',
-    private readonly items: Array<{id: string, label: string, onSelect: () => void}> = [],
-    ltPosition: Position = new Position(0, 0),
-    rbPosition: Position = new Position(process.stdout.columns - 1, process.stdout.rows),
+    private readonly items: Array<{id: string, label: string, onSelect: () => void}>,
+    ltPosition: Position,
+    rbPosition: Position,
     bordered: boolean = true,
     activeId = items[0]?.id,
   ) {

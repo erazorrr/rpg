@@ -21,7 +21,6 @@ After that, new executables will be in a `build` folder.
 - Add new monster modifiers (e.g., leach life)
 - Monsters' shouting should attract other monsters
 - Add idle animations
-- Handle window resize
 - Add game save and load
 
 ## References

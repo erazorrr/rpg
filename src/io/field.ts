@@ -4,16 +4,23 @@ import {Char} from "./char";
 import {ForegroundColor} from "./foreground.color";
 import {BackgroundColor} from "./background.color";
 import {Position} from "./position";
-import * as process from "node:process";
 
 export class Field extends Renderer implements Renderable  {
   constructor(
     private readonly title: string = '',
-    protected readonly ltPosition: Position = new Position(0, 0),
-    protected readonly rbPosition: Position = new Position(process.stdout.columns - 1, process.stdout.rows),
+    protected ltPosition: Position,
+    protected rbPosition: Position,
     protected readonly bordered: boolean = true,
   ) {
     super();
+  }
+
+  public setLTPosition(position: Position): void {
+    this.ltPosition = position;
+  }
+
+  public setRBPosition(position: Position): void {
+    this.rbPosition = position;
   }
 
   private color: ForegroundColor = ForegroundColor.White;

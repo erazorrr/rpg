@@ -38,8 +38,13 @@ type LevelTemplate = {
 export class LevelGenerator extends GameObject {
   private debug: Debug = new Debug('level-generator.log');
 
-  constructor(context: Context, private containerWidth, private containerHeight) {
+  constructor(context: Context, private containerWidth: number, private containerHeight: number) {
     super(context);
+  }
+
+  public setContainerSize(width: number, height: number): void {
+    this.containerWidth = width;
+    this.containerHeight = height;
   }
 
   private startingAreaSize = 50;
