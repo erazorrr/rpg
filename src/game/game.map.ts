@@ -6,8 +6,13 @@ import {GameObject} from "./abstract.game-object";
 import {Context} from "./context";
 
 export class GameMap extends GameObject implements Renderable {
-  constructor(context: Context, private tiles: Tile[][], private initialPosition: Position, public width: number, public height: number, private readonly containerWidth, private readonly containerHeight) {
+  constructor(context: Context, private tiles: Tile[][], private initialPosition: Position, public width: number, public height: number, private containerWidth: number, private containerHeight: number) {
     super(context);
+  }
+
+  public setContainerSize(width: number, height: number): void {
+    this.containerWidth = width;
+    this.containerHeight = height;
   }
 
   public getInitialPosition(): Position {

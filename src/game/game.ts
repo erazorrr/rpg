@@ -97,7 +97,29 @@ export class Game {
     getItem: (position: Position) => this.getCurrentLevel()?.getItem(position),
     destroyNpc: this.destroyNpc.bind(this),
     getCurrentGameLevel: () => this.getCurrentLevel(),
-  });
+  }, new Position(0, 0), new Position(process.stdout.columns - 1, process.stdout.rows - 1));
+
+  constructor() {
+    process.stdout.on('resize', () => {
+      this.gameField.setRBPosition(new Position(process.stdout.columns - 31, process.stdout.rows - 1));
+
+      this.menuField.setLTPosition(new Position(process.stdout.columns - 30, 0));
+      this.menuField.setRBPosition(new Position(process.stdout.columns - 1, process.stdout.rows - 21));
+
+      this.logField.setLTPosition(new Position(process.stdout.columns - 30, process.stdout.rows - 20));
+      this.logField.setRBPosition(new Position(process.stdout.columns - 1, process.stdout.rows - 1));
+
+      this.mainMenu.setRBPosition(new Position(process.stdout.columns - 1, process.stdout.rows - 1));
+
+      this.levelGenerator.setContainerSize(this.gameField.getWidth(), this.gameField.getHeight());
+
+      for (const level of this.levels) {
+        level.map.setContainerSize(this.gameField.getWidth(), this.gameField.getHeight());
+      }
+
+      this.render(false);
+    });
+  }
 
   private destroyNpc(npc: Npc) {
     this.getCurrentLevel()?.removeNpc(npc);
@@ -268,24 +290,24 @@ export class Game {
     };
   }
 
+  private levelGenerator = new LevelGenerator({
+    getCurrentMap: () => this.getCurrentLevel().map,
+    getPlayer: () => this.player,
+    getRenderer: () => this.gameField,
+    postGameMessage: this.receiveGameMessage.bind(this),
+    tick: this.tick.bind(this),
+    getIsFree: this.isFree.bind(this),
+    buildPath: this.buildPath.bind(this),
+    getCharacter: this.getCharacterAt.bind(this),
+    log: this.gameLog.log.bind(this.gameLog),
+    getItem: (position: Position) => this.getCurrentLevel()?.getItem(position),
+    destroyNpc: this.destroyNpc.bind(this),
+    getCurrentGameLevel: () => this.getCurrentLevel(),
+  }, this.gameField.getWidth(), this.gameField.getHeight());
   private newGame() {
     this.mainMenu?.makeUninteractive();
 
-    const levelGenerator = new LevelGenerator({
-      getCurrentMap: () => this.getCurrentLevel().map,
-      getPlayer: () => this.player,
-      getRenderer: () => this.gameField,
-      postGameMessage: this.receiveGameMessage.bind(this),
-      tick: this.tick.bind(this),
-      getIsFree: this.isFree.bind(this),
-      buildPath: this.buildPath.bind(this),
-      getCharacter: this.getCharacterAt.bind(this),
-      log: this.gameLog.log.bind(this.gameLog),
-      getItem: (position: Position) => this.getCurrentLevel()?.getItem(position),
-      destroyNpc: this.destroyNpc.bind(this),
-      getCurrentGameLevel: () => this.getCurrentLevel(),
-    }, this.gameField.getWidth(), this.gameField.getHeight());
-    this.levels.push(levelGenerator.generateLevel(0));
+    this.levels.push(this.levelGenerator.generateLevel(0));
     this.player = new Player(this.generateGameObjectContext(), this.getCurrentLevel().map.getInitialPosition());
 
     this.player.makeInteractive();
@@ -365,7 +387,7 @@ export class Game {
         this.render();
       } else if (this.getCurrentLevel().map.getTile(this.player.position) instanceof StairsDownTile) {
         if (this.currentLevelIndex === this.levels.length - 1 && this.levels.length < 4) {
-          this.levels.push(levelGenerator.generateLevel(this.levels.length, this.levels[this.levels.length - 1]));
+          this.levels.push(this.levelGenerator.generateLevel(this.levels.length, this.levels[this.levels.length - 1]));
           if (this.levels.length === 4) { // last level
             const position = this.levels[this.levels.length - 1].findTile(StairsDownTile);
             this.levels[this.levels.length - 1].map.setTile(position, new FloorTile());
@@ -433,7 +455,7 @@ export class Game {
     }
   }
 
-  private render() {
+  private render(isBuffered = true) {
     switch (this.state) {
       case GameState.Game:
         this.renderGame();
@@ -442,7 +464,7 @@ export class Game {
         this.renderMenu();
         break;
     }
-    this.renderer.flush();
+    this.renderer.flush(isBuffered);
   }
 
 

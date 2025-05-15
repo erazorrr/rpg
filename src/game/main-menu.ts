@@ -5,13 +5,25 @@ import {List} from "../io/list";
 import {Position} from "../io/position";
 import {GameMessage} from "./game-message";
 import {Field} from "../io/field";
-import * as process from "node:process";
+import {Context} from "./context";
 
 export class MainMenu extends GameObject implements Renderable, Interactive {
+  constructor(context: Context, private tlPosition: Position, private brCorner: Position) {
+    super(context);
+  }
+
+  public setLTPosition(position: Position): void {
+    this.field.setLTPosition(position);
+  }
+
+  public setRBPosition(position: Position): void {
+    this.field.setRBPosition(position);
+  }
+
   private field = new Field(
     'Menu',
-    new Position(0, 0),
-    new Position(process.stdout.columns - 1, process.stdout.rows - 1),
+    this.tlPosition,
+    this.brCorner,
   );
   private mainMenu: List = new List(
     '',
