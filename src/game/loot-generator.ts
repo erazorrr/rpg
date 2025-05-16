@@ -45,6 +45,11 @@ import {ChampionAntiHealth} from "./item-modifiers/champion-anti-health";
 import {Debug} from "../debug";
 import {ChampionHealthPotion} from "./items/potions/champion-health";
 import {GiantHealthPotion} from "./items/potions/giant-health";
+import {HandAxe} from "./items/weapons/hand-axe";
+import {PlateBoots} from "./items/boots/plate-boots";
+import {PlateMail} from "./items/chest/plate-mail";
+import {PlateGauntlets} from "./items/gauntlets/plate-gauntlets";
+import {LongSword} from "./items/weapons/long-sword";
 
 type ItemModifierBuilder = new () => ItemModifier;
 
@@ -66,18 +71,18 @@ export class LootGenerator extends GameObject {
       LeviathanStrength, LeviathanEndurance
     ];
     const _items: Array<[Array<new (ctx: Context) => Item>, ItemModifierBuilder[], ItemModifierBuilder[]]> = [
-      [[ShortSword, GreatAxe], [CopperModifier, IronModifier, SteelModifier], this.commonModifiers],
+      [[ShortSword, HandAxe, GreatAxe, LongSword], [CopperModifier, IronModifier, SteelModifier], this.commonModifiers],
       [[LeatherArmor], [NopModifier], this.commonModifiers],
-      [[ChainMail], [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
-      [[HealthPotion], [NopModifier], new Array(Math.floor(this.commonModifiers.length * 0.8)).fill(NopModifier)],
-      [[SmallHealthPotion], [NopModifier], new Array(Math.floor(this.commonModifiers.length * 0.8)).fill(NopModifier)],
-      [[LargeHealthPotion], [NopModifier], new Array(Math.floor(this.commonModifiers.length * 0.8)).fill(NopModifier)],
-      [[ChampionHealthPotion], [NopModifier], new Array(Math.floor(this.commonModifiers.length * 0.8)).fill(NopModifier)],
-      [[GiantHealthPotion], [NopModifier], new Array(Math.floor(this.commonModifiers.length * 0.8)).fill(NopModifier)],
+      [[ChainMail, PlateMail], [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
+      [[HealthPotion], [NopModifier], new Array(Math.floor(this.commonModifiers.length)).fill(NopModifier)],
+      [[SmallHealthPotion], [NopModifier], new Array(Math.floor(this.commonModifiers.length)).fill(NopModifier)],
+      [[LargeHealthPotion], [NopModifier], new Array(Math.floor(this.commonModifiers.length)).fill(NopModifier)],
+      [[ChampionHealthPotion], [NopModifier], new Array(Math.floor(this.commonModifiers.length)).fill(NopModifier)],
+      [[GiantHealthPotion], [NopModifier], new Array(Math.floor(this.commonModifiers.length)).fill(NopModifier)],
       [[LeatherBoots], [NopModifier], this.commonModifiers],
-      [[MetalBoots], [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
+      [[MetalBoots, PlateBoots], [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
       [[LeatherGauntlets], [NopModifier], this.commonModifiers],
-      [[MetalGauntlets], [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
+      [[MetalGauntlets, PlateGauntlets], [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
     ];
     this.debug.log(`Building opposites...`);
     this.opposites = this.commonModifiers.reduce((acc, mod) => {

@@ -28,6 +28,7 @@ import {LootGenerator} from "./loot-generator";
 import {StairsDownTile} from "./tiles/stairs-down.tile";
 import {StairsUpTile} from "./tiles/stairs-up.tile";
 import {FloorTile} from "./tiles/floor.tile";
+import {LevelUpPopup} from "./level-up-popup";
 
 export class Game {
   private state = GameState.Menu;
@@ -37,6 +38,7 @@ export class Game {
   private player: Player | null = null;
 
   private inventory: Inventory | null = null;
+  private levelUpWindow: LevelUpPopup | null = null;
 
   private gameLog: GameLog = new GameLog(30);
 
@@ -139,6 +141,20 @@ export class Game {
   private lootGenerator = new LootGenerator(this.generateGameObjectContext());
   private receiveGameMessage(message: GameMessage): void {
     switch (message.type) {
+      case GameMessageType.StartLevelUp:
+        this.levelUpWindow = new LevelUpPopup(this.generateGameObjectContext());
+        this.levelUpWindow.makeInteractive();
+        this.player.makeUninteractive();
+        this.render();
+        break;
+      case GameMessageType.FinishLevelUp:
+        this.levelUpWindow.makeUninteractive();
+        this.levelUpWindow = null;
+        this.player.hp = this.player.getMaxHp();
+        this.gameLog.log(`${this.player.getName()}'s hp restored to ${this.player.hp}!`);
+        this.player.makeInteractive();
+        this.render();
+        break;
       case GameMessageType.NewGame:
         this.newGame();
         break;
@@ -313,7 +329,7 @@ export class Game {
     this.player.makeInteractive();
 
     this.inputEmitter.on(InputEvent.I, this, () => {
-      if (this.inventory) {
+      if (this.inventory || this.levelUpWindow) {
         return;
       }
       this.inventory = this.buildInventory();
@@ -452,6 +468,9 @@ export class Game {
     }
     if (this.inventory) {
       this.inventory.render();
+    }
+    if (this.levelUpWindow) {
+      this.levelUpWindow.render();
     }
   }
 

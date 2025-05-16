@@ -3,6 +3,7 @@ import {Context} from "../../context";
 import {Char} from "src/io/char";
 import {BackgroundColor} from "../../../io/background.color";
 import {ForegroundColor} from "../../../io/foreground.color";
+import {PRICE_PER_DAMAGE, PRICE_PER_DAMAGE_ROLL} from "../../prices";
 
 export class GreatAxe extends Weapon {
   getChar(): Char {
@@ -19,7 +20,7 @@ export class GreatAxe extends Weapon {
   };
 
   constructor(context: Context) {
-    super(context, {...GreatAxe.baseStats}, 8);
+    super(context, {...GreatAxe.baseStats}, Math.round(PRICE_PER_DAMAGE_ROLL * GreatAxe.baseStats.damageRoll + PRICE_PER_DAMAGE * GreatAxe.baseStats.damageBonus));
   }
 
   getBaseName(): string {

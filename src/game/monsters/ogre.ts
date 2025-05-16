@@ -8,9 +8,9 @@ import {ChainMail} from "../items/chest/chain-mail";
 import {SteelModifier} from "../item-modifiers/weapon/material/steel";
 
 export class Ogre extends Npc {
-  protected strength = 14;
-  protected dexterity = 6;
-  protected endurance = 5;
+  strength = 14;
+  dexterity = 6;
+  endurance = 5;
 
   protected getVisibilityRadius(): number {
     return 15;

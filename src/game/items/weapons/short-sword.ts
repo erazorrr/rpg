@@ -3,6 +3,7 @@ import {Context} from "../../context";
 import {Char} from "../../../io/char";
 import {ForegroundColor} from "../../../io/foreground.color";
 import {BackgroundColor} from "../../../io/background.color";
+import {PRICE_PER_DAMAGE, PRICE_PER_DAMAGE_ROLL} from "../../prices";
 
 export class ShortSword extends Weapon {
   getChar(): Char {
@@ -19,7 +20,7 @@ export class ShortSword extends Weapon {
   };
 
   constructor(context: Context) {
-    super(context, {...ShortSword.baseStats}, 4);
+    super(context, {...ShortSword.baseStats}, Math.round(PRICE_PER_DAMAGE_ROLL * ShortSword.baseStats.damageRoll + PRICE_PER_DAMAGE * ShortSword.baseStats.damageBonus));
   }
 
   getBaseName(): string {

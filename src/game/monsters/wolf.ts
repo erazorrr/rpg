@@ -4,9 +4,9 @@ import {ForegroundColor} from "../../io/foreground.color";
 import {BackgroundColor} from "../../io/background.color";
 
 export class Wolf extends Npc {
-  protected strength = 8;
-  protected dexterity = 12;
-  protected endurance = 2;
+  strength = 8;
+  dexterity = 12;
+  endurance = 2;
 
   protected getVisibilityRadius(): number {
     return 60;

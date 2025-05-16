@@ -7,9 +7,9 @@ import {SteelModifier} from "../item-modifiers/weapon/material/steel";
 import {ChainMail} from "../items/chest/chain-mail";
 
 export class Skeleton extends Npc {
-  protected strength = 16;
-  protected dexterity = 10;
-  protected endurance = 4;
+  strength = 16;
+  dexterity = 10;
+  endurance = 4;
 
   getShout() {
     return `${this.getName()} shrieks!`;

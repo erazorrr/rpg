@@ -7,9 +7,9 @@ import {Position} from "../../io/position";
 import {Level} from "../level";
 
 export class TreasureGoblin extends Npc {
-  protected strength = 6;
-  protected dexterity = 10;
-  protected endurance = 3;
+  strength = 6;
+  dexterity = 10;
+  endurance = 3;
 
   private timer = 40;
   private timerStarted = false;

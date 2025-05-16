@@ -14,9 +14,9 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
 
   abstract getIsBloody(): boolean;
 
-  protected strength: number = 10;
-  protected endurance: number = 12;
-  protected dexterity: number = 10;
+  public strength: number = 10;
+  public endurance: number = 12;
+  public dexterity: number = 10;
 
   public equipment: Equipment = {};
 

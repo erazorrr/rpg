@@ -1,9 +1,10 @@
 import {ItemModifier} from "../item-modifier";
+import {PRICE_PER_STRENGTH} from "../prices";
 
 export class Strength extends ItemModifier {
   constructor() {
     super('strength', {
       strengthBonus: 2,
-    }, 6, true);
+    }, Math.round(PRICE_PER_STRENGTH * 2), true);
   }
 }
