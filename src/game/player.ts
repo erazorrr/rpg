@@ -24,7 +24,7 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
   public xp = 0;
 
   public nextLevelXp() {
-    return Math.floor(Math.pow(2.5, this.level - 1)) * 100;
+    return Math.floor(Math.pow(3, this.level - 1)) * 100;
   }
 
   public getMaxHp(): number {
@@ -37,17 +37,7 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
     if (this.xp >= this.nextLevelXp()) {
       this.level++;
       this.context.log(`${this.getName()} reached level ${this.level}!`);
-      this.endurance += 1;
-      this.context.log(`${this.getName()}'s endurance is now ${this.endurance}!`);
-      if (this.level % 4 === 0) {
-        this.dexterity += 1;
-        this.context.log(`${this.getName()}'s dexterity is now ${this.dexterity}!`);
-      } else if (this.level % 2 === 0) {
-        this.strength += 1;
-        this.context.log(`${this.getName()}'s strength is now ${this.strength}!`);
-      }
-      this.hp = this.getMaxHp();
-      this.context.log(`${this.getName()}'s hp restored to ${this.hp}!`);
+      this.context.postGameMessage(GameMessage.startLevelUp());
     }
   }
 

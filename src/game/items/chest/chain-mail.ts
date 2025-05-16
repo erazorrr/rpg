@@ -3,6 +3,7 @@ import {ForegroundColor} from "../../../io/foreground.color";
 import {BackgroundColor} from "../../../io/background.color";
 import {Context} from "../../context";
 import {Chest} from "./chest";
+import {PRICE_PER_ARMOR} from "../../prices";
 
 export class ChainMail extends Chest {
   getChar(): Char {
@@ -18,7 +19,7 @@ export class ChainMail extends Chest {
   };
 
   constructor(context: Context) {
-    super(context, {...ChainMail.baseStats}, 7);
+    super(context, {...ChainMail.baseStats}, Math.round(PRICE_PER_ARMOR * ChainMail.baseStats.armor));
   }
 
   getBaseName(): string {

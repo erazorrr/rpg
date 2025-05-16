@@ -7,6 +7,8 @@ export enum GameMessageType {
   Kill,
   Die,
   PickUp,
+  StartLevelUp,
+  FinishLevelUp,
   Move,
 }
 
@@ -38,5 +40,13 @@ export class GameMessage {
 
   static pickUp(): GameMessage {
     return new GameMessage(GameMessageType.PickUp);
+  }
+
+  static startLevelUp(): GameMessage {
+    return new GameMessage(GameMessageType.StartLevelUp);
+  }
+
+  static finishLevelUp(): GameMessage {
+    return new GameMessage(GameMessageType.FinishLevelUp);
   }
 }

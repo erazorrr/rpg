@@ -5,24 +5,24 @@ import {BackgroundColor} from "../../../io/background.color";
 import {Context} from "../../context";
 import {PRICE_PER_ARMOR} from "../../prices";
 
-export class MetalBoots extends Boots {
+export class PlateBoots extends Boots {
   getChar(): Char {
     return {
       char: 'J',
-      color: ForegroundColor.SteelBlue,
+      color: ForegroundColor.DarkBlue,
       backgroundColor: BackgroundColor.Black,
     };
   }
 
   private static baseStats = {
-    armor: 3,
+    armor: 5,
   };
 
   constructor(context: Context) {
-    super(context, {...MetalBoots.baseStats}, Math.round(PRICE_PER_ARMOR * MetalBoots.baseStats.armor));
+    super(context, {...PlateBoots.baseStats}, Math.round(PRICE_PER_ARMOR * PlateBoots.baseStats.armor));
   }
 
   getBaseName(): string {
-    return "Boots";
+    return "Plate Boots";
   }
 }

@@ -3,6 +3,7 @@ import {Char} from "../../../io/char";
 import {ForegroundColor} from "../../../io/foreground.color";
 import {BackgroundColor} from "../../../io/background.color";
 import {Context} from "../../context";
+import {PRICE_PER_ARMOR} from "../../prices";
 
 export class MetalGauntlets extends Gauntlets {
   getChar(): Char {
@@ -18,7 +19,7 @@ export class MetalGauntlets extends Gauntlets {
   };
 
   constructor(context: Context) {
-    super(context, {...MetalGauntlets.baseStats}, 6);
+    super(context, {...MetalGauntlets.baseStats}, Math.round(PRICE_PER_ARMOR * MetalGauntlets.baseStats.armor));
   }
 
   getBaseName(): string {
