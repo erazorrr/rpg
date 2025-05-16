@@ -113,7 +113,7 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
     return strengthModifier + weaponModifier;
   }
 
-  private ATTACK_ROLL = 30;
+  private ATTACK_ROLL = 50;
   public MAX_AC = this.ATTACK_ROLL - 5;
   attack(target: CharacterGameObject): void {
     this.combatLog.log(`${this.getName()}->${target.getName()}!`);

@@ -37,7 +37,7 @@ export class Goblin extends Npc {
   }
 
   getBaseLootCost(): number {
-    return 6;
+    return 4;
   }
 
   public equipment = {

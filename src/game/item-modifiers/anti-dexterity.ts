@@ -5,6 +5,6 @@ export class AntiDexterity extends ItemModifier {
   constructor() {
     super('clumsiness', {
       dexterityBonus: -2,
-    }, Math.round(0.75 * -2 * PRICE_PER_DEXTERITY), true);
+    }, Math.round(0.5 * -2 * PRICE_PER_DEXTERITY), true);
   }
 }

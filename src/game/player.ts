@@ -15,7 +15,6 @@ import {ShortSword} from "./items/weapons/short-sword";
 import {CopperModifier} from "./item-modifiers/weapon/material/copper";
 import {StairsDownTile} from "./tiles/stairs-down.tile";
 import {StairsUpTile} from "./tiles/stairs-up.tile";
-import {LeatherArmor} from "./items/chest/leather-armor";
 
 export class Player extends CharacterGameObject implements Renderable, Interactive {
   private inputEmitter = new InputEmitter();
@@ -28,7 +27,7 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
   }
 
   public getMaxHp(): number {
-    return super.getMaxHp() + 17;
+    return super.getMaxHp() + 20;
   }
   public hp = this.getMaxHp();
 
@@ -110,11 +109,9 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
 
   public inventory: Item[] = [
     new ShortSword(this.context).applyModifier(new CopperModifier()),
-    new LeatherArmor(this.context),
   ];
   public equipment: Equipment = {
     weapon: this.inventory[0],
-    chest: this.inventory[1],
   };
 
   getIsBloody(): boolean {

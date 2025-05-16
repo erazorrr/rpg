@@ -4,6 +4,7 @@ import {Context} from "../../context";
 import {ItemStats} from "../../item";
 import {ForegroundColor} from "../../../io/foreground.color";
 import {BackgroundColor} from "../../../io/background.color";
+import {PRICE_PER_HP_POINT} from "../../prices";
 
 export class SmallHealthPotion extends Potion {
   private static baseStats: ItemStats = {
@@ -11,7 +12,7 @@ export class SmallHealthPotion extends Potion {
   };
 
   constructor(context: Context) {
-    super(context, {...SmallHealthPotion.baseStats}, 1);
+    super(context, {...SmallHealthPotion.baseStats}, Math.round(PRICE_PER_HP_POINT * SmallHealthPotion.baseStats.consumableHpReplenish));
   }
 
   getBaseName(): string {

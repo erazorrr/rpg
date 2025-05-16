@@ -167,7 +167,8 @@ export class LootGenerator extends GameObject {
 
   public generateLoot(cost: number): Item | null {
     this.debug.log(`Generating loot for ${cost}...`);
-    let roll = Math.ceil(Math.random() * cost);
+    const min = Math.max(1, Math.round(cost * 0.2));
+    let roll = Math.ceil(Math.random() * (cost - min)) + min;
     this.debug.log(`Roll: ${roll}`);
     let possibleItems: Item[];
     do {
