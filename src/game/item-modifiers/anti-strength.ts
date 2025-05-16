@@ -5,6 +5,6 @@ export class AntiStrength extends ItemModifier {
   constructor() {
     super('weakness', {
       strengthBonus: -2,
-    }, Math.round(PRICE_PER_STRENGTH * -2 * 0.75), true);
+    }, Math.round(PRICE_PER_STRENGTH * -2 * 0.5), true);
   }
 }

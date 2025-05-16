@@ -5,6 +5,8 @@ import {BackgroundColor} from "../../io/background.color";
 import {ShortSword} from "../items/weapons/short-sword";
 import {SteelModifier} from "../item-modifiers/weapon/material/steel";
 import {ChainMail} from "../items/chest/chain-mail";
+import {PlateGauntlets} from "../items/gauntlets/plate-gauntlets";
+import {PlateBoots} from "../items/boots/plate-boots";
 
 export class Skeleton extends Npc {
   strength = 16;
@@ -36,12 +38,14 @@ export class Skeleton extends Npc {
   }
 
   getBaseLootCost(): number {
-    return 13;
+    return 11;
   }
 
   public equipment = {
     weapon: new ShortSword(this.context).applyModifier(new SteelModifier()),
     chest: new ChainMail(this.context).applyModifier(new SteelModifier()),
+    gauntlets: new PlateGauntlets(this.context).applyModifier(new SteelModifier()),
+    boots: new PlateBoots(this.context).applyModifier(new SteelModifier()),
   };
 
   getIsBloody(): boolean {

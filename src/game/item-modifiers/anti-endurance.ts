@@ -5,6 +5,6 @@ export class AntiEndurance extends ItemModifier {
   constructor() {
     super('breathlessness', {
       enduranceBonus: -2,
-    }, Math.round(PRICE_PER_ENDURANCE * -2 * 0.75), true);
+    }, Math.round(PRICE_PER_ENDURANCE * -2 * 0.5), true);
   }
 }

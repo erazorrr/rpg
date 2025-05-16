@@ -7,3 +7,4 @@ export const PRICE_PER_STRENGTH = PRICE_PER_DAMAGE / 2;
 
 export const PRICE_PER_HP = 1;
 export const PRICE_PER_ENDURANCE = PRICE_PER_HP * 2;
+export const PRICE_PER_HP_POINT = PRICE_PER_HP / 3;

@@ -5,6 +5,6 @@ export class ChampionAntiDexterity extends ItemModifier {
   constructor() {
     super('champion clumsiness', {
       dexterityBonus: -4,
-    }, Math.round(0.75 * -4 * PRICE_PER_DEXTERITY), true);
+    }, Math.round(0.5 * -4 * PRICE_PER_DEXTERITY), true);
   }
 }

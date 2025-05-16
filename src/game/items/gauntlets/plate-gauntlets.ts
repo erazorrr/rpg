@@ -15,7 +15,7 @@ export class PlateGauntlets extends Gauntlets {
   }
 
   private static baseStats = {
-    armor: 2,
+    armor: 3,
   };
 
   constructor(context: Context) {

@@ -37,7 +37,7 @@ export class Wolf extends Npc {
   }
 
   getBaseLootCost(): number {
-    return 5;
+    return 4;
   }
 
   getIsBloody(): boolean {
