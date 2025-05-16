@@ -267,7 +267,14 @@ export class Game {
 
   private returnToMainMenu() {
     this.player = null;
+    if (this.inventory) {
+      this.inventory.makeUninteractive();
+    }
     this.inventory = null;
+    if (this.levelUpWindow) {
+      this.levelUpWindow.makeUninteractive();
+    }
+    this.levelUpWindow = null;
     this.levels = [];
     this.currentLevelIndex = 0;
     this.gameLog.clear();
