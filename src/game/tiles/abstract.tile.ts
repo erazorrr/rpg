@@ -11,6 +11,10 @@ export abstract class Tile {
     this.isBloody = bloody;
   }
 
+  getIsBloody(): boolean {
+    return this.isBloody;
+  }
+
   protected explored = false;
   setExplored(explored: boolean) {
     this.explored = explored;

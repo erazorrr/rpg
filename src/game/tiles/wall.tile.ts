@@ -8,7 +8,7 @@ export class WallTile extends Tile {
     return {
       char: ' ',
       color: ForegroundColor.Pink1,
-      backgroundColor: BackgroundColor.Grey50,
+      backgroundColor: BackgroundColor.Grey11,
     };
   }
 

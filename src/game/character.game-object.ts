@@ -58,11 +58,11 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
   }
 
   public canAttack(p: Position): boolean {
-    return this.position.distanceTo(p) === 1;
+    return this.position.manhattanDistanceTo(p) === 1;
   }
 
   public canMove(p: Position): boolean {
-    if (this.position.distanceTo(p) !== 1) {
+    if (this.position.manhattanDistanceTo(p) !== 1) {
       return false;
     }
     if (!this.context.getCurrentMap().isNavigable(p)) {
@@ -185,36 +185,6 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
     return 30;
   }
   public isVisible(targetPosition: Position): boolean {
-    const map = this.context.getCurrentMap();
-
-    if (this.position.equals(targetPosition)) {
-      return true;
-    }
-
-    const dx = targetPosition.x - this.position.x;
-    const dy = targetPosition.y - this.position.y;
-    const distance = Math.max(Math.abs(dx), Math.abs(dy));
-
-    if (distance > this.getVisibilityRadius()) {
-      return false;
-    }
-
-    if (distance === 1) {
-      return true;
-    }
-
-    for (let i = 1; i < distance; i++) {
-      const ratio = i / distance;
-      const ix = Math.round(this.position.x + dx * ratio);
-      const iy = Math.round(this.position.y + dy * ratio);
-      const intermediatePosition = new Position(ix, iy);
-
-      const intermediateTile = map.getTile(intermediatePosition);
-      if (intermediateTile && !intermediateTile.isNavigable()) {
-        return false;
-      }
-    }
-
-    return true;
+    return super.isVisible(this.position, targetPosition, this.getVisibilityRadius());
   }
 }

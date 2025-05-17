@@ -127,7 +127,7 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
         const tile = map.getTile(targetPosition);
 
         if (tile && !tile.isExplored()) {
-          if (this.position.distanceTo(targetPosition) <= this.getVisibilityRadius()) {
+          if (this.position.manhattanDistanceTo(targetPosition) <= this.getVisibilityRadius()) {
             if (this.isVisible(targetPosition)) {
               tile.setExplored(true);
             }
