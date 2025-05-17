@@ -27,7 +27,7 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
   }
 
   public getMaxHp(): number {
-    return super.getMaxHp() + 20;
+    return super.getMaxHp() + 25;
   }
   public hp = this.getMaxHp();
 
