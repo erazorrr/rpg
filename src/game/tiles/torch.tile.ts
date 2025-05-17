@@ -3,16 +3,16 @@ import {Char} from "../../io/char";
 import {ForegroundColor} from "../../io/foreground.color";
 import {BackgroundColor} from "../../io/background.color";
 
-export class WallTile extends Tile {
+export class TorchTile extends Tile {
   getBaseChar(): Char {
     return {
       char: ' ',
       color: ForegroundColor.Pink1,
-      backgroundColor: BackgroundColor.Grey11,
+      backgroundColor: this.isBloody ? BackgroundColor.Red : BackgroundColor.Gold1,
     };
   }
 
   isNavigable(): boolean {
-    return false;
+    return true;
   }
 }

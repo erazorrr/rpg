@@ -510,8 +510,8 @@ export class Game {
     openList.set(serialize(from), {
       position: from,
       g: 0,
-      h: from.distanceTo(to),
-      f: from.distanceTo(to),
+      h: from.manhattanDistanceTo(to),
+      f: from.manhattanDistanceTo(to),
       parent: null,
     })
     const closedList: Set<string> = new Set<string>();
@@ -554,12 +554,12 @@ export class Game {
           openList.set(serialize(neighbour), {
             position: neighbour,
             g,
-            h: neighbour.distanceTo(to),
-            f: g + neighbour.distanceTo(to),
+            h: neighbour.manhattanDistanceTo(to),
+            f: g + neighbour.manhattanDistanceTo(to),
             parent: current,
           });
-        } else if (openList.get(serialize(neighbour))!.f > g + neighbour.distanceTo(to)) {
-          openList.get(serialize(neighbour))!.f = g + neighbour.distanceTo(to);
+        } else if (openList.get(serialize(neighbour))!.f > g + neighbour.manhattanDistanceTo(to)) {
+          openList.get(serialize(neighbour))!.f = g + neighbour.manhattanDistanceTo(to);
           openList.get(serialize(neighbour))!.parent = current;
         }
       }

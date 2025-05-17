@@ -8,7 +8,7 @@ export class FloorTile extends Tile {
     return {
       char: ' ',
       color: ForegroundColor.Pink1,
-      backgroundColor: this.isBloody ? BackgroundColor.DarkRed1 : BackgroundColor.Grey11,
+      backgroundColor: this.isBloody ? BackgroundColor.DarkRed1 : BackgroundColor.Grey19,
     };
   }
 

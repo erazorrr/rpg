@@ -22,6 +22,7 @@ import {FloorTile} from "./tiles/floor.tile";
 import {WallTile} from "./tiles/wall.tile";
 import {TreasureGoblin} from "./monsters/treasure-goblin";
 import {Debug} from "../debug";
+import {TorchTile} from "./tiles/torch.tile";
 
 enum Direction {
   Up = 'up',
@@ -226,7 +227,7 @@ export class LevelGenerator extends GameObject {
     do {
       const x = Math.floor(Math.random() * width);
       const y = Math.floor(Math.random() * height);
-      if (tiles[x][y] instanceof FloorTile && new Position(x, y).distanceTo(initialPosition) > 200) {
+      if (tiles[x][y] instanceof FloorTile && new Position(x, y).manhattanDistanceTo(initialPosition) > 200) {
         tiles[x][y] = new StairsDownTile();
         lastDoor = new Position(x, y);
       }
@@ -387,6 +388,59 @@ export class LevelGenerator extends GameObject {
       }
     }
 
+    let torchesCount: number;
+    if (width === 1 || height === 1) {
+      torchesCount = 0;
+    } else  {
+      const roll = Math.random();
+      if (roll < 0.5) {
+        torchesCount = 0;
+      } else if (roll < 0.85) {
+        torchesCount = 1;
+      } else {
+        torchesCount = 2;
+      }
+    }
+    for (let i = 0; i < torchesCount; i++) {
+      const allowedWalls: Direction[] = [
+        canGenerateDoorInTopWall ? Direction.Up : null,
+        canGenerateDoorInBottomWall ? Direction.Down : null,
+        canGenerateDoorInLeftWall ? Direction.Left : null,
+        canGenerateDoorInRightWall ? Direction.Right : null
+      ].filter(Boolean) as Direction[];
+      const wall = allowedWalls[Math.floor(Math.random() * allowedWalls.length)];
+      switch (wall) {
+        case Direction.Up: {
+          const x = Math.floor(Math.random() * width) + topLeftCorner.x;
+          if (!tiles[x][topLeftCorner.y - 1]) {
+            tiles[x][topLeftCorner.y] = new TorchTile();
+          }
+          break;
+        }
+        case Direction.Down: {
+          const x = Math.floor(Math.random() * width) + topLeftCorner.x;
+          if (!tiles[x][bottomRightCorner.y + 1]) {
+            tiles[x][bottomRightCorner.y] = new TorchTile();
+          }
+          break;
+        }
+        case Direction.Left: {
+          const y = Math.floor(Math.random() * height) + topLeftCorner.y;
+          if (!tiles[topLeftCorner.x - 1][y]) {
+            tiles[topLeftCorner.x][y] = new TorchTile();
+          }
+          break;
+        }
+        case Direction.Right: {
+          const y = Math.floor(Math.random() * height) + topLeftCorner.y;
+          if (!tiles[bottomRightCorner.x + 1][y]) {
+            tiles[bottomRightCorner.x][y] = new TorchTile();
+          }
+          break;
+        }
+      }
+    }
+
     this.debug.log(`doors: ${JSON.stringify(doors)}`);
     this.debug.log(`generateRoom from ${entrance.serialize()}, direction: ${direction} done!`);
     return {doors, freeTiles};
@@ -416,7 +470,7 @@ export class LevelGenerator extends GameObject {
 
     for (let k = 0; k < 10; k++) {
       const lakePosition = new Position(Math.floor(Math.random() * width), Math.floor(Math.random() * height));
-      if (lakePosition.distanceTo(initialPosition) < 20) {
+      if (lakePosition.manhattanDistanceTo(initialPosition) < 20) {
         continue;
       }
       tiles[lakePosition.x][lakePosition.y] = new WaterTile();
@@ -460,7 +514,7 @@ export class LevelGenerator extends GameObject {
 
     for (let i = Math.max(position.x - Math.ceil(Math.random() * 3), 0); i <= Math.min(position.x + Math.ceil(Math.random() * 3), width - 1); i++) {
       for (let j = Math.max(position.y - Math.ceil(Math.random() * 3), 0); j <= Math.min(position.y + Math.ceil(Math.random() * 3), height - 1); j++) {
-        if (Math.random() < 0.4 && new Position(i, j).distanceTo(initialPosition) > 20) {
+        if (Math.random() < 0.4 && new Position(i, j).manhattanDistanceTo(initialPosition) > 20) {
           tiles[i][j] = new WaterTile();
           tiles[i][j].setExplored(true);
           freeTiles.delete(new Position(i, j).serialize());

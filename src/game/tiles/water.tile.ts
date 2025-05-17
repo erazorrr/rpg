@@ -6,7 +6,7 @@ import {BackgroundColor} from "../../io/background.color";
 export class WaterTile extends Tile {
   getBaseChar(): Char {
     return {
-      char: '~',
+      char: Math.random() < 0.01 ? ' ' : '~',
       color: ForegroundColor.Blue,
       backgroundColor: BackgroundColor.Blue3a,
     };

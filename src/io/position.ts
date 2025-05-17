@@ -24,8 +24,12 @@ export class Position {
     return new Position(this.x + x, this.y + y);
   }
 
-  distanceTo(p: Position): number {
+  manhattanDistanceTo(p: Position): number {
     return Math.abs(this.x - p.x) + Math.abs(this.y - p.y);
+  }
+
+  distanceTo(p: Position): number {
+    return Math.sqrt(Math.pow(this.x - p.x, 2) + Math.pow(this.y - p.y, 2));
   }
 
   equals(p: Position): boolean {
