@@ -75,7 +75,14 @@ export abstract class Item extends GameObject {
       .filter(([key]) => this.statsNames[key])
       .map(([key, value]) => `${this.statsNames[key]}${+value >= 0 ? '+' : ''}${value}`)
       .join(' ');
-    return `${prefix ? `${prefix} `: ''}${this.getBaseName()}${suffix ? ` of ${suffix}` : ''}${params ? ` (${params})` : ''}`;
+    const stateParams = this.stats.consumableState
+      ? Object.entries(this.stats.consumableState.stats)
+        .filter(([key]) => this.statsNames[key])
+        .map(([key, value]) => `${this.statsNames[key]}${+value >= 0 ? '+' : ''}${value}`)
+        .join(' ')
+        .concat(` Duration+${this.stats.consumableState.turns}`)
+      : ''
+    return `${prefix ? `${prefix} `: ''}${this.getBaseName()}${suffix ? ` of ${suffix}` : ''}${params ? ` (${params})` : ''}${stateParams ? ` (${stateParams})` : ''}`;
 
   }
 

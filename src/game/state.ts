@@ -15,7 +15,7 @@ export type StateStats = {
 
 export abstract class State {
   private turnsLeft: number;
-  protected constructor(public stats: StateStats, turns: number) {
+  protected constructor(public stats: StateStats, public turns: number) {
     this.turnsLeft = turns;
   }
 
