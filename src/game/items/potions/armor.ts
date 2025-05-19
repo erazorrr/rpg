@@ -7,7 +7,7 @@ import {ArmorState} from "../../states/armor.state";
 
 export class ArmorPotion extends Potion {
   public constructor(context: Context) {
-    super(context, {consumableState: new ArmorState(30)}, 4);
+    super(context, {consumableState: new ArmorState(30, 10)}, 4);
   }
 
   getBaseName(): string {
@@ -16,7 +16,7 @@ export class ArmorPotion extends Potion {
 
   getChar(): Char {
     return {
-      char: 'Q',
+      char: 'q',
       color: ForegroundColor.SteelBlue,
       backgroundColor: BackgroundColor.Black,
     };

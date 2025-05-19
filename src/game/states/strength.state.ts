@@ -2,9 +2,9 @@ import {State} from "../state";
 import {CharacterGameObject} from "../character.game-object";
 
 export class StrengthState extends State {
-  constructor(turns: number) {
+  constructor(turns: number, strengthBonus: number) {
     super({
-      strengthBonus: 6,
+      strengthBonus,
     }, turns);
   }
 
