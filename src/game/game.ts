@@ -29,6 +29,7 @@ import {StairsDownTile} from "./tiles/stairs-down.tile";
 import {StairsUpTile} from "./tiles/stairs-up.tile";
 import {FloorTile} from "./tiles/floor.tile";
 import {LevelUpPopup} from "./level-up-popup";
+import {State} from "./state";
 
 export class Game {
   private state = GameState.Menu;
@@ -245,6 +246,7 @@ export class Game {
         npc.tick();
       }
     }
+    this.player.tick();
     this.render();
   }
 
@@ -388,6 +390,10 @@ export class Game {
                   case 'consumableHpReplenish':
                     this.player.hp = Math.min(this.player.hp + (value as number), this.player.getMaxHp());
                     this.gameLog.log(`You gained ${value} HP!`);
+                    break;
+                  case 'consumableState':
+                    this.player.applyState(value as State);
+                    this.gameLog.log((value as State).getActiveMessage(this.player));
                     break;
                   default:
                     break;

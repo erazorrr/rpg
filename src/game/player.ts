@@ -136,4 +136,13 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
       }
     }
   }
+
+  tick() {
+    for (const state of this.states) {
+      if (state.tick() === 0) {
+        this.states.delete(state);
+        this.context.log(state.getInactiveMessage(this));
+      }
+    }
+  }
 }

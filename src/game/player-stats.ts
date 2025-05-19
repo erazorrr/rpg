@@ -29,11 +29,31 @@ export class PlayerStats extends GameObject implements Renderable {
     const player = this.context.getPlayer();
     const j = 4;
 
-    this.renderField(j + 0, 'Strength:  ', player.getStrength() + '');
+    const strengthBase = player.getStrength(false);
+    const strengthTotal = player.getStrength(true);
+    let strengthSuffix: string;
+    if (strengthBase === strengthTotal) {
+      strengthSuffix = ''
+    } else if (strengthTotal > strengthBase) {
+      strengthSuffix = ` + ${strengthTotal - strengthBase}`;
+    } else {
+      strengthSuffix = ` - ${Math.abs(strengthTotal - strengthBase)}`;
+    }
+    this.renderField(j + 0, 'Strength:  ', `${strengthBase}${strengthSuffix}`);
     this.renderField(j + 1, 'Dexterity: ', player.getDexterity() + '');
     this.renderField(j + 2, 'Endurance: ', player.getEndurance() + '');
 
-    this.renderField(j + 4, 'Armor:     ', player.getAC() + ' / ' + player.MAX_AC);
+    const acBase = player.getAC(false);
+    const acTotal = player.getAC(true);
+    let acSuffix: string;
+    if (acBase === acTotal) {
+      acSuffix = '';
+    } else if (acTotal > acBase) {
+      acSuffix = ` + ${acTotal - acBase}`;
+    } else {
+      acSuffix = ` - ${Math.abs(acTotal - acBase)}`;
+    }
+    this.renderField(j + 4, 'Armor:     ', `${acBase}${acSuffix}` + ' / ' + player.MAX_AC);
     this.renderField(j + 5, 'DmgRoll:   ', player.getDamageDice() + '');
     this.renderField(j + 6, 'DmgBonus:  ', player.getDamageBonus() + '');
   }
