@@ -1,23 +1,23 @@
 import {Potion} from "./potion";
 import {Context} from "../../context";
-import {StrengthState} from "../../states/strength.state";
 import {Char} from "../../../io/char";
 import {ForegroundColor} from "../../../io/foreground.color";
 import {BackgroundColor} from "../../../io/background.color";
+import {ArmorState} from "../../states/armor.state";
 
-export class StrengthPotion extends Potion {
+export class ChampionArmorPotion extends Potion {
   public constructor(context: Context) {
-    super(context, {consumableState: new StrengthState(30, 6)}, 4);
+    super(context, {consumableState: new ArmorState(50, 20)}, 8);
   }
 
   getBaseName(): string {
-    return "Strength Potion";
+    return "Champion Armor Potion";
   }
 
   getChar(): Char {
     return {
-      char: 'q',
-      color: ForegroundColor.DarkGoldenrod,
+      char: 'Q',
+      color: ForegroundColor.SteelBlue,
       backgroundColor: BackgroundColor.Black,
     };
   }

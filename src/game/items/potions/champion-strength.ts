@@ -5,13 +5,13 @@ import {Char} from "../../../io/char";
 import {ForegroundColor} from "../../../io/foreground.color";
 import {BackgroundColor} from "../../../io/background.color";
 
-export class StrengthPotion extends Potion {
+export class ChampionStrengthPotion extends Potion {
   public constructor(context: Context) {
-    super(context, {consumableState: new StrengthState(30, 6)}, 4);
+    super(context, {consumableState: new StrengthState(50, 12)}, 8);
   }
 
   getBaseName(): string {
-    return "Strength Potion";
+    return "Champion strength Potion";
   }
 
   getChar(): Char {
