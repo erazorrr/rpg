@@ -3,6 +3,7 @@ import {Context} from "./context";
 import {ItemModifier} from "./item-modifier";
 import {Char} from "../io/char";
 import {Position} from "../io/position";
+import {State} from "./state";
 
 export enum ItemType {
   Weapon,
@@ -27,6 +28,7 @@ export type ItemStats = {
   enduranceBonus?: number;
 
   consumableHpReplenish?: number;
+  consumableState?: State;
 };
 
 export abstract class Item extends GameObject {
@@ -50,7 +52,7 @@ export abstract class Item extends GameObject {
 
   abstract getBaseName(): string;
 
-  private statsNames: Record<keyof ItemStats, string> = {
+  private statsNames: Partial<Record<keyof ItemStats, string>> = {
     damageRoll: 'DmgRoll',
     damageBonus: 'DmgBonus',
     armor: 'Armor',
@@ -70,6 +72,7 @@ export abstract class Item extends GameObject {
       .filter(m => m.name.length > 0)
       .map(m => m.name).join(" and ");
     const params = Object.entries(this.stats)
+      .filter(([key]) => this.statsNames[key])
       .map(([key, value]) => `${this.statsNames[key]}${+value >= 0 ? '+' : ''}${value}`)
       .join(' ');
     return `${prefix ? `${prefix} `: ''}${this.getBaseName()}${suffix ? ` of ${suffix}` : ''}${params ? ` (${params})` : ''}`;

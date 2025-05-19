@@ -147,7 +147,7 @@ export class LevelGenerator extends GameObject {
         freePositionIdx = Math.floor(Math.random() * template.freeTiles.length);
         position = template.freeTiles[freePositionIdx];
       } while (template.level.getNpcAt(position));
-      const treasureGoblin = new TreasureGoblin(this.context, template.level, position, 10 + 5 * (template.level.levelNo - 1));
+      const treasureGoblin = new TreasureGoblin(this.context, template.level, position, 10 + 10 * (template.level.levelNo - 1));
       template.level.putNpc(treasureGoblin);
     }
     this.debug.log(`generateNpcs for ${template.level.levelNo} done!`);

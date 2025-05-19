@@ -50,6 +50,8 @@ import {PlateBoots} from "./items/boots/plate-boots";
 import {PlateMail} from "./items/chest/plate-mail";
 import {PlateGauntlets} from "./items/gauntlets/plate-gauntlets";
 import {LongSword} from "./items/weapons/long-sword";
+import {StrengthPotion} from "./items/potions/strength";
+import {ArmorPotion} from "./items/potions/armor";
 
 type ItemModifierBuilder = new () => ItemModifier;
 
@@ -70,19 +72,20 @@ export class LootGenerator extends GameObject {
       GiantDexterity, GiantHealth, GiantEndurance, GiantStrength,
       LeviathanStrength, LeviathanEndurance
     ];
-    const _items: Array<[Array<new (ctx: Context) => Item>, ItemModifierBuilder[], ItemModifierBuilder[]]> = [
-      [[ShortSword, HandAxe, GreatAxe, LongSword], [CopperModifier, IronModifier, SteelModifier], this.commonModifiers],
-      [[LeatherArmor], [NopModifier], this.commonModifiers],
-      [[ChainMail, PlateMail], [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
-      [[HealthPotion], [NopModifier], new Array(Math.floor(this.commonModifiers.length)).fill(NopModifier)],
-      [[SmallHealthPotion], [NopModifier], new Array(Math.floor(this.commonModifiers.length)).fill(NopModifier)],
-      [[LargeHealthPotion], [NopModifier], new Array(Math.floor(this.commonModifiers.length)).fill(NopModifier)],
-      [[ChampionHealthPotion], [NopModifier], new Array(Math.floor(this.commonModifiers.length)).fill(NopModifier)],
-      [[GiantHealthPotion], [NopModifier], new Array(Math.floor(this.commonModifiers.length)).fill(NopModifier)],
-      [[LeatherBoots], [NopModifier], this.commonModifiers],
-      [[MetalBoots, PlateBoots], [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
-      [[LeatherGauntlets], [NopModifier], this.commonModifiers],
-      [[MetalGauntlets, PlateGauntlets], [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
+    const _items: Array<[Array<new (ctx: Context) => Item>, number, ItemModifierBuilder[], ItemModifierBuilder[]]> = [
+      [[ShortSword, HandAxe, GreatAxe, LongSword], 1, [CopperModifier, IronModifier, SteelModifier], this.commonModifiers],
+      [[LeatherArmor], 1, [NopModifier], this.commonModifiers],
+      [[ChainMail, PlateMail], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
+      [[StrengthPotion, ArmorPotion], 2, [NopModifier], []],
+      [[HealthPotion], 20, [NopModifier], []],
+      [[SmallHealthPotion], 10, [NopModifier], []],
+      [[LargeHealthPotion], 30, [NopModifier], []],
+      [[ChampionHealthPotion], 40, [NopModifier], []],
+      [[GiantHealthPotion], 50, [NopModifier], []],
+      [[LeatherBoots], 1, [NopModifier], this.commonModifiers],
+      [[MetalBoots, PlateBoots], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
+      [[LeatherGauntlets], 1, [NopModifier], this.commonModifiers],
+      [[MetalGauntlets, PlateGauntlets], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
     ];
     this.debug.log(`Building opposites...`);
     this.opposites = this.commonModifiers.reduce((acc, mod) => {
@@ -100,7 +103,7 @@ export class LootGenerator extends GameObject {
     this.debug.log(`Building opposites done!`);
 
     this.debug.log(`Constructing loot...`);
-    this.loot = _items.reduce((acc, [items, modifiers, modifiers1]) => {
+    this.loot = _items.reduce((acc, [items, count, modifiers, modifiers1]) => {
       function* pairs(array: ItemModifierBuilder[]) {
         for (let i = 0; i < array.length; i++) {
           yield [array[i]];
@@ -113,34 +116,36 @@ export class LootGenerator extends GameObject {
         yield [];
       }
 
-      for (const item of items) {
-        const base = new item(this.context);
-        for (const modifier of modifiers) {
-          const res = base.clone();
-          res.applyModifier(new modifier());
-          const cost = res.getCost();
-          if (!acc[cost]) {
-            acc[cost] = [];
-          }
-          acc[cost].push(res);
+      for (let i = 0; i < count; i++) {
+        for (const item of items) {
+          const base = new item(this.context);
+          for (const modifier of modifiers) {
+            const res = base.clone();
+            res.applyModifier(new modifier());
+            const cost = res.getCost();
+            if (!acc[cost]) {
+              acc[cost] = [];
+            }
+            acc[cost].push(res);
 
-          for (const additionalModifiers of pairs(modifiers1)) {
-            if (this.hasOpposites(additionalModifiers)) {
-              continue;
-            }
+            for (const additionalModifiers of pairs(modifiers1)) {
+              if (this.hasOpposites(additionalModifiers)) {
+                continue;
+              }
 
-            const res1 = res.clone();
-            for (const modifier1 of additionalModifiers) {
-              res1.applyModifier(new modifier1());
+              const res1 = res.clone();
+              for (const modifier1 of additionalModifiers) {
+                res1.applyModifier(new modifier1());
+              }
+              const cost1 = res1.getCost();
+              if (cost <= 0) {
+                continue;
+              }
+              if (!acc[cost1]) {
+                acc[cost1] = [];
+              }
+              acc[cost1].push(res1);
             }
-            const cost1 = res1.getCost();
-            if (cost <= 0) {
-              continue;
-            }
-            if (!acc[cost1]) {
-              acc[cost1] = [];
-            }
-            acc[cost1].push(res1);
           }
         }
       }

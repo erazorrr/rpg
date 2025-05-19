@@ -8,6 +8,7 @@ import {MonsterModifier} from "./monster-modifier";
 import {SpectralHitMonsterModifier} from "./monster-modufiers/spectral-hit";
 import {Context} from "./context";
 import {Debug} from "../debug";
+import {State} from "./state";
 
 export abstract class CharacterGameObject extends GameObject implements Renderable {
   private combatLog = new Debug('combat.log');
@@ -20,13 +21,18 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
 
   public equipment: Equipment = {};
 
+  public states: Set<State> = new Set();
+
+  abstract tick(): void;
+
   constructor(context: Context, public position: Position) {
     super(context);
   }
 
-  getStrength() {
+  getStrength(withStates = true) {
     const bonus = Object.values(this.equipment).reduce((acc, e) => acc + (e?.stats?.strengthBonus ? e.stats.strengthBonus : 0), 0);
-    return this.strength + bonus;
+    const states = withStates ? Array.from(this.states).reduce((acc, s) => acc + (s.stats?.strengthBonus ?? 0), 0) : 0;
+    return this.strength + bonus + states;
   }
 
   getEndurance() {
@@ -49,12 +55,13 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
   }
   public hp = this.getMaxHp();
 
-  getAC(): number {
+  getAC(withStates = true): number {
     const base = 5;
     const armor = this.equipment.chest ? this.equipment.chest.stats.armor : 0;
     const boots = this.equipment.boots ? this.equipment.boots.stats.armor : 0;
     const gauntlets = this.equipment.gauntlets ? this.equipment.gauntlets.stats.armor : 0;
-    return Math.min(this.MAX_AC, base + armor + boots + gauntlets + Math.floor((this.getDexterity() - 10) * 0.5));
+    const states = withStates ? Array.from(this.states).reduce((acc, s) => acc + (s.stats?.armor ?? 0), 0) : 0;
+    return Math.min(this.MAX_AC, states + base + armor + boots + gauntlets + Math.floor((this.getDexterity() - 10) * 0.5));
   }
 
   public canAttack(p: Position): boolean {
@@ -186,5 +193,14 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
   }
   public isVisible(targetPosition: Position): boolean {
     return super.isVisible(this.position, targetPosition, this.getVisibilityRadius());
+  }
+
+  applyState(state: State) {
+    for (const existingState of this.states) {
+      if (existingState.constructor === state.constructor) {
+        this.states.delete(existingState);
+      }
+    }
+    this.states.add(state);
   }
 }
