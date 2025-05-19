@@ -8,7 +8,7 @@ import {PRICE_PER_DAMAGE, PRICE_PER_DAMAGE_ROLL} from "../../prices";
 export class LongSword extends Weapon {
   getChar(): Char {
     return {
-      char: '/',
+      char: 'I',
       color: ForegroundColor.DarkBlue,
       backgroundColor: BackgroundColor.Black,
     };

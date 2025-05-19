@@ -5,17 +5,28 @@ import {List} from "../io/list";
 import {Interactive} from "./interactive.interface";
 import {Context} from "./context";
 import {Item} from "./item";
+import {Potion} from "./items/potions/potion";
 
 export class Inventory extends GameObject implements Renderable, Interactive {
   private list: List;
 
   constructor(context: Context, activeItemId: number = 0) {
     super(context);
-    const items: Array<{id: string, label: string, onSelect: () => void}> = this.context.getPlayer().inventory.map((item, i) => ({
-      id: i + '',
-      label: Object.values(this.context.getPlayer().equipment).includes(item) ? `[x] ${item.getName()}` : `[ ] ${item.getName()}`,
-      onSelect: () => {},
-    }));
+    const items: Array<{id: string, label: string, onSelect: () => void}> = this.context.getPlayer().inventory.map((item, i) => {
+      let prefix: string;
+      if (item instanceof Potion) {
+        prefix = '   ';
+      } else if (Object.values(this.context.getPlayer().equipment).includes(item)) {
+        prefix = '[x]';
+      } else {
+        prefix = '[ ]';
+      }
+      return {
+        id: i + '',
+        label: `${prefix} ${item.getName()}`,
+        onSelect: () => {},
+      };
+    });
     this.list = new List('Inventory', items, new Position(10, 5), new Position(110, 20), true, activeItemId + '');
   }
 

@@ -50,6 +50,10 @@ import {PlateBoots} from "./items/boots/plate-boots";
 import {PlateMail} from "./items/chest/plate-mail";
 import {PlateGauntlets} from "./items/gauntlets/plate-gauntlets";
 import {LongSword} from "./items/weapons/long-sword";
+import {StrengthPotion} from "./items/potions/strength";
+import {ArmorPotion} from "./items/potions/armor";
+import {ChampionArmorPotion} from "./items/potions/champion-armor";
+import {ChampionStrengthPotion} from "./items/potions/champion-strength";
 
 type ItemModifierBuilder = new () => ItemModifier;
 
@@ -70,19 +74,21 @@ export class LootGenerator extends GameObject {
       GiantDexterity, GiantHealth, GiantEndurance, GiantStrength,
       LeviathanStrength, LeviathanEndurance
     ];
-    const _items: Array<[Array<new (ctx: Context) => Item>, ItemModifierBuilder[], ItemModifierBuilder[]]> = [
-      [[ShortSword, HandAxe, GreatAxe, LongSword], [CopperModifier, IronModifier, SteelModifier], this.commonModifiers],
-      [[LeatherArmor], [NopModifier], this.commonModifiers],
-      [[ChainMail, PlateMail], [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
-      [[HealthPotion], [NopModifier], new Array(Math.floor(this.commonModifiers.length)).fill(NopModifier)],
-      [[SmallHealthPotion], [NopModifier], new Array(Math.floor(this.commonModifiers.length)).fill(NopModifier)],
-      [[LargeHealthPotion], [NopModifier], new Array(Math.floor(this.commonModifiers.length)).fill(NopModifier)],
-      [[ChampionHealthPotion], [NopModifier], new Array(Math.floor(this.commonModifiers.length)).fill(NopModifier)],
-      [[GiantHealthPotion], [NopModifier], new Array(Math.floor(this.commonModifiers.length)).fill(NopModifier)],
-      [[LeatherBoots], [NopModifier], this.commonModifiers],
-      [[MetalBoots, PlateBoots], [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
-      [[LeatherGauntlets], [NopModifier], this.commonModifiers],
-      [[MetalGauntlets, PlateGauntlets], [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
+    const _items: Array<[Array<new (ctx: Context) => Item>, number, ItemModifierBuilder[], ItemModifierBuilder[]]> = [
+      [[ShortSword, HandAxe, GreatAxe, LongSword], 1, [CopperModifier, IronModifier, SteelModifier], this.commonModifiers],
+      [[LeatherArmor], 1, [NopModifier], this.commonModifiers],
+      [[ChainMail, PlateMail], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
+      [[StrengthPotion, ArmorPotion], 4, [NopModifier], []],
+      [[ChampionArmorPotion, ChampionStrengthPotion], 20, [NopModifier], []],
+      [[HealthPotion], 30, [NopModifier], []],
+      [[SmallHealthPotion], 15, [NopModifier], []],
+      [[LargeHealthPotion], 120, [NopModifier], []],
+      [[ChampionHealthPotion], 150, [NopModifier], []],
+      [[GiantHealthPotion], 200, [NopModifier], []],
+      [[LeatherBoots], 1, [NopModifier], this.commonModifiers],
+      [[MetalBoots, PlateBoots], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
+      [[LeatherGauntlets], 1, [NopModifier], this.commonModifiers],
+      [[MetalGauntlets, PlateGauntlets], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
     ];
     this.debug.log(`Building opposites...`);
     this.opposites = this.commonModifiers.reduce((acc, mod) => {
@@ -100,7 +106,7 @@ export class LootGenerator extends GameObject {
     this.debug.log(`Building opposites done!`);
 
     this.debug.log(`Constructing loot...`);
-    this.loot = _items.reduce((acc, [items, modifiers, modifiers1]) => {
+    this.loot = _items.reduce((acc, [items, count, modifiers, modifiers1]) => {
       function* pairs(array: ItemModifierBuilder[]) {
         for (let i = 0; i < array.length; i++) {
           yield [array[i]];
@@ -113,34 +119,36 @@ export class LootGenerator extends GameObject {
         yield [];
       }
 
-      for (const item of items) {
-        const base = new item(this.context);
-        for (const modifier of modifiers) {
-          const res = base.clone();
-          res.applyModifier(new modifier());
-          const cost = res.getCost();
-          if (!acc[cost]) {
-            acc[cost] = [];
-          }
-          acc[cost].push(res);
+      for (let i = 0; i < count; i++) {
+        for (const item of items) {
+          const base = new item(this.context);
+          for (const modifier of modifiers) {
+            const res = base.clone();
+            res.applyModifier(new modifier());
+            const cost = res.getCost();
+            if (!acc[cost]) {
+              acc[cost] = [];
+            }
+            acc[cost].push(res);
 
-          for (const additionalModifiers of pairs(modifiers1)) {
-            if (this.hasOpposites(additionalModifiers)) {
-              continue;
-            }
+            for (const additionalModifiers of pairs(modifiers1)) {
+              if (this.hasOpposites(additionalModifiers)) {
+                continue;
+              }
 
-            const res1 = res.clone();
-            for (const modifier1 of additionalModifiers) {
-              res1.applyModifier(new modifier1());
+              const res1 = res.clone();
+              for (const modifier1 of additionalModifiers) {
+                res1.applyModifier(new modifier1());
+              }
+              const cost1 = res1.getCost();
+              if (cost <= 0) {
+                continue;
+              }
+              if (!acc[cost1]) {
+                acc[cost1] = [];
+              }
+              acc[cost1].push(res1);
             }
-            const cost1 = res1.getCost();
-            if (cost <= 0) {
-              continue;
-            }
-            if (!acc[cost1]) {
-              acc[cost1] = [];
-            }
-            acc[cost1].push(res1);
           }
         }
       }
@@ -165,9 +173,13 @@ export class LootGenerator extends GameObject {
     return hasOpposites;
   }
 
+  private getMinCost(cost: number): number {
+    return Math.max(1, Math.round(cost * 0.4));
+  }
+
   public generateLoot(cost: number): Item | null {
     this.debug.log(`Generating loot for ${cost}...`);
-    const min = Math.max(1, Math.round(cost * 0.2));
+    const min = this.getMinCost(cost);
     let roll = Math.ceil(Math.random() * (cost - min)) + min;
     this.debug.log(`Roll: ${roll}`);
     let possibleItems: Item[];
@@ -183,5 +195,26 @@ export class LootGenerator extends GameObject {
     }
     this.debug.log(`Failed to generate!`);
     return null;
+  }
+
+  static getLoot(cost: number) {
+    const lootGenerator = new LootGenerator({} as Context);
+    const items = lootGenerator['loot'];
+    const MIN_COST = lootGenerator.getMinCost(cost);
+
+    // assuming we have every cost
+    const loot: Record<string, number> = {};
+    for (let i = MIN_COST; i <= cost; i++) {
+      const p1 = 1 / (cost - MIN_COST);
+      for (const item of items[i]) {
+        const p2 = 1 / items[i].length;
+        if (!loot[item.getName()]) {
+          loot[item.getName()] = 0;
+        }
+        loot[item.getName()] += p1 * p2;
+      }
+    }
+
+    return loot;
   }
 }

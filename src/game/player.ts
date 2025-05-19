@@ -15,6 +15,8 @@ import {ShortSword} from "./items/weapons/short-sword";
 import {CopperModifier} from "./item-modifiers/weapon/material/copper";
 import {StairsDownTile} from "./tiles/stairs-down.tile";
 import {StairsUpTile} from "./tiles/stairs-up.tile";
+import {StrengthPotion} from "./items/potions/strength";
+import {ArmorPotion} from "./items/potions/armor";
 
 export class Player extends CharacterGameObject implements Renderable, Interactive {
   private inputEmitter = new InputEmitter();
@@ -109,6 +111,8 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
 
   public inventory: Item[] = [
     new ShortSword(this.context).applyModifier(new CopperModifier()),
+    new StrengthPotion(this.context),
+    new ArmorPotion(this.context),
   ];
   public equipment: Equipment = {
     weapon: this.inventory[0],
@@ -133,6 +137,15 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
             }
           }
         }
+      }
+    }
+  }
+
+  tick() {
+    for (const state of this.states) {
+      if (state.tick() === 0) {
+        this.states.delete(state);
+        this.context.log(state.getInactiveMessage(this));
       }
     }
   }

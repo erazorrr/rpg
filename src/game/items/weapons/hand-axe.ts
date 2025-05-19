@@ -8,7 +8,7 @@ import {PRICE_PER_DAMAGE, PRICE_PER_DAMAGE_ROLL} from "../../prices";
 export class HandAxe extends Weapon {
   getChar(): Char {
     return {
-      char: 'P',
+      char: 'p',
       color: ForegroundColor.SteelBlue,
       backgroundColor: BackgroundColor.Black,
     };
