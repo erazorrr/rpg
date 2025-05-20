@@ -96,7 +96,7 @@ export class LevelGenerator extends GameObject {
 
   private npcs = [
     [[], []],
-    [[Goblin, Wolf], []],
+    [[Goblin, Wolf], [EnduranceMonsterModifier]],
     [[Ogre, Goblin], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier]],
     [[Ogre, Skeleton, Goblin], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier, SpectralHitMonsterModifier]],
   ] as const;
