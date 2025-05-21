@@ -140,14 +140,14 @@ export class LevelGenerator extends GameObject {
       }
       template.level.putNpc(npc);
     }
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 4; i++) {
       let position: Position;
       let freePositionIdx: number;
       do {
         freePositionIdx = Math.floor(Math.random() * template.freeTiles.length);
         position = template.freeTiles[freePositionIdx];
       } while (template.level.getNpcAt(position));
-      const treasureGoblin = new TreasureGoblin(this.context, template.level, position, 10 + 10 * (template.level.levelNo - 1));
+      const treasureGoblin = new TreasureGoblin(this.context, template.level, position, 14 + 10 * (template.level.levelNo - 1));
       template.level.putNpc(treasureGoblin);
     }
     this.debug.log(`generateNpcs for ${template.level.levelNo} done!`);
@@ -224,14 +224,14 @@ export class LevelGenerator extends GameObject {
       }
     }
 
-    do {
+    while (!lastDoor) {
       const x = Math.floor(Math.random() * width);
       const y = Math.floor(Math.random() * height);
       if (tiles[x][y] instanceof FloorTile && new Position(x, y).manhattanDistanceTo(initialPosition) > 200) {
         tiles[x][y] = new StairsDownTile();
         lastDoor = new Position(x, y);
       }
-    } while (!lastDoor);
+    }
 
     for (let i = 0; i < width; i++) {
       for (let j = 0; j < height; j++) {
