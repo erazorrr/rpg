@@ -12,7 +12,7 @@
     "test": "jest"
   },
   "author": "aryabov",
-  "license": "BSD-3-Clause",
+  "license": "MIT",
   "description": "",
   "devDependencies": {
     "@eslint/js": "^9.26.0",
