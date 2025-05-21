@@ -1,6 +1,7 @@
 # RPG
 This is a simple roguelike game I put together in a spare time on my vacation.
 ![Game screenshot](screenshot.png)
+![Gameplay GIF](gameplay.gif)
 
 ## How to launch
 Run the appropriate version from the GitHub's "Releases" section.
