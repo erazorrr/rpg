@@ -12,15 +12,25 @@ Run the appropriate version from the GitHub's "Releases" section.
 After that, new executables will be in a `build` folder.
 
 ## Backlog
+- Add magic
+  - Intelligence attribute, Mana
+  - Spellbook popup, Target selection popup
+  - Mana potions
+  - Robes, gloves, wands
+    - Item modifiers that give additional mana, increase intelligence, increase damage
 - Items dropped should not destroy items that lay on the current tile
 - Add more details to the game map
 - Add more monsters
 - Add ring items
 - Add amulet items
-- Add new weapon modifiers (e.g., leach live + anti-leach live)
-- Add new monster modifiers (e.g., leach life)
+- Add new weapon modifiers
+  - leach live - transfer hp from target to source
+  - anti-leach live - spend hp per hit to deal more damage (or have better attributes)
+- Add new monster modifiers
+  - leach live
+  - poisonous
+    - add antidote that removes poisonous state
 - Monsters' shouting should attract other monsters
-- Add idle animations
 - Add game save and load
 
 ## References
