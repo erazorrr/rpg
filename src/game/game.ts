@@ -27,9 +27,9 @@ import {LevelGenerator} from "./level-generator";
 import {LootGenerator} from "./loot-generator";
 import {StairsDownTile} from "./tiles/stairs-down.tile";
 import {StairsUpTile} from "./tiles/stairs-up.tile";
-import {FloorTile} from "./tiles/floor.tile";
 import {LevelUpPopup} from "./level-up-popup";
 import {State} from "./state";
+import {ExitTile} from "./tiles/exit.tile";
 
 export class Game {
   private state = GameState.Menu;
@@ -139,6 +139,11 @@ export class Game {
     return this.getCharacterAt(position) === null;
   }
 
+  private gameFinished = false;
+  private isGameFinished() {
+    return this.gameFinished;
+  }
+
   private lootGenerator = new LootGenerator(this.generateGameObjectContext());
   private receiveGameMessage(message: GameMessage): void {
     switch (message.type) {
@@ -176,7 +181,17 @@ export class Game {
         break;
       }
       case GameMessageType.Die:
+        if (this.inventory) {
+          this.inventory.makeUninteractive();
+          this.inventory = null;
+        }
+        if (this.levelUpWindow) {
+          this.levelUpWindow.makeUninteractive();
+          this.levelUpWindow = null;
+        }
         this.player.makeUninteractive();
+        this.gameFinished = true;
+        this.render();
         break;
       case GameMessageType.PickUp: {
         const item = this.getCurrentLevel()?.getItem(this.player.position);
@@ -315,6 +330,7 @@ export class Game {
     };
   }
 
+  private MAX_DUNGEON_LEVEL = 3;
   private levelGenerator = new LevelGenerator({
     getCurrentMap: () => this.getCurrentLevel().map,
     getPlayer: () => this.player,
@@ -330,6 +346,7 @@ export class Game {
     getCurrentGameLevel: () => this.getCurrentLevel(),
   }, this.gameField.getWidth(), this.gameField.getHeight());
   private newGame() {
+    this.gameFinished = false;
     this.mainMenu?.makeUninteractive();
 
     this.levels.push(this.levelGenerator.generateLevel(0));
@@ -338,7 +355,7 @@ export class Game {
     this.player.makeInteractive();
 
     this.inputEmitter.on(InputEvent.I, this, () => {
-      if (this.inventory || this.levelUpWindow) {
+      if (this.isGameFinished() || this.inventory || this.levelUpWindow) {
         return;
       }
       this.inventory = this.buildInventory();
@@ -366,7 +383,7 @@ export class Game {
     })
 
     this.inputEmitter.on(InputEvent.ENTER, this, () => {
-      if (this.player.hp === 0) {
+      if (this.gameFinished) {
         this.returnToMainMenu();
       } else if (this.inventory) {
         const item = this.inventory.getSelectedItem();
@@ -415,11 +432,11 @@ export class Game {
         this.inventory.makeInteractive();
         this.render();
       } else if (this.getCurrentLevel().map.getTile(this.player.position) instanceof StairsDownTile) {
-        if (this.currentLevelIndex === this.levels.length - 1 && this.levels.length < 4) {
+        if (this.currentLevelIndex === this.levels.length - 1 && this.levels.length < this.MAX_DUNGEON_LEVEL + 1) {
           this.levels.push(this.levelGenerator.generateLevel(this.levels.length, this.levels[this.levels.length - 1]));
-          if (this.levels.length === 4) { // last level
+          if (this.levels.length === this.MAX_DUNGEON_LEVEL + 1) {
             const position = this.levels[this.levels.length - 1].findTile(StairsDownTile);
-            this.levels[this.levels.length - 1].map.setTile(position, new FloorTile());
+            this.levels[this.levels.length - 1].map.setTile(position, new ExitTile());
           }
         }
         this.currentLevelIndex++;
@@ -429,11 +446,16 @@ export class Game {
         }
         this.render();
       } else if (this.getCurrentLevel().map.getTile(this.player.position) instanceof StairsUpTile) {
-        this.gameLog.log(`${this.player.getName()} is ascending...`);
         this.currentLevelIndex--;
         if (this.currentLevelIndex === 0) {
           this.gameLog.log(`Bright light hurts ${this.player.getName()}'s eyes!`);
         }
+        this.render();
+      } else if (this.getCurrentLevel().map.getTile(this.player.position) instanceof ExitTile) {
+        this.gameFinished = true;
+        this.gameLog.log(`You win! Your score is ${this.player.xp}!`);
+        this.gameLog.log(`Press [Enter] to continue...`);
+        this.player.makeUninteractive();
         this.render();
       }
     });
