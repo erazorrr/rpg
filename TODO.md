@@ -1,9 +1,9 @@
 # TODO
 ## Hard
 - Add magic
-    - Intelligence attribute, Mana
-    - Spellbook popup, Target selection popup
-    - Mana potions
+    - ~~Intelligence attribute, Mana~~
+    - ~~Spellbook popup, Target selection popup~~
+    - ~~Mana potions~~
     - Spells items (that can be added to the spellbook)
     - Robes, gloves, wands
         - Item modifiers that give additional mana, increase intelligence, increase damage
@@ -23,6 +23,9 @@
     - leach live
     - poisonous
         - add antidote that removes poisonous state
+- Add new common modifiers
+  - HP regen
+  - MP regen
 
 ## Easy
 - Items dropped should not destroy items that lay on the current tile

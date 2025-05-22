@@ -24,7 +24,7 @@ describe('Loot check', () => {
     ];
     for (const monster of monsters) {
       describe(monster.getName(), () => {
-        it('should have more than 20% and less than 30% chance of getting health potion', () => {
+        it('should have more than 15% and less than 25% chance of getting health potion', () => {
           const loot = LootGenerator.getLoot(monster.getLootCost());
           let log = '';
           const healthProbability = Object.entries(loot).reduce((acc, [name, p]) => {
@@ -35,8 +35,37 @@ describe('Loot check', () => {
             return acc;
           }, 0);
           console.log(log);
-          expect(healthProbability).toBeGreaterThan(0.2);
-          expect(healthProbability).toBeLessThan(0.3);
+          expect(healthProbability).toBeGreaterThan(0.15);
+          expect(healthProbability).toBeLessThan(0.25);
+        });
+      });
+    }
+  });
+
+  describe('Mana potion', () => {
+    const monsters = [
+      new Goblin(ctx, level, position),
+      new Goblin(ctx, level, position).applyModifier(new StrengthMonsterModifier()),
+      new Wolf(ctx, level, position),
+      new Wolf(ctx, level, position).applyModifier(new StrengthMonsterModifier()),
+      new Ogre(ctx, level, position),
+      new Skeleton(ctx, level, position),
+    ];
+    for (const monster of monsters) {
+      describe(monster.getName(), () => {
+        it('should have more than 15% and less than 25% chance of getting mana potion', () => {
+          const loot = LootGenerator.getLoot(monster.getLootCost());
+          let log = '';
+          const healthProbability = Object.entries(loot).reduce((acc, [name, p]) => {
+            if (/mana potion/i.test(name)) {
+              log += `Probability of dropping ${name} from ${monster.getName()}: ${p * 100}%\n`;
+              return acc + p;
+            }
+            return acc;
+          }, 0);
+          console.log(log);
+          expect(healthProbability).toBeGreaterThan(0.15);
+          expect(healthProbability).toBeLessThan(0.25);
         });
       });
     }

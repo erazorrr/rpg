@@ -35,6 +35,13 @@ export class LevelUpPopup extends GameObject implements Renderable, Interactive 
             this.increaseEndurance();
           },
         },
+        {
+          id: 'INT',
+          label: `Increase intelligence: ${this.context.getPlayer().intelligence} -> ${this.context.getPlayer().intelligence + 1}`,
+          onSelect: () => {
+            this.increaseIntelligence();
+          },
+        },
       ],
       new Position(10, 5),
       new Position(110, 20)
@@ -66,6 +73,11 @@ export class LevelUpPopup extends GameObject implements Renderable, Interactive 
 
   private increaseEndurance() {
     this.context.getPlayer().endurance++;
+    this.commitPoint();
+  }
+
+  private increaseIntelligence() {
+    this.context.getPlayer().intelligence++;
     this.commitPoint();
   }
 

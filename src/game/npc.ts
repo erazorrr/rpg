@@ -43,6 +43,8 @@ export abstract class Npc extends CharacterGameObject {
   }
 
   public tick() {
+    super.tick();
+
     if (!this.isActive()) {
       return;
     }
@@ -57,6 +59,9 @@ export abstract class Npc extends CharacterGameObject {
         if (this.canAttack(player.position)) {
           this.attack(player);
         } else {
+          if (this.isImmobile()) {
+            return;
+          }
           const path = this.context.buildPath(this.position, player.position, 100);
           const restSpeed = this.step(path);
           if (restSpeed > 0 && this.canAttack(player.position)) {
@@ -71,6 +76,9 @@ export abstract class Npc extends CharacterGameObject {
         }
         if (Math.random() < 0.3) {
           this.spreadBlood();
+        }
+        if (this.isImmobile()) {
+          return;
         }
         const start = this.position;
         const isRational = Math.random() < 0.8;

@@ -11,6 +11,11 @@ export type StateStats = {
   strengthBonus?: number;
   dexterityBonus?: number;
   enduranceBonus?: number;
+  intelligenceBonus?: number;
+
+  damagePerTurn?: number;
+
+  isUnableToMove?: boolean;
 };
 
 export abstract class State {
@@ -21,6 +26,9 @@ export abstract class State {
 
   abstract getActiveMessage(character: CharacterGameObject): string;
   abstract getInactiveMessage(character: CharacterGameObject): string;
+  getIncompatibleStates(): Set<new (...args: unknown[]) => State> {
+    return new Set();
+  }
 
   tick(): number {
     return --this.turnsLeft;

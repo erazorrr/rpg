@@ -30,6 +30,10 @@ import {StairsUpTile} from "./tiles/stairs-up.tile";
 import {LevelUpPopup} from "./level-up-popup";
 import {State} from "./state";
 import {ExitTile} from "./tiles/exit.tile";
+import {MagicBar} from "./magic-bar";
+import {SpellBook} from "./spell-book";
+import {Spell, SpellTarget} from "./spell";
+import {SelectTarget} from "./select-target";
 
 export class Game {
   private state = GameState.Menu;
@@ -39,7 +43,11 @@ export class Game {
   private player: Player | null = null;
 
   private inventory: Inventory | null = null;
+  private spellBook: SpellBook | null = null;
+  private selectTarget: SelectTarget | null = null;
   private levelUpWindow: LevelUpPopup | null = null;
+
+  private selectedSpell: Spell | null = null;
 
   private gameLog: GameLog = new GameLog(30);
 
@@ -84,6 +92,7 @@ export class Game {
     };
   }
   private healthBar = new HealthBar(this.generateMenuFieldContext());
+  private magicBar = new MagicBar(this.generateMenuFieldContext());
   private levelBar = new LevelBar(this.generateMenuFieldContext());
   private xpBar = new XpBar(this.generateMenuFieldContext());
 
@@ -157,7 +166,7 @@ export class Game {
         this.levelUpWindow.makeUninteractive();
         this.levelUpWindow = null;
         this.player.hp = this.player.getMaxHp();
-        this.gameLog.log(`${this.player.getName()}'s hp restored to ${this.player.hp}!`);
+        this.player.mp = this.player.getMaxMp();
         this.player.makeInteractive();
         this.render();
         break;
@@ -189,6 +198,14 @@ export class Game {
           this.levelUpWindow.makeUninteractive();
           this.levelUpWindow = null;
         }
+        if (this.spellBook) {
+          this.spellBook.makeUninteractive();
+          this.spellBook = null;
+        }
+        if (this.selectTarget) {
+          this.selectTarget.makeUninteractive();
+          this.selectTarget = null;
+        }
         this.player.makeUninteractive();
         this.gameFinished = true;
         this.render();
@@ -208,6 +225,46 @@ export class Game {
         }
         break;
       }
+      case GameMessageType.SelectSpell: {
+        const spell = (message.payload as {spell: Spell}).spell;
+        if (spell.getMPCost() > this.player.mp) {
+          this.gameLog.log(`Not enough MP!`);
+          this.render();
+          return;
+        }
+        switch (spell.target) {
+          case SpellTarget.Self:
+            this.player.applySpell(spell);
+            this.player.makeInteractive();
+            this.player.spendMP(spell.getMPCost());
+            break;
+          case SpellTarget.Monster: {
+            this.selectedSpell = spell;
+            this.selectTarget = new SelectTarget(this.generateGameObjectContext());
+            this.selectTarget.makeInteractive();
+            break;
+          }
+        }
+        this.spellBook.makeUninteractive();
+        this.spellBook = null;
+        this.render();
+        break;
+      }
+      case GameMessageType.SelectTarget: {
+        if (!this.selectedSpell) {
+          return;
+        }
+        const npc = (message.payload as { npc: Npc }).npc;
+        this.selectTarget.makeUninteractive();
+        this.selectTarget = null;
+        this.player.makeInteractive();
+        npc.applySpell(this.selectedSpell);
+        this.player.spendMP(this.selectedSpell.getMPCost());
+        this.selectedSpell = null;
+        this.tick();
+        this.render();
+        break;
+      }
     }
   }
 
@@ -221,6 +278,9 @@ export class Game {
     }
     if (this.player.hp > this.player.getMaxHp()) {
       this.player.hp = this.player.getMaxHp();
+    }
+    if (this.player.mp > this.player.getMaxMp()) {
+      this.player.mp = this.player.getMaxMp();
     }
     this.gameLog.log(`Dropped ${item.getName()}`);
   }
@@ -286,10 +346,19 @@ export class Game {
     this.player = null;
     if (this.inventory) {
       this.inventory.makeUninteractive();
+      this.inventory = null;
     }
-    this.inventory = null;
     if (this.levelUpWindow) {
       this.levelUpWindow.makeUninteractive();
+      this.levelUpWindow = null;
+    }
+    if (this.spellBook) {
+      this.spellBook.makeUninteractive();
+      this.spellBook = null;
+    }
+    if (this.selectTarget) {
+      this.selectTarget.makeUninteractive();
+      this.selectTarget = null;
     }
     this.levelUpWindow = null;
     this.levels = [];
@@ -355,7 +424,7 @@ export class Game {
     this.player.makeInteractive();
 
     this.inputEmitter.on(InputEvent.I, this, () => {
-      if (this.isGameFinished() || this.inventory || this.levelUpWindow) {
+      if (this.isGameFinished() || this.inventory || this.levelUpWindow || this.spellBook || this.selectTarget) {
         return;
       }
       this.inventory = this.buildInventory();
@@ -408,6 +477,10 @@ export class Game {
                     this.player.hp = Math.min(this.player.hp + (value as number), this.player.getMaxHp());
                     this.gameLog.log(`You gained ${value} HP!`);
                     break;
+                  case 'consumableMpReplenish':
+                    this.player.mp = Math.min(this.player.mp + (value as number), this.player.getMaxMp());
+                    this.gameLog.log(`You gained ${value} MP!`);
+                    break;
                   case 'consumableState':
                     this.player.applyState(value as State);
                     this.gameLog.log((value as State).getActiveMessage(this.player));
@@ -422,6 +495,9 @@ export class Game {
           if (this.player.hp > this.player.getMaxHp()) {
             this.player.hp = this.player.getMaxHp();
           }
+          if (this.player.mp > this.player.getMaxMp()) {
+            this.player.mp = this.player.getMaxMp();
+          }
           this.inventory.makeUninteractive();
           this.inventory = this.buildInventory();
           this.inventory.makeInteractive();
@@ -431,6 +507,9 @@ export class Game {
         this.inventory = this.buildInventory();
         this.inventory.makeInteractive();
         this.render();
+      } else if (this.spellBook || this.selectTarget) {
+        // TODO
+        // do nothing
       } else if (this.getCurrentLevel().map.getTile(this.player.position) instanceof StairsDownTile) {
         if (this.currentLevelIndex === this.levels.length - 1 && this.levels.length < this.MAX_DUNGEON_LEVEL + 1) {
           this.levels.push(this.levelGenerator.generateLevel(this.levels.length, this.levels[this.levels.length - 1]));
@@ -467,10 +546,33 @@ export class Game {
         this.inventory = null;
         this.gameLog.clear();
         this.render();
+      } else if (this.spellBook) {
+        this.spellBook.makeUninteractive();
+        this.player.makeInteractive();
+        this.spellBook = null;
+        this.gameLog.clear();
+        this.render();
+      } else if (this.selectTarget) {
+        this.selectTarget.makeUninteractive();
+        this.player.makeInteractive();
+        this.selectTarget = null;
+        this.gameLog.clear();
+        this.render();
       }
     });
 
-    this.gameLog.log(`${this.player.getName()} found himself in an unknown place. Use arrows to move, [Space] to skip turn. Walk on the enemy to attack`);
+    this.inputEmitter.on(InputEvent.C, this, () => {
+      if (this.isGameFinished() || this.inventory || this.levelUpWindow || this.spellBook || this.selectTarget) {
+        return;
+      }
+      this.player.makeUninteractive();
+      this.spellBook = new SpellBook(this.generateGameObjectContext());
+      this.spellBook.makeInteractive();
+      this.gameLog.clear();
+      this.render();
+    });
+
+    this.gameLog.log(`${this.player.getName()} found himself in an unknown place. Use arrows to move, [Space] to skip turn. Walk on the enemy to attack. Use [c] to cast spells`);
 
     this.state = GameState.Game;
     this.render();
@@ -488,6 +590,7 @@ export class Game {
     this.gameLog.render(this.logField);
 
     this.healthBar.render();
+    this.magicBar.render();
     this.levelBar.render();
     this.xpBar.render();
     this.playerStats.render();
@@ -506,6 +609,12 @@ export class Game {
     }
     if (this.levelUpWindow) {
       this.levelUpWindow.render();
+    }
+    if (this.spellBook) {
+      this.spellBook.render();
+    }
+    if (this.selectTarget) {
+      this.selectTarget.render();
     }
   }
 

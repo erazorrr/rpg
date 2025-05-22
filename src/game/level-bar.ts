@@ -9,7 +9,7 @@ export class LevelBar extends GameObject implements Renderable {
       let i = 0;
       const label = 'LVL: ';
       for (const char of label) {
-        this.context.getRenderer().put(new Position(i, 1), {
+        this.context.getRenderer().put(new Position(i, 2), {
           char,
           color: ForegroundColor.White,
           backgroundColor: BackgroundColor.Black,
@@ -18,7 +18,7 @@ export class LevelBar extends GameObject implements Renderable {
       }
       const rest = this.context.getPlayer().level + '';
       for (const char of rest) {
-        this.context.getRenderer().put(new Position(i, 1), {
+        this.context.getRenderer().put(new Position(i, 2), {
           char,
           color: ForegroundColor.White,
           backgroundColor: BackgroundColor.Black,

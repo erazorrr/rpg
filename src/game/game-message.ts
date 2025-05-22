@@ -1,4 +1,6 @@
 import {CharacterGameObject} from "./character.game-object";
+import {Spell} from "./spell";
+import {Npc} from "./npc";
 
 export enum GameMessageType {
   NewGame,
@@ -9,6 +11,8 @@ export enum GameMessageType {
   PickUp,
   StartLevelUp,
   FinishLevelUp,
+  SelectSpell,
+  SelectTarget,
   Move,
 }
 
@@ -48,5 +52,13 @@ export class GameMessage {
 
   static finishLevelUp(): GameMessage {
     return new GameMessage(GameMessageType.FinishLevelUp);
+  }
+
+  static selectSpell(spell: Spell) {
+    return new GameMessage(GameMessageType.SelectSpell, {spell});
+  }
+
+  static selectTarget(npc: Npc) {
+    return new GameMessage(GameMessageType.SelectTarget, {npc});
   }
 }

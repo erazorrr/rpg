@@ -54,6 +54,11 @@ import {StrengthPotion} from "./items/potions/strength";
 import {ArmorPotion} from "./items/potions/armor";
 import {ChampionArmorPotion} from "./items/potions/champion-armor";
 import {ChampionStrengthPotion} from "./items/potions/champion-strength";
+import {SmallManaPotion} from "./items/potions/small-mana";
+import {ManaPotion} from "./items/potions/mana";
+import {LargeManaPotion} from "./items/potions/large-mana";
+import {ChampionManaPotion} from "./items/potions/champion-mana";
+import {GiantManaPotion} from "./items/potions/giant-mana";
 
 type ItemModifierBuilder = new () => ItemModifier;
 
@@ -80,11 +85,16 @@ export class LootGenerator extends GameObject {
       [[ChainMail, PlateMail], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
       [[StrengthPotion, ArmorPotion], 4, [NopModifier], []],
       [[ChampionArmorPotion, ChampionStrengthPotion], 20, [NopModifier], []],
-      [[HealthPotion], 30, [NopModifier], []],
-      [[SmallHealthPotion], 15, [NopModifier], []],
-      [[LargeHealthPotion], 120, [NopModifier], []],
-      [[ChampionHealthPotion], 150, [NopModifier], []],
-      [[GiantHealthPotion], 200, [NopModifier], []],
+      [[HealthPotion], 160, [NopModifier], []],
+      [[SmallHealthPotion], 30, [NopModifier], []],
+      [[LargeHealthPotion], 190, [NopModifier], []],
+      [[ChampionHealthPotion], 250, [NopModifier], []],
+      [[GiantHealthPotion], 300, [NopModifier], []],
+      [[SmallManaPotion], 30, [NopModifier], []],
+      [[ManaPotion], 160, [NopModifier], []],
+      [[LargeManaPotion], 190, [NopModifier], []],
+      [[ChampionManaPotion], 250, [NopModifier], []],
+      [[GiantManaPotion], 300, [NopModifier], []],
       [[LeatherBoots], 1, [NopModifier], this.commonModifiers],
       [[MetalBoots, PlateBoots], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
       [[LeatherGauntlets], 1, [NopModifier], this.commonModifiers],

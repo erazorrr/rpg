@@ -15,6 +15,13 @@ import {ShortSword} from "./items/weapons/short-sword";
 import {CopperModifier} from "./item-modifiers/weapon/material/copper";
 import {StairsDownTile} from "./tiles/stairs-down.tile";
 import {StairsUpTile} from "./tiles/stairs-up.tile";
+import {Spell} from "./spell";
+import {FireBoltSpell} from "./spells/fire-bolt";
+import {IceShardSpell} from "./spells/ice-shard";
+import {MinorHealSpell} from "./spells/minor-heal";
+import {BloodSacrificeSpell} from "./spells/blood-sacrifice";
+import {EmpowerSpell} from "./spells/empower";
+import {FortifySpell} from "./spells/fortify";
 
 export class Player extends CharacterGameObject implements Renderable, Interactive {
   private inputEmitter = new InputEmitter();
@@ -51,7 +58,8 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
   private moveTo(targetPosition: Position): void {
     if (this.context.getCharacter(targetPosition)) {
       this.attack(this.context.getCharacter(targetPosition));
-    } else if (this.context.getCurrentMap().isNavigable(targetPosition)) {
+      this.context.tick();
+    } else if (this.canMove(targetPosition)) {
       this.position = targetPosition;
       if (this.context.getItem(targetPosition)) {
         this.context.log(`${this.getName()} sees ${this.context.getItem(targetPosition).getName()}. [p] to pick it up.`);
@@ -63,8 +71,8 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
         this.context.log(`${this.getName()} sees the stairs down. [Enter] to ascend.`);
       }
       this.explore();
+      this.context.tick();
     }
-    this.context.tick();
   }
 
   makeInteractive(): void {
@@ -137,12 +145,13 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
     }
   }
 
-  tick() {
-    for (const state of this.states) {
-      if (state.tick() === 0) {
-        this.states.delete(state);
-        this.context.log(state.getInactiveMessage(this));
-      }
-    }
-  }
+  public knownSpells: Set<Spell> = new Set([
+    new FireBoltSpell(),
+    // TODO leave only fire bolt at the start
+    new IceShardSpell(),
+    new MinorHealSpell(),
+    new BloodSacrificeSpell(),
+    new FortifySpell(),
+    new EmpowerSpell(),
+  ]);
 }
