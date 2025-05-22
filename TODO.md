@@ -4,6 +4,7 @@
     - Intelligence attribute, Mana
     - Spellbook popup, Target selection popup
     - Mana potions
+    - Spells items (that can be added to the spellbook)
     - Robes, gloves, wands
         - Item modifiers that give additional mana, increase intelligence, increase damage
 - Add game save and load
@@ -11,9 +12,13 @@
 ## Medium
 - Add more details/tiles to the game map
 - Add more monster bases
+- Chests
+- Trader
+  - I was thinking about having one on each dungeon level
 - Add new weapon modifiers
     - leach live - transfer hp from target to source
     - anti-leach live - spend hp per hit to deal more damage (or have better attributes)
+    - knockback
 - Add new monster modifiers
     - leach live
     - poisonous
