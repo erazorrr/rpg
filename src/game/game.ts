@@ -234,9 +234,10 @@ export class Game {
         }
         switch (spell.target) {
           case SpellTarget.Self:
-            this.player.applySpell(spell);
+            this.player.applySpell(this.player, spell);
             this.player.makeInteractive();
             this.player.spendMP(spell.getMPCost());
+            this.tick();
             break;
           case SpellTarget.Monster: {
             this.selectedSpell = spell;
@@ -258,7 +259,7 @@ export class Game {
         this.selectTarget.makeUninteractive();
         this.selectTarget = null;
         this.player.makeInteractive();
-        npc.applySpell(this.selectedSpell);
+        npc.applySpell(this.player, this.selectedSpell);
         this.player.spendMP(this.selectedSpell.getMPCost());
         this.selectedSpell = null;
         this.tick();

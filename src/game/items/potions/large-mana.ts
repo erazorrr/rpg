@@ -8,7 +8,7 @@ import {PRICE_PER_MANA_POINT} from "../../prices";
 
 export class LargeManaPotion extends Potion {
   private static baseStats: ItemStats = {
-    consumableMpReplenish: 45,
+    consumableMpReplenish: 75,
   };
 
   constructor(context: Context) {

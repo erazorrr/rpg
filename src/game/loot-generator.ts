@@ -59,12 +59,31 @@ import {ManaPotion} from "./items/potions/mana";
 import {LargeManaPotion} from "./items/potions/large-mana";
 import {ChampionManaPotion} from "./items/potions/champion-mana";
 import {GiantManaPotion} from "./items/potions/giant-mana";
+import {HpReplen} from "./item-modifiers/hp-replen";
+import {MpReplen} from "./item-modifiers/mp-replen";
+import {AntiIntelligence} from "./item-modifiers/anti-intelligence";
+import {ChampionAntiIntelligence} from "./item-modifiers/champion-anti-intelligence";
+import {Intelligence} from "./item-modifiers/intelligence";
+import {ChampionIntelligence} from "./item-modifiers/champion-intelligence";
+import {GiantIntelligence} from "./item-modifiers/giant-intelligence";
+import {LeviathanIntelligence} from "./item-modifiers/leviathan-intelligence";
+import {Focus} from "./item-modifiers/focus";
+import {ChampionFocus} from "./item-modifiers/champion-focus";
+import {GiantFocus} from "./item-modifiers/giant-focus";
+import {Power} from "./item-modifiers/power";
+import {ChampionPower} from "./item-modifiers/champion-power";
+import {GiantPower} from "./item-modifiers/giant-power";
+import {Robe} from "./items/chest/robe";
+import {Staff} from "./items/weapons/staff";
+import {Wand} from "./items/weapons/wand";
 
 type ItemModifierBuilder = new () => ItemModifier;
 
 export class LootGenerator extends GameObject {
   private debug: Debug = new Debug('loot-generator.log');
   private readonly commonModifiers: ItemModifierBuilder[];
+  private readonly magicModifiers: ItemModifierBuilder[];
+  private readonly magicWeaponModifiers: ItemModifierBuilder[];
   private opposites: Map<ItemModifierBuilder, Set<ItemModifierBuilder>>;
   private readonly loot: Record<number, Array<Item>>;
 
@@ -77,11 +96,23 @@ export class LootGenerator extends GameObject {
       ChampionAntiEndurance, ChampionAntiDexterity, ChampionAntiStrength, ChampionAntiHealth,
       ChampionStrength, ChampionDexterity, ChampionEndurance, ChampionHealth,
       GiantDexterity, GiantHealth, GiantEndurance, GiantStrength,
-      LeviathanStrength, LeviathanEndurance
+      LeviathanStrength, LeviathanEndurance,
+      HpReplen,
+      AntiIntelligence, ChampionAntiIntelligence,
+    ];
+    this.magicModifiers = [
+      MpReplen,
+      Intelligence, ChampionIntelligence, GiantIntelligence, LeviathanIntelligence,
+    ];
+    this.magicWeaponModifiers = [
+      Focus, ChampionFocus, GiantFocus,
+      Power, ChampionPower, GiantPower,
     ];
     const _items: Array<[Array<new (ctx: Context) => Item>, number, ItemModifierBuilder[], ItemModifierBuilder[]]> = [
       [[ShortSword, HandAxe, GreatAxe, LongSword], 1, [CopperModifier, IronModifier, SteelModifier], this.commonModifiers],
       [[LeatherArmor], 1, [NopModifier], this.commonModifiers],
+      [[Robe], 1, [NopModifier], this.magicModifiers],
+      [[Staff, Wand], 1, [NopModifier], [...this.magicModifiers, ...this.magicWeaponModifiers]],
       [[ChainMail, PlateMail], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
       [[StrengthPotion, ArmorPotion], 4, [NopModifier], []],
       [[ChampionArmorPotion, ChampionStrengthPotion], 20, [NopModifier], []],
@@ -95,13 +126,13 @@ export class LootGenerator extends GameObject {
       [[LargeManaPotion], 190, [NopModifier], []],
       [[ChampionManaPotion], 250, [NopModifier], []],
       [[GiantManaPotion], 300, [NopModifier], []],
-      [[LeatherBoots], 1, [NopModifier], this.commonModifiers],
+      [[LeatherBoots], 1, [NopModifier], [...this.commonModifiers, ...this.magicModifiers]],
       [[MetalBoots, PlateBoots], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
-      [[LeatherGauntlets], 1, [NopModifier], this.commonModifiers],
+      [[LeatherGauntlets], 1, [NopModifier], [...this.commonModifiers, ...this.magicModifiers]],
       [[MetalGauntlets, PlateGauntlets], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
     ];
     this.debug.log(`Building opposites...`);
-    this.opposites = this.commonModifiers.reduce((acc, mod) => {
+    this.opposites = [...this.commonModifiers, ...this.magicModifiers, ...this.magicWeaponModifiers].reduce((acc, mod) => {
       acc.set(mod, new Set());
       const instance = new mod();
       for (const otherMod of this.commonModifiers) {

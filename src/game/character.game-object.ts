@@ -10,6 +10,9 @@ import {Context} from "./context";
 import {Debug} from "../debug";
 import {State} from "./state";
 import {Spell} from "./spell";
+import {BackgroundColor} from "../io/background.color";
+import {ForegroundColor} from "../io/foreground.color";
+import {Item} from "./item";
 
 export abstract class CharacterGameObject extends GameObject implements Renderable {
   private combatLog = new Debug('combat.log');
@@ -33,6 +36,16 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
       } else {
         if (state.stats.damagePerTurn) {
           this.damage(state.stats.damagePerTurn);
+        }
+      }
+    }
+    for (const item of Object.values(this.equipment) as Item[]) {
+      if (item) {
+        if (item.stats.hpReplenishment) {
+          this.hp = Math.min(this.getMaxHp(), this.hp + item.stats.hpReplenishment);
+        }
+        if (item.stats.mpReplenishment) {
+          this.mp = Math.min(this.getMaxMp(), this.mp + item.stats.mpReplenishment);
         }
       }
     }
@@ -135,11 +148,24 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
   render() {
     const map = this.context.getCurrentMap();
     const tile = map.getTile(this.position);
+
+    let stateBackgroundColor: BackgroundColor | null = null;
+    let stateForegroundColor: ForegroundColor | null = null;
+    for (const state of this.states) {
+      if (state.getBackgroundColor()) {
+        stateBackgroundColor = state.getBackgroundColor();
+      }
+      if (state.getForegroundColor()) {
+        stateForegroundColor = state.getForegroundColor();
+      }
+    }
+
     this.context.getRenderer().put(
       new Position(this.position.x - map.getTopLeftCorner().x, this.position.y - map.getTopLeftCorner().y),
       tile.isExplored() ? {
         ...this.getChar(),
-        backgroundColor: tile.getChar().backgroundColor,
+        backgroundColor: stateBackgroundColor ? stateBackgroundColor : tile.getChar().backgroundColor,
+        color: stateForegroundColor ? stateForegroundColor : this.getChar().color,
       } : tile.getChar(),
     );
   };
@@ -163,13 +189,23 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
   }
 
   getDamageDice(): number {
-    return this.equipment.weapon ? this.equipment.weapon.stats.damageRoll : 4;
+    return (this.equipment.weapon && this.equipment.weapon.stats.damageRoll) ?? 4;
   }
 
   getDamageBonus(): number {
     const strengthModifier = Math.floor((this.getStrength() - 10) / 2);
-    const weaponModifier =  this.equipment.weapon ? this.equipment.weapon.stats.damageBonus : 0;
+    const weaponModifier = (this.equipment.weapon && this.equipment.weapon.stats.damageBonus) ?? 0;
     return strengthModifier + weaponModifier;
+  }
+
+  getMagicDiceBonus(): number {
+    return (this.equipment.weapon && this.equipment.weapon.stats.magicRoll) ?? 0;
+  }
+
+  getMagicBonus(): number {
+    const intelligenceModifier = Math.floor((this.getIntelligence() - 10) / 2);
+    const weaponModifier = (this.equipment.weapon && this.equipment.weapon.stats.magicBonus) ?? 0;
+    return intelligenceModifier + weaponModifier;
   }
 
   public ATTACK_ROLL = 50;
@@ -241,7 +277,7 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
     this.states.add(state);
   }
 
-  applySpell(spell: Spell) {
+  applySpell(caster: CharacterGameObject, spell: Spell) {
     if (spell.stats.state && !spell.stats.stateChance) {
       const state = (spell.stats.state)();
       this.context.log(state.getActiveMessage(this));
@@ -263,9 +299,8 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
       const attackRoll = Math.ceil(Math.random() * this.ATTACK_ROLL);
       this.combatLog.log(`AttackRoll ${attackRoll}`);
       if (attackRoll >= ac) {
-        // TODO apply bonuses
-        const dice = spell.stats.damageRoll;
-        const bonus = spell.stats.damageBonus;
+        const dice = spell.stats.damageRoll + caster.getMagicDiceBonus();
+        const bonus = spell.stats.damageBonus + caster.getMagicBonus();
         const damageRoll = Math.ceil(Math.random() * dice);
         this.combatLog.log(`DamageRoll ${damageRoll}`);
         const damage = Math.max(damageRoll + bonus, 0);

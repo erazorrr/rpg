@@ -49,5 +49,7 @@ export class PlayerStats extends GameObject implements Renderable {
     this.renderField(j + 5, 'Armor:     ', this.getStatefullAttribute(player.getAC.bind(player)) + ' / ' + player.MAX_AC);
     this.renderField(j + 6, 'DmgRoll:   ', player.getDamageDice() + '');
     this.renderField(j + 7, 'DmgBonus:  ', player.getDamageBonus() + '');
+    this.renderField(j + 9, 'MgcRoll:   ', player.getMagicDiceBonus() + '');
+    this.renderField(j + 10, 'MgcBonus:  ', player.getMagicBonus() + '');
   }
 }

@@ -1,6 +1,7 @@
 import {State} from "../state";
 import {CharacterGameObject} from "../character.game-object";
 import {FrozenState} from "./frozen.state";
+import {BackgroundColor} from "../../io/background.color";
 
 export class BurningState extends State {
   constructor(turns: number, damagePerTurn: number) {
@@ -19,5 +20,9 @@ export class BurningState extends State {
 
   getIncompatibleStates() {
     return new Set([FrozenState]);
+  }
+
+  getBackgroundColor(): BackgroundColor | null {
+    return Math.random() < 0.5 ? BackgroundColor.Orange4b : BackgroundColor.LightGoldenrod3;
   }
 }

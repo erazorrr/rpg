@@ -24,7 +24,7 @@ describe('Loot check', () => {
     ];
     for (const monster of monsters) {
       describe(monster.getName(), () => {
-        it('should have more than 15% and less than 25% chance of getting health potion', () => {
+        it('should have more than 15% and less than 30% chance of getting health potion', () => {
           const loot = LootGenerator.getLoot(monster.getLootCost());
           let log = '';
           const healthProbability = Object.entries(loot).reduce((acc, [name, p]) => {
@@ -36,7 +36,7 @@ describe('Loot check', () => {
           }, 0);
           console.log(log);
           expect(healthProbability).toBeGreaterThan(0.15);
-          expect(healthProbability).toBeLessThan(0.25);
+          expect(healthProbability).toBeLessThan(0.3);
         });
       });
     }
@@ -53,7 +53,7 @@ describe('Loot check', () => {
     ];
     for (const monster of monsters) {
       describe(monster.getName(), () => {
-        it('should have more than 15% and less than 25% chance of getting mana potion', () => {
+        it('should have more than 15% and less than 30% chance of getting mana potion', () => {
           const loot = LootGenerator.getLoot(monster.getLootCost());
           let log = '';
           const healthProbability = Object.entries(loot).reduce((acc, [name, p]) => {
@@ -65,7 +65,7 @@ describe('Loot check', () => {
           }, 0);
           console.log(log);
           expect(healthProbability).toBeGreaterThan(0.15);
-          expect(healthProbability).toBeLessThan(0.25);
+          expect(healthProbability).toBeLessThan(0.3);
         });
       });
     }

@@ -1,4 +1,6 @@
 import {CharacterGameObject} from "./character.game-object";
+import {ForegroundColor} from "../io/foreground.color";
+import {BackgroundColor} from "../io/background.color";
 
 export type StateStats = {
   damageRoll?: number;
@@ -28,6 +30,14 @@ export abstract class State {
   abstract getInactiveMessage(character: CharacterGameObject): string;
   getIncompatibleStates(): Set<new (...args: unknown[]) => State> {
     return new Set();
+  }
+
+  getForegroundColor(): ForegroundColor | null {
+    return null;
+  }
+
+  getBackgroundColor(): BackgroundColor | null {
+    return null;
   }
 
   tick(): number {

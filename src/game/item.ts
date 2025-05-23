@@ -24,6 +24,12 @@ export type ItemStats = {
   maxHp?: number;
   maxMp?: number;
 
+  hpReplenishment?: number;
+  mpReplenishment?: number;
+
+  magicRoll?: number;
+  magicBonus?: number;
+
   strengthBonus?: number;
   dexterityBonus?: number;
   enduranceBonus?: number;
@@ -63,8 +69,13 @@ export abstract class Item extends GameObject {
     strengthBonus: 'Str',
     dexterityBonus: 'Dex',
     enduranceBonus: 'End',
+    intelligenceBonus: 'Int',
     consumableHpReplenish: 'HP',
     consumableMpReplenish: 'MP',
+    hpReplenishment: 'HPReplen',
+    mpReplenishment: 'MPReplen',
+    magicRoll: 'MgcRoll',
+    magicBonus: 'MgcBonus',
   }
   getName() {
     const prefix = this.modifiers
