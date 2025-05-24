@@ -34,6 +34,7 @@ import {MagicBar} from "./magic-bar";
 import {SpellBook} from "./spell-book";
 import {Spell, SpellTarget} from "./spell";
 import {SelectTarget} from "./select-target";
+import {Scroll} from "./abstract.scroll";
 
 export class Game {
   private state = GameState.Menu;
@@ -490,6 +491,16 @@ export class Game {
                     break;
                 }
               }
+              this.player.inventory = this.player.inventory.filter(i => i !== item);
+            } else if (item instanceof Scroll) {
+              const spell = new item.spell();
+              if (Array.from(this.player.knownSpells).find(s => s.getName() === spell.getName())) {
+                this.gameLog.log(`${this.player.getName()} already knows this spell!`);
+                this.render();
+                return;
+              }
+              this.player.knownSpells.add(spell);
+              this.gameLog.log(`${this.player.getName()} learned ${spell.getName()}!`);
               this.player.inventory = this.player.inventory.filter(i => i !== item);
             }
           }

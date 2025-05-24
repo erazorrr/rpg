@@ -1,21 +1,21 @@
 import {Spell, SpellTarget} from "../spell";
 import {FrozenState} from "../states/frozen.state";
 
-export class IceShardSpell extends Spell {
+export class IceRaySpell extends Spell {
   constructor() {
     super(SpellTarget.Monster, {
-      damageRoll: 6,
-      damageBonus: 2,
+      damageRoll: 8,
+      damageBonus: 5,
       stateChance: 0.5,
       state: () => new FrozenState(10),
-    }, 2);
+    }, 3);
   }
 
   getName(): string {
-    return "Ice Shard";
+    return "Ice Ray";
   }
 
   getMPCost(): number {
-    return 10;
+    return 25;
   }
 }

@@ -43,4 +43,6 @@ export abstract class State {
   tick(): number {
     return --this.turnsLeft;
   }
+
+  abstract getName(): string;
 }

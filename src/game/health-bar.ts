@@ -16,7 +16,7 @@ export class HealthBar extends GameObject implements Renderable {
         });
         i++;
       }
-      const currentHp = this.context.getPlayer().hp + '';
+      const currentHp = this.context.getPlayer().getHp() + '';
       for (const char of currentHp) {
         let color = ForegroundColor.Yellow;
         if (this.context.getPlayer().hp < this.context.getPlayer().getMaxHp() * 0.25) {

@@ -5,11 +5,11 @@ export class EmpowerSpell extends Spell {
   constructor() {
     super(SpellTarget.Self, {
       state: () => new StrengthState(30, 8),
-    });
+    }, 1);
   }
 
   getMPCost(): number {
-    return 12;
+    return 10;
   }
 
   getName(): string {

@@ -25,4 +25,8 @@ export class BurningState extends State {
   getBackgroundColor(): BackgroundColor | null {
     return Math.random() < 0.5 ? BackgroundColor.Orange4b : BackgroundColor.LightGoldenrod3;
   }
+
+  getName(): string {
+    return "Burning";
+  }
 }

@@ -17,11 +17,6 @@ import {StairsDownTile} from "./tiles/stairs-down.tile";
 import {StairsUpTile} from "./tiles/stairs-up.tile";
 import {Spell} from "./spell";
 import {FireBoltSpell} from "./spells/fire-bolt";
-import {IceShardSpell} from "./spells/ice-shard";
-import {MinorHealSpell} from "./spells/minor-heal";
-import {BloodSacrificeSpell} from "./spells/blood-sacrifice";
-import {EmpowerSpell} from "./spells/empower";
-import {FortifySpell} from "./spells/fortify";
 
 export class Player extends CharacterGameObject implements Renderable, Interactive {
   private inputEmitter = new InputEmitter();
@@ -147,11 +142,5 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
 
   public knownSpells: Set<Spell> = new Set([
     new FireBoltSpell(),
-    // TODO leave only fire bolt at the start
-    new IceShardSpell(),
-    new MinorHealSpell(),
-    new BloodSacrificeSpell(),
-    new FortifySpell(),
-    new EmpowerSpell(),
   ]);
 }

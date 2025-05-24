@@ -25,4 +25,8 @@ export class FrozenState extends State {
   getBackgroundColor(): BackgroundColor | null {
     return BackgroundColor.SkyBlue1;
   }
+
+  getName(): string {
+    return "Frozen";
+  }
 }

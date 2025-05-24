@@ -4,7 +4,7 @@ export class BloodSacrificeSpell extends Spell {
   constructor() {
     super(SpellTarget.Self, {
       restoreHp: -10,
-    });
+    }, 1);
   }
 
   getMPCost(): number {

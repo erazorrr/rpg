@@ -1,21 +1,21 @@
 import {Spell, SpellTarget} from "../spell";
 import {BurningState} from "../states/burning.state";
 
-export class FireBoltSpell extends Spell {
+export class FireLanceSpell extends Spell {
   constructor() {
     super(SpellTarget.Monster, {
-      damageRoll: 7,
-      damageBonus: 3,
+      damageRoll: 10,
+      damageBonus: 6,
       stateChance: 0.5,
       state: () => new BurningState(10, 1),
-    }, 1);
+    }, 3);
   }
 
   getName(): string {
-    return "Fire Bolt";
+    return "Fire Lance";
   }
 
   getMPCost(): number {
-    return 5;
+    return 25;
   }
 }

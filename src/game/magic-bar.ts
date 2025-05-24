@@ -16,7 +16,7 @@ export class MagicBar extends GameObject implements Renderable {
         });
         i++;
       }
-      const currentMp = this.context.getPlayer().mp + '';
+      const currentMp = Math.floor(this.context.getPlayer().mp) + '';
       for (const char of currentMp) {
         let color = ForegroundColor.Yellow;
         if (this.context.getPlayer().mp < this.context.getPlayer().getMaxMp() * 0.25) {

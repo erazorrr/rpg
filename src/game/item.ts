@@ -12,7 +12,8 @@ export enum ItemType {
   Boots,
   Ring,
   Amulet,
-  Potion
+  Potion,
+  Scroll,
 }
 
 export type ItemStats = {
@@ -24,8 +25,8 @@ export type ItemStats = {
   maxHp?: number;
   maxMp?: number;
 
-  hpReplenishment?: number;
-  mpReplenishment?: number;
+  hpPerHit?: number;
+  mpPerHitReceived?: number;
 
   magicRoll?: number;
   magicBonus?: number;
@@ -72,8 +73,8 @@ export abstract class Item extends GameObject {
     intelligenceBonus: 'Int',
     consumableHpReplenish: 'HP',
     consumableMpReplenish: 'MP',
-    hpReplenishment: 'HPReplen',
-    mpReplenishment: 'MPReplen',
+    hpPerHit: 'HpPerHit',
+    mpPerHitReceived: 'MpPerHitRcvd',
     magicRoll: 'MgcRoll',
     magicBonus: 'MgcBonus',
   }

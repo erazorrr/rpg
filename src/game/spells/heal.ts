@@ -1,17 +1,17 @@
 import {Spell, SpellTarget} from "../spell";
 
-export class MinorHealSpell extends Spell {
+export class HealSpell extends Spell {
   constructor() {
     super(SpellTarget.Self, {
-      restoreHp: 10,
-    }, 1);
+      restoreHp: 30,
+    }, 3);
   }
 
   getName(): string {
-    return "Minor Heal";
+    return "Heal";
   }
 
   getMPCost(): number {
-    return 10;
+    return 30;
   }
 }

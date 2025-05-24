@@ -15,4 +15,8 @@ export class StrengthState extends State {
   getInactiveMessage(character: CharacterGameObject): string {
     return `${character.getName()}'s strength fades away!`;
   }
+
+  getName(): string {
+    return "Empowered";
+  }
 }

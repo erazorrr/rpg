@@ -5,11 +5,11 @@ export class FortifySpell extends Spell {
   constructor() {
     super(SpellTarget.Self, {
       state: () => new ArmorState(30, 15),
-    });
+    }, 1);
   }
 
   getMPCost(): number {
-    return 12;
+    return 10;
   }
 
   getName(): string {

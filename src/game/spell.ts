@@ -16,7 +16,7 @@ export type SpellStats = {
 };
 
 export abstract class Spell {
-  protected constructor(public readonly target: SpellTarget, public readonly stats: SpellStats) {}
+  protected constructor(public readonly target: SpellTarget, public readonly stats: SpellStats, public readonly level: number) {}
 
   abstract getName(): string;
   abstract getMPCost(): number;

@@ -12,7 +12,6 @@ import {State} from "./state";
 import {Spell} from "./spell";
 import {BackgroundColor} from "../io/background.color";
 import {ForegroundColor} from "../io/foreground.color";
-import {Item} from "./item";
 
 export abstract class CharacterGameObject extends GameObject implements Renderable {
   private combatLog = new Debug('combat.log');
@@ -39,20 +38,14 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
         }
       }
     }
-    for (const item of Object.values(this.equipment) as Item[]) {
-      if (item) {
-        if (item.stats.hpReplenishment) {
-          this.hp = Math.min(this.getMaxHp(), this.hp + item.stats.hpReplenishment);
-        }
-        if (item.stats.mpReplenishment) {
-          this.mp = Math.min(this.getMaxMp(), this.mp + item.stats.mpReplenishment);
-        }
-      }
-    }
   }
 
   constructor(context: Context, public position: Position) {
     super(context);
+  }
+
+  public getHp() {
+    return Math.floor(this.hp);
   }
 
   damage(damage: number) {
@@ -60,7 +53,7 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
       this.spreadBlood();
     }
     this.hp = Math.max(0, this.hp - damage);
-    if (this.hp === 0) {
+    if (this.getHp() === 0) {
       if (this === (this.context.getPlayer() as CharacterGameObject)) {
         this.context.postGameMessage(GameMessage.die());
         this.context.log(`${this.getName()} is dead! Game over!`);
@@ -106,9 +99,9 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
   }
   public hp = this.getMaxHp();
 
-  public getMaxMp(multiplier = 3): number {
+  public getMaxMp(multiplier = 2): number {
     const bonus = Object.values(this.equipment).reduce((acc, e) => acc + (e?.stats?.maxMp ? e.stats.maxMp : 0), 0);
-    return Math.floor(28 + this.getIntelligence() * multiplier + bonus);
+    return Math.floor(32 + this.getIntelligence() * multiplier + bonus);
   }
   public mp = this.getMaxMp();
 
@@ -230,6 +223,12 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
         this.context.log(`${this.getName()} attacks ${target.getName()} for ${damage} damage!`);
         target.damage(damage);
       }
+      if (this.equipment.weapon?.stats?.hpPerHit) {
+        this.hp = Math.min(this.hp + this.equipment.weapon.stats.hpPerHit, this.getMaxHp());
+      }
+      if (target.equipment.chest?.stats?.mpPerHitReceived) {
+        target.mp = Math.min(target.mp + target.equipment.chest.stats.mpPerHitReceived, target.getMaxMp());
+      }
     }
     else {
       this.context.log(`${this.getName()} attacks ${target.getName()} but misses!`);
@@ -278,10 +277,12 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
   }
 
   applySpell(caster: CharacterGameObject, spell: Spell) {
-    if (spell.stats.state && !spell.stats.stateChance) {
-      const state = (spell.stats.state)();
-      this.context.log(state.getActiveMessage(this));
-      this.applyState(state);
+    if (spell.stats.state && !spell.stats.damageRoll) {
+      if (!spell.stats.stateChance || Math.random() < spell.stats.stateChance) {
+        const state = (spell.stats.state)();
+        this.context.log(state.getActiveMessage(this));
+        this.applyState(state);
+      }
     }
     if (spell.stats.restoreHp) {
       this.hp = Math.min(this.getMaxMp(), this.hp + spell.stats.restoreHp);

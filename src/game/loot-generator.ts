@@ -38,10 +38,6 @@ import {MetalGauntlets} from "./items/gauntlets/metal-gauntlets";
 import {GameObject} from "./abstract.game-object";
 import {LeviathanStrength} from "./item-modifiers/leviathan-strength";
 import {LeviathanEndurance} from "./item-modifiers/leviathan-endurance";
-import {ChampionAntiEndurance} from "./item-modifiers/champion-anti-endurance";
-import {ChampionAntiDexterity} from "./item-modifiers/champion-anti-dexterity";
-import {ChampionAntiStrength} from "./item-modifiers/champion-anti-strength";
-import {ChampionAntiHealth} from "./item-modifiers/champion-anti-health";
 import {Debug} from "../debug";
 import {ChampionHealthPotion} from "./items/potions/champion-health";
 import {GiantHealthPotion} from "./items/potions/giant-health";
@@ -59,10 +55,7 @@ import {ManaPotion} from "./items/potions/mana";
 import {LargeManaPotion} from "./items/potions/large-mana";
 import {ChampionManaPotion} from "./items/potions/champion-mana";
 import {GiantManaPotion} from "./items/potions/giant-mana";
-import {HpReplen} from "./item-modifiers/hp-replen";
-import {MpReplen} from "./item-modifiers/mp-replen";
 import {AntiIntelligence} from "./item-modifiers/anti-intelligence";
-import {ChampionAntiIntelligence} from "./item-modifiers/champion-anti-intelligence";
 import {Intelligence} from "./item-modifiers/intelligence";
 import {ChampionIntelligence} from "./item-modifiers/champion-intelligence";
 import {GiantIntelligence} from "./item-modifiers/giant-intelligence";
@@ -76,6 +69,19 @@ import {GiantPower} from "./item-modifiers/giant-power";
 import {Robe} from "./items/chest/robe";
 import {Staff} from "./items/weapons/staff";
 import {Wand} from "./items/weapons/wand";
+import {BloodSacrificeScroll} from "./items/scrolls/blood-sacrifice.scroll";
+import {EmpowerScroll} from "./items/scrolls/empower.scroll";
+import {FireBoltScroll} from "./items/scrolls/fire-bolt.scroll";
+import {FortifyScroll} from "./items/scrolls/fortify.scroll";
+import {IceShardScroll} from "./items/scrolls/ice-shard.scroll";
+import {MinorHealScroll} from "./items/scrolls/minor-heal.scroll";
+import {FireLanceScroll} from "./items/scrolls/fire-lance.scroll";
+import {FreezeScroll} from "./items/scrolls/freeze.scroll";
+import {HealScroll} from "./items/scrolls/heal.scroll";
+import {IceRayScroll} from "./items/scrolls/ice-ray.scroll";
+import {HpPerHit} from "./item-modifiers/hp-per-hit";
+import {MpPerHitReceived} from "./item-modifiers/mp-per-hit-received";
+import {Potion} from "./items/potions/potion";
 
 type ItemModifierBuilder = new () => ItemModifier;
 
@@ -93,15 +99,12 @@ export class LootGenerator extends GameObject {
     this.commonModifiers = [
       Health, Endurance, Dexterity, Strength,
       AntiEndurance, AntiDexterity, AntiStrength, AntiHealth,
-      ChampionAntiEndurance, ChampionAntiDexterity, ChampionAntiStrength, ChampionAntiHealth,
       ChampionStrength, ChampionDexterity, ChampionEndurance, ChampionHealth,
       GiantDexterity, GiantHealth, GiantEndurance, GiantStrength,
       LeviathanStrength, LeviathanEndurance,
-      HpReplen,
-      AntiIntelligence, ChampionAntiIntelligence,
+      AntiIntelligence,
     ];
     this.magicModifiers = [
-      MpReplen,
       Intelligence, ChampionIntelligence, GiantIntelligence, LeviathanIntelligence,
     ];
     this.magicWeaponModifiers = [
@@ -109,35 +112,37 @@ export class LootGenerator extends GameObject {
       Power, ChampionPower, GiantPower,
     ];
     const _items: Array<[Array<new (ctx: Context) => Item>, number, ItemModifierBuilder[], ItemModifierBuilder[]]> = [
-      [[ShortSword, HandAxe, GreatAxe, LongSword], 1, [CopperModifier, IronModifier, SteelModifier], this.commonModifiers],
+      [[ShortSword, HandAxe, GreatAxe, LongSword], 1, [CopperModifier, IronModifier, SteelModifier], [...this.commonModifiers, HpPerHit]],
       [[LeatherArmor], 1, [NopModifier], this.commonModifiers],
-      [[Robe], 1, [NopModifier], this.magicModifiers],
-      [[Staff, Wand], 1, [NopModifier], [...this.magicModifiers, ...this.magicWeaponModifiers]],
+      [[Robe], 1, [NopModifier], [...this.magicModifiers, AntiEndurance, AntiDexterity, AntiStrength, AntiHealth, MpPerHitReceived]],
+      [[Staff, Wand], 3, [NopModifier], [...this.magicModifiers, ...this.magicWeaponModifiers]],
       [[ChainMail, PlateMail], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
-      [[StrengthPotion, ArmorPotion], 4, [NopModifier], []],
-      [[ChampionArmorPotion, ChampionStrengthPotion], 20, [NopModifier], []],
-      [[HealthPotion], 160, [NopModifier], []],
-      [[SmallHealthPotion], 30, [NopModifier], []],
-      [[LargeHealthPotion], 190, [NopModifier], []],
-      [[ChampionHealthPotion], 250, [NopModifier], []],
-      [[GiantHealthPotion], 300, [NopModifier], []],
-      [[SmallManaPotion], 30, [NopModifier], []],
-      [[ManaPotion], 160, [NopModifier], []],
-      [[LargeManaPotion], 190, [NopModifier], []],
-      [[ChampionManaPotion], 250, [NopModifier], []],
-      [[GiantManaPotion], 300, [NopModifier], []],
+      [[StrengthPotion, ArmorPotion], 50, [NopModifier], []],
+      [[ChampionArmorPotion, ChampionStrengthPotion], 150, [NopModifier], []],
       [[LeatherBoots], 1, [NopModifier], [...this.commonModifiers, ...this.magicModifiers]],
       [[MetalBoots, PlateBoots], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
       [[LeatherGauntlets], 1, [NopModifier], [...this.commonModifiers, ...this.magicModifiers]],
       [[MetalGauntlets, PlateGauntlets], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
+      [[
+        BloodSacrificeScroll,
+        EmpowerScroll,
+        FireBoltScroll,
+        FireLanceScroll,
+        FortifyScroll,
+        FreezeScroll,
+        HealScroll,
+        IceRayScroll,
+        IceShardScroll,
+        MinorHealScroll,
+      ], 30, [NopModifier], []],
     ];
     this.debug.log(`Building opposites...`);
     this.opposites = [...this.commonModifiers, ...this.magicModifiers, ...this.magicWeaponModifiers].reduce((acc, mod) => {
       acc.set(mod, new Set());
       const instance = new mod();
-      for (const otherMod of this.commonModifiers) {
+      for (const otherMod of [...this.commonModifiers, ...this.magicModifiers, ...this.magicWeaponModifiers]) {
         for (const [key, value] of Object.entries(new otherMod().stats)) {
-          if (value && instance.stats[key] !== 0 && mod !== otherMod) {
+          if (value && instance.stats[key] && instance.stats[key] !== 0 && mod !== otherMod) {
             acc.get(mod)!.add(otherMod);
           }
         }
@@ -218,15 +223,47 @@ export class LootGenerator extends GameObject {
     return Math.max(1, Math.round(cost * 0.4));
   }
 
+  private HEALTH_POTION_PROBABILITY = 0.15;
+  private MANA_POTION_PROBABILITY = 0.15;
+  private healthPotions = [SmallHealthPotion, HealthPotion, LargeHealthPotion, ChampionHealthPotion, GiantHealthPotion]
+    .map(p => new p(this.context))
+    .reduce((acc, p) => {
+      const cost = p.getCost();
+      if (!acc[cost]) {
+        acc[cost] = [];
+      }
+      acc[cost].push(p);
+      return acc;
+    }, {} as Record<number, Potion[]>);
+  private manaPotions = [SmallManaPotion, ManaPotion, LargeManaPotion, ChampionManaPotion, GiantManaPotion]
+    .map(p => new p(this.context))
+    .reduce((acc, p) => {
+      const cost = p.getCost();
+      if (!acc[cost]) {
+        acc[cost] = [];
+      }
+      acc[cost].push(p);
+      return acc;
+    }, {} as Record<number, Potion[]>);
   public generateLoot(cost: number): Item | null {
     this.debug.log(`Generating loot for ${cost}...`);
     const min = this.getMinCost(cost);
     let roll = Math.ceil(Math.random() * (cost - min)) + min;
     this.debug.log(`Roll: ${roll}`);
+
+    let lookUp = this.loot;
     let possibleItems: Item[];
+    const potionsRoll = Math.random();
+    if (potionsRoll < this.HEALTH_POTION_PROBABILITY) {
+      // health potion
+      lookUp = this.healthPotions;
+    } else if (potionsRoll < (this.HEALTH_POTION_PROBABILITY + this.MANA_POTION_PROBABILITY)) {
+      // mana potion
+      lookUp = this.manaPotions;
+    }
     do {
       this.debug.log(`Finding items for ${roll}...`);
-      possibleItems = this.loot[roll];
+      possibleItems = lookUp[roll];
       roll--;
     } while (roll > 0 && !possibleItems);
     if (possibleItems) {
@@ -245,14 +282,16 @@ export class LootGenerator extends GameObject {
 
     // assuming we have every cost
     const loot: Record<string, number> = {};
+    loot['Health potion'] = lootGenerator['HEALTH_POTION_PROBABILITY'];
+    loot['Mana potion'] = lootGenerator['MANA_POTION_PROBABILITY'];
     for (let i = MIN_COST; i <= cost; i++) {
       const p1 = 1 / (cost - MIN_COST);
-      for (const item of items[i]) {
+      for (const item of (items[i] ?? [])) {
         const p2 = 1 / items[i].length;
         if (!loot[item.getName()]) {
           loot[item.getName()] = 0;
         }
-        loot[item.getName()] += p1 * p2;
+        loot[item.getName()] += p1 * p2 * (1 - lootGenerator['HEALTH_POTION_PROBABILITY'] - lootGenerator['MANA_POTION_PROBABILITY']);
       }
     }
 
