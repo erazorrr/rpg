@@ -9,7 +9,7 @@ export class XpBar extends GameObject implements Renderable {
       let i = 0;
       const label = 'XP: ';
       for (const char of label) {
-        this.context.getRenderer().put(new Position(i, 2), {
+        this.context.getRenderer().put(new Position(i, 3), {
           char,
           color: ForegroundColor.White,
           backgroundColor: BackgroundColor.Black,
@@ -18,7 +18,7 @@ export class XpBar extends GameObject implements Renderable {
       }
       const xp = this.context.getPlayer().xp + '';
       for (const char of xp) {
-        this.context.getRenderer().put(new Position(i, 2), {
+        this.context.getRenderer().put(new Position(i, 3), {
           char,
           color: ForegroundColor.White,
           backgroundColor: BackgroundColor.Black,
@@ -27,7 +27,7 @@ export class XpBar extends GameObject implements Renderable {
       }
       const rest = ' / ' + this.context.getPlayer().nextLevelXp();
       for (const char of rest) {
-        this.context.getRenderer().put(new Position(i, 2), {
+        this.context.getRenderer().put(new Position(i, 3), {
           char,
           color: ForegroundColor.White,
           backgroundColor: BackgroundColor.Black,

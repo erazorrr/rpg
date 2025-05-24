@@ -8,8 +8,7 @@
     "start": "node ./dist/index.js",
     "start:dev": "npm run build && npm start",
     "package": "pkg . --out-path build",
-    "lint": "eslint",
-    "test": "jest"
+    "lint": "eslint"
   },
   "author": "aryabov",
   "license": "MIT",
