@@ -451,7 +451,12 @@ export class Game {
 
     this.inputEmitter.on(InputEvent.SPACE, this, () => {
       this.tick();
-    })
+    });
+
+    this.inputEmitter.on(InputEvent.QUESTION, this, () => {
+      this.displayHelp();
+      this.render();
+    });
 
     this.inputEmitter.on(InputEvent.ENTER, this, () => {
       if (this.gameFinished) {
@@ -584,10 +589,16 @@ export class Game {
       this.render();
     });
 
-    this.gameLog.log(`${this.player.getName()} found himself in an unknown place. Use arrows to move, [Space] to skip turn. Walk on the enemy to attack. Use [c] to cast spells`);
+    this.gameLog.log(`${this.player.getName()} found himself in an unknown place.`);
+    this.displayHelp();
 
     this.state = GameState.Game;
     this.render();
+  }
+
+  private displayHelp() {
+    this.gameLog.log(`Use arrows to move, [Space] to skip turn.`);
+    this.gameLog.log(`Walk on the enemy to attack. Use [c] to cast spells.`);
   }
 
   private renderMenu() {

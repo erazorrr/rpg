@@ -7,7 +7,7 @@ import {BackgroundColor} from "../io/background.color";
 export class LevelBar extends GameObject implements Renderable {
     render(): void {
       let i = 0;
-      const label = 'LVL: ';
+      const label = 'LVL:           ';
       for (const char of label) {
         this.context.getRenderer().put(new Position(i, 2), {
           char,

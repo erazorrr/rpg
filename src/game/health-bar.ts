@@ -7,7 +7,7 @@ import {BackgroundColor} from "../io/background.color";
 export class HealthBar extends GameObject implements Renderable {
     render(): void {
       let i = 0;
-      const label = 'HP: ';
+      const label = 'HP:            ';
       for (const char of label) {
         this.context.getRenderer().put(new Position(i, 0), {
           char,

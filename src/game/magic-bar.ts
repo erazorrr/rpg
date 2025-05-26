@@ -7,7 +7,7 @@ import {BackgroundColor} from "../io/background.color";
 export class MagicBar extends GameObject implements Renderable {
     render(): void {
       let i = 0;
-      const label = 'MP: ';
+      const label = 'MP:            ';
       for (const char of label) {
         this.context.getRenderer().put(new Position(i, 1), {
           char,

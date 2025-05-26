@@ -11,5 +11,6 @@ export enum InputEvent {
   E = 'e',
   D = 'd',
   C = 'c',
+  QUESTION = 'question',
   SPACE = 'Space',
 }
