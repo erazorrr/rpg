@@ -285,12 +285,12 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
       }
     }
     if (spell.stats.restoreHp) {
-      this.hp = Math.min(this.getMaxMp(), this.hp + spell.stats.restoreHp);
       if (spell.stats.restoreHp > 0) {
         this.context.log(`${spell.getName()} restored ${this.getName()} ${spell.stats.restoreHp} health!`);
+        this.hp = Math.min(this.getMaxMp(), this.hp + spell.stats.restoreHp);
       } else {
         this.context.log(`${spell.getName()} drained ${-spell.stats.restoreHp} health from ${this.getName()}!`);
-        this.spreadBlood();
+        this.damage(-spell.stats.restoreHp);
       }
     }
     if (spell.stats.damageRoll && spell.stats.damageBonus) {

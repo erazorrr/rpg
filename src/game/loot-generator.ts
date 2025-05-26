@@ -114,8 +114,8 @@ export class LootGenerator extends GameObject {
     const _items: Array<[Array<new (ctx: Context) => Item>, number, ItemModifierBuilder[], ItemModifierBuilder[]]> = [
       [[ShortSword, HandAxe, GreatAxe, LongSword], 1, [CopperModifier, IronModifier, SteelModifier], [...this.commonModifiers, HpPerHit]],
       [[LeatherArmor], 1, [NopModifier], this.commonModifiers],
-      [[Robe], 1, [NopModifier], [...this.magicModifiers, AntiEndurance, AntiDexterity, AntiStrength, AntiHealth, MpPerHitReceived]],
-      [[Staff, Wand], 3, [NopModifier], [...this.magicModifiers, ...this.magicWeaponModifiers]],
+      [[Robe], 8, [NopModifier], [...this.magicModifiers, AntiEndurance, AntiDexterity, AntiStrength, AntiHealth, MpPerHitReceived]],
+      [[Staff, Wand], 10, [NopModifier], [...this.magicModifiers, ...this.magicWeaponModifiers]],
       [[ChainMail, PlateMail], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], this.commonModifiers],
       [[StrengthPotion, ArmorPotion], 50, [NopModifier], []],
       [[ChampionArmorPotion, ChampionStrengthPotion], 150, [NopModifier], []],
@@ -223,8 +223,8 @@ export class LootGenerator extends GameObject {
     return Math.max(1, Math.round(cost * 0.4));
   }
 
-  private HEALTH_POTION_PROBABILITY = 0.15;
-  private MANA_POTION_PROBABILITY = 0.15;
+  private HEALTH_POTION_PROBABILITY = 0.20;
+  private MANA_POTION_PROBABILITY = 0.20;
   private healthPotions = [SmallHealthPotion, HealthPotion, LargeHealthPotion, ChampionHealthPotion, GiantHealthPotion]
     .map(p => new p(this.context))
     .reduce((acc, p) => {
@@ -247,9 +247,7 @@ export class LootGenerator extends GameObject {
     }, {} as Record<number, Potion[]>);
   public generateLoot(cost: number): Item | null {
     this.debug.log(`Generating loot for ${cost}...`);
-    const min = this.getMinCost(cost);
-    let roll = Math.ceil(Math.random() * (cost - min)) + min;
-    this.debug.log(`Roll: ${roll}`);
+    let roll: number;
 
     let lookUp = this.loot;
     let possibleItems: Item[];
@@ -257,10 +255,16 @@ export class LootGenerator extends GameObject {
     if (potionsRoll < this.HEALTH_POTION_PROBABILITY) {
       // health potion
       lookUp = this.healthPotions;
+      roll = cost;
     } else if (potionsRoll < (this.HEALTH_POTION_PROBABILITY + this.MANA_POTION_PROBABILITY)) {
       // mana potion
       lookUp = this.manaPotions;
+      roll = cost;
+    } else {
+      const min = this.getMinCost(cost);
+      roll = Math.ceil(Math.random() * (cost - min)) + min;
     }
+    this.debug.log(`Roll: ${roll}`);
     do {
       this.debug.log(`Finding items for ${roll}...`);
       possibleItems = lookUp[roll];
