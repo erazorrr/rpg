@@ -426,7 +426,13 @@ export class Game {
     this.player.makeInteractive();
 
     this.inputEmitter.on(InputEvent.I, this, () => {
-      if (this.isGameFinished() || this.inventory || this.levelUpWindow || this.spellBook || this.selectTarget) {
+      if (this.inventory) {
+        this.closeInventory();
+        this.render();
+        return;
+      }
+
+      if (this.isGameFinished() || this.levelUpWindow || this.spellBook || this.selectTarget) {
         return;
       }
       this.inventory = this.buildInventory();
@@ -454,8 +460,10 @@ export class Game {
     });
 
     this.inputEmitter.on(InputEvent.QUESTION, this, () => {
-      this.displayHelp();
-      this.render();
+      if (!this.inventory && !this.spellBook) {
+        this.displayHelp();
+        this.render();
+      }
     });
 
     this.inputEmitter.on(InputEvent.ENTER, this, () => {
@@ -558,16 +566,10 @@ export class Game {
 
     this.inputEmitter.on(InputEvent.ESCAPE, this, () => {
       if (this.inventory) {
-        this.inventory.makeUninteractive();
-        this.player.makeInteractive();
-        this.inventory = null;
-        this.gameLog.clear();
+        this.closeInventory();
         this.render();
       } else if (this.spellBook) {
-        this.spellBook.makeUninteractive();
-        this.player.makeInteractive();
-        this.spellBook = null;
-        this.gameLog.clear();
+        this.closeSpellBook();
         this.render();
       } else if (this.selectTarget) {
         this.selectTarget.makeUninteractive();
@@ -579,13 +581,19 @@ export class Game {
     });
 
     this.inputEmitter.on(InputEvent.C, this, () => {
-      if (this.isGameFinished() || this.inventory || this.levelUpWindow || this.spellBook || this.selectTarget) {
+      if (this.spellBook) {
+        this.closeSpellBook();
+        this.render();
+        return;
+      }
+
+      if (this.isGameFinished() || this.inventory || this.levelUpWindow || this.selectTarget) {
         return;
       }
       this.player.makeUninteractive();
       this.spellBook = new SpellBook(this.generateGameObjectContext());
       this.spellBook.makeInteractive();
-      this.gameLog.clear();
+      this.gameLog.log(`[Enter] to select a spell, [Escape] to exit spell book`);
       this.render();
     });
 
@@ -594,6 +602,20 @@ export class Game {
 
     this.state = GameState.Game;
     this.render();
+  }
+
+  private closeInventory() {
+    this.inventory.makeUninteractive();
+    this.player.makeInteractive();
+    this.inventory = null;
+    this.gameLog.clear();
+  }
+
+  private closeSpellBook() {
+    this.spellBook.makeUninteractive();
+    this.player.makeInteractive();
+    this.spellBook = null;
+    this.gameLog.clear();
   }
 
   private displayHelp() {
