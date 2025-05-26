@@ -21,7 +21,7 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
   public strength: number = 10;
   public endurance: number = 12;
   public dexterity: number = 10;
-  public intelligence: number = 10;
+  public wisdom: number = 10;
 
   public equipment: Equipment = {};
 
@@ -65,10 +65,10 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
     }
   }
 
-  getIntelligence(withStates = true) {
-    const bonus = Object.values(this.equipment).reduce((acc, e) => acc + (e?.stats?.intelligenceBonus ? e.stats.intelligenceBonus : 0), 0);
-    const states = withStates ? Array.from(this.states).reduce((acc, s) => acc + (s.stats?.intelligenceBonus ?? 0), 0) : 0;
-    return this.intelligence + bonus + states;
+  getWisdom(withStates = true) {
+    const bonus = Object.values(this.equipment).reduce((acc, e) => acc + (e?.stats?.wisdomBonus ? e.stats.wisdomBonus : 0), 0);
+    const states = withStates ? Array.from(this.states).reduce((acc, s) => acc + (s.stats?.wisdomBonus ?? 0), 0) : 0;
+    return this.wisdom + bonus + states;
   }
 
   getStrength(withStates = true) {
@@ -101,7 +101,7 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
 
   public getMaxMp(multiplier = 2): number {
     const bonus = Object.values(this.equipment).reduce((acc, e) => acc + (e?.stats?.maxMp ? e.stats.maxMp : 0), 0);
-    return Math.floor(32 + this.getIntelligence() * multiplier + bonus);
+    return Math.floor(32 + this.getWisdom() * multiplier + bonus);
   }
   public mp = this.getMaxMp();
 
@@ -196,9 +196,9 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
   }
 
   getMagicBonus(): number {
-    const intelligenceModifier = Math.floor((this.getIntelligence() - 10) / 2);
+    const wisdomModifier = Math.floor((this.getWisdom() - 10) / 2);
     const weaponModifier = (this.equipment.weapon && this.equipment.weapon.stats.magicBonus) ?? 0;
-    return intelligenceModifier + weaponModifier;
+    return wisdomModifier + weaponModifier;
   }
 
   public ATTACK_ROLL = 50;

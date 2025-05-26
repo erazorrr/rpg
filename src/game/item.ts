@@ -34,7 +34,7 @@ export type ItemStats = {
   strengthBonus?: number;
   dexterityBonus?: number;
   enduranceBonus?: number;
-  intelligenceBonus?: number;
+  wisdomBonus?: number;
 
   consumableHpReplenish?: number;
   consumableMpReplenish?: number;
@@ -70,7 +70,7 @@ export abstract class Item extends GameObject {
     strengthBonus: 'Str',
     dexterityBonus: 'Dex',
     enduranceBonus: 'End',
-    intelligenceBonus: 'Int',
+    wisdomBonus: 'Wsd',
     consumableHpReplenish: 'HP',
     consumableMpReplenish: 'MP',
     hpPerHit: 'HpPerHit',

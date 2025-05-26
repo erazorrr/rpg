@@ -13,7 +13,7 @@ export type StateStats = {
   strengthBonus?: number;
   dexterityBonus?: number;
   enduranceBonus?: number;
-  intelligenceBonus?: number;
+  wisdomBonus?: number;
 
   damagePerTurn?: number;
 

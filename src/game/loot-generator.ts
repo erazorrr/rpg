@@ -55,11 +55,11 @@ import {ManaPotion} from "./items/potions/mana";
 import {LargeManaPotion} from "./items/potions/large-mana";
 import {ChampionManaPotion} from "./items/potions/champion-mana";
 import {GiantManaPotion} from "./items/potions/giant-mana";
-import {AntiIntelligence} from "./item-modifiers/anti-intelligence";
-import {Intelligence} from "./item-modifiers/intelligence";
-import {ChampionIntelligence} from "./item-modifiers/champion-intelligence";
-import {GiantIntelligence} from "./item-modifiers/giant-intelligence";
-import {LeviathanIntelligence} from "./item-modifiers/leviathan-intelligence";
+import {AntiWisdom} from "./item-modifiers/anti-wisdom";
+import {Wisdom} from "./item-modifiers/wisdom";
+import {ChampionWisdom} from "./item-modifiers/champion-wisdom";
+import {GiantWisdom} from "./item-modifiers/giant-wisdom";
+import {LeviathanWisdom} from "./item-modifiers/leviathan-wisdom";
 import {Focus} from "./item-modifiers/focus";
 import {ChampionFocus} from "./item-modifiers/champion-focus";
 import {GiantFocus} from "./item-modifiers/giant-focus";
@@ -102,10 +102,10 @@ export class LootGenerator extends GameObject {
       ChampionStrength, ChampionDexterity, ChampionEndurance, ChampionHealth,
       GiantDexterity, GiantHealth, GiantEndurance, GiantStrength,
       LeviathanStrength, LeviathanEndurance,
-      AntiIntelligence,
+      AntiWisdom,
     ];
     this.magicModifiers = [
-      Intelligence, ChampionIntelligence, GiantIntelligence, LeviathanIntelligence,
+      Wisdom, ChampionWisdom, GiantWisdom, LeviathanWisdom,
     ];
     this.magicWeaponModifiers = [
       Focus, ChampionFocus, GiantFocus,

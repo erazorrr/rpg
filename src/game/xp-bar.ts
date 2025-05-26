@@ -7,7 +7,7 @@ import {BackgroundColor} from "../io/background.color";
 export class XpBar extends GameObject implements Renderable {
     render(): void {
       let i = 0;
-      const label = 'XP:            ';
+      const label = 'XP:        ';
       for (const char of label) {
         this.context.getRenderer().put(new Position(i, 3), {
           char,

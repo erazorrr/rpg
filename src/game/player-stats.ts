@@ -41,17 +41,17 @@ export class PlayerStats extends GameObject implements Renderable {
     const player = this.context.getPlayer();
     const j = 5;
 
-    this.renderField(j + 0, 'Strength:      ', this.getStatefullAttribute(player.getStrength.bind(player)));
-    this.renderField(j + 1, 'Dexterity:     ', this.getStatefullAttribute(player.getDexterity.bind(player)));
-    this.renderField(j + 2, 'Endurance:     ', this.getStatefullAttribute(player.getEndurance.bind(player)));
-    this.renderField(j + 3, 'Intelligence:  ', this.getStatefullAttribute(player.getIntelligence.bind(player)));
+    this.renderField(j + 0, 'Strength:  ', this.getStatefullAttribute(player.getStrength.bind(player)));
+    this.renderField(j + 1, 'Dexterity: ', this.getStatefullAttribute(player.getDexterity.bind(player)));
+    this.renderField(j + 2, 'Endurance: ', this.getStatefullAttribute(player.getEndurance.bind(player)));
+    this.renderField(j + 3, 'Wisdom:    ', this.getStatefullAttribute(player.getWisdom.bind(player)));
 
-    this.renderField(j + 5, 'Armor:         ', this.getStatefullAttribute(player.getAC.bind(player)) + ' / ' + player.MAX_AC);
-    this.renderField(j + 6, 'DmgRoll:       ', player.getDamageDice() + '');
-    this.renderField(j + 7, 'DmgBonus:      ', player.getDamageBonus() + '');
-    this.renderField(j + 9, 'MgcRoll:       ', player.getMagicDiceBonus() >= 0 ? `+${player.getMagicDiceBonus()}` : `-${-player.getMagicDiceBonus()}` + '');
-    this.renderField(j + 10, 'MgcBonus:      ', player.getMagicBonus() + '');
+    this.renderField(j + 5, 'Armor:     ', this.getStatefullAttribute(player.getAC.bind(player)) + ' / ' + player.MAX_AC);
+    this.renderField(j + 6, 'DmgRoll:   ', player.getDamageDice() + '');
+    this.renderField(j + 7, 'DmgBonus:  ', player.getDamageBonus() + '');
+    this.renderField(j + 9, 'MgcRoll:   ', player.getMagicDiceBonus() >= 0 ? `+${player.getMagicDiceBonus()}` : `-${-player.getMagicDiceBonus()}` + '');
+    this.renderField(j + 10, 'MgcBonus:  ', player.getMagicBonus() + '');
 
-    this.renderField(j + 12, 'Help:          ', '[?]');
+    this.renderField(j + 12, 'Help:      ', '[?]');
   }
 }
