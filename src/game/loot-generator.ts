@@ -255,11 +255,11 @@ export class LootGenerator extends GameObject {
     if (potionsRoll < this.HEALTH_POTION_PROBABILITY) {
       // health potion
       lookUp = this.healthPotions;
-      roll = cost;
+      roll = Math.round(cost);
     } else if (potionsRoll < (this.HEALTH_POTION_PROBABILITY + this.MANA_POTION_PROBABILITY)) {
       // mana potion
       lookUp = this.manaPotions;
-      roll = cost;
+      roll = Math.round(cost);
     } else {
       const min = this.getMinCost(cost);
       roll = Math.ceil(Math.random() * (cost - min)) + min;
