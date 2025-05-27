@@ -21,19 +21,19 @@ export abstract class GameObject {
     return true;
   }
 
-  public isVisible(rootPosition: Position, targetPosition: Position, radius: number): boolean {
+  public isVisible(rootPosition: Position, targetPosition: Position, radius: number): Position[] | null {
     if (rootPosition.equals(targetPosition)) {
-      return true;
+      return [];
     }
 
     const distance = rootPosition.distanceTo(targetPosition);
 
     if (distance > radius) {
-      return false;
+      return null;
     }
 
     if (distance === 1) {
-      return true;
+      return [];
     }
 
     let x0 = rootPosition.x;
@@ -50,6 +50,8 @@ export abstract class GameObject {
     let prevX = x0;
     let prevY = y0;
 
+    const result: Position[] = [];
+
     while (!(x0 === x1 && y0 === y1)) {
       if (!(x0 === rootPosition.x && y0 === rootPosition.y)) {
         const pos = new Position(x0, y0);
@@ -60,13 +62,15 @@ export abstract class GameObject {
           const pos1 = new Position(prevX, y0);
           const pos2 = new Position(x0, prevY);
           if (!this.canPassLight(pos1) || !this.canPassLight(pos2)) {
-            return false;
+            return null;
           }
         }
 
         if (!this.canPassLight(pos)) {
-          return false;
+          return null;
         }
+
+        result.push(pos);
       }
 
       prevX = x0;
@@ -83,6 +87,6 @@ export abstract class GameObject {
       }
     }
 
-    return true;
+    return result;
   }
 }

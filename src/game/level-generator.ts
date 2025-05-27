@@ -23,6 +23,8 @@ import {WallTile} from "./tiles/wall.tile";
 import {TreasureGoblin} from "./monsters/treasure-goblin";
 import {Debug} from "../debug";
 import {TorchTile} from "./tiles/torch.tile";
+import {GoblinHunter} from "./monsters/goblin-hunter";
+import {SkeletonArcher} from "./monsters/skeleton-archer";
 
 enum Direction {
   Up = 'up',
@@ -96,9 +98,9 @@ export class LevelGenerator extends GameObject {
 
   private npcs = [
     [[], []],
-    [[Goblin, Wolf], [EnduranceMonsterModifier]],
-    [[Ogre, Goblin], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier]],
-    [[Ogre, Skeleton, Goblin], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier, SpectralHitMonsterModifier]],
+    [[Goblin, GoblinHunter, Wolf], [EnduranceMonsterModifier]],
+    [[Ogre, Goblin, GoblinHunter], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier]],
+    [[Ogre, Skeleton, Goblin, GoblinHunter, SkeletonArcher], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier, SpectralHitMonsterModifier]],
   ] as const;
   private generateNpcs(template: LevelTemplate) {
     this.debug.log(`generateNpcs for ${template.level.levelNo}...`);

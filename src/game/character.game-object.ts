@@ -115,7 +115,11 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
   }
 
   public canAttack(p: Position): boolean {
-    return this.position.manhattanDistanceTo(p) === 1;
+    if (this.equipment.weapon?.isRanged) {
+      return this.isVisible(this.context.getPlayer().position) !== null;
+    } else {
+      return this.position.manhattanDistanceTo(p) === 1;
+    }
   }
 
   protected isImmobile(): boolean {
@@ -186,9 +190,11 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
   }
 
   getDamageBonus(): number {
-    const strengthModifier = Math.floor((this.getStrength() - 10) / 2);
     const weaponModifier = (this.equipment.weapon && this.equipment.weapon.stats.damageBonus) ?? 0;
-    return strengthModifier + weaponModifier;
+    const attributeModifier = this.equipment.weapon?.isRanged
+      ? Math.floor((this.getDexterity() - 10) / 2)
+      : Math.floor((this.getStrength() - 10) / 2);
+    return attributeModifier + weaponModifier;
   }
 
   getMagicDiceBonus(): number {
@@ -205,10 +211,23 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
   public MAX_AC = this.ATTACK_ROLL - 5;
   attack(target: CharacterGameObject): void {
     this.combatLog.log(`${this.getName()}->${target.getName()}!`);
+    if (this.equipment.weapon?.isRanged) {
+      // rendering projectile
+      const path = this.isVisible(target.position);
+      this.context.getCurrentMap().renderProjectile(
+        path,
+        {
+          char: '•',
+          backgroundColor: BackgroundColor.Black,
+          color: ForegroundColor.Grey50,
+        }
+      );
+    }
     const ac = target.getAC();
     this.combatLog.log(`AC ${ac}`);
     const attackRoll = Math.ceil(Math.random() * this.ATTACK_ROLL);
     this.combatLog.log(`AttackRoll ${attackRoll}`);
+    const verb = this.equipment.weapon?.isRanged ? 'shoots' : 'hits';
     if (attackRoll >= ac || this.modifiers.find(m => m instanceof SpectralHitMonsterModifier)) {
       // hit
       const dice = this.getDamageDice();
@@ -218,9 +237,9 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
       const damage = Math.max(damageRoll + bonus, 0);
       this.combatLog.log(`Damage ${damage}`);
       if (damage === 0) {
-        this.context.log(`${this.getName()} attacks ${target.getName()} for no damage!`);
+        this.context.log(`${this.getName()} ${verb} ${target.getName()} for no damage!`);
       } else {
-        this.context.log(`${this.getName()} attacks ${target.getName()} for ${damage} damage!`);
+        this.context.log(`${this.getName()} ${verb} ${target.getName()} for ${damage} damage!`);
         target.damage(damage);
       }
       if (this.equipment.weapon?.stats?.hpPerHit) {
@@ -231,7 +250,7 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
       }
     }
     else {
-      this.context.log(`${this.getName()} attacks ${target.getName()} but misses!`);
+      this.context.log(`${this.getName()} ${verb} ${target.getName()} but misses!`);
     }
   }
 
@@ -263,7 +282,7 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
   protected getVisibilityRadius(): number {
     return 30;
   }
-  public isVisible(targetPosition: Position): boolean {
+  public isVisible(targetPosition: Position): Position[] | null {
     return super.isVisible(this.position, targetPosition, this.getVisibilityRadius());
   }
 
@@ -277,6 +296,13 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
   }
 
   applySpell(caster: CharacterGameObject, spell: Spell) {
+    const projectile = spell.getProjectile();
+    if (projectile) {
+      const path = caster.isVisible(this.position);
+      if (path) {
+        this.context.getCurrentMap().renderProjectile(path, projectile);
+      }
+    }
     if (spell.stats.state && !spell.stats.damageRoll) {
       if (!spell.stats.stateChance || Math.random() < spell.stats.stateChance) {
         const state = (spell.stats.state)();

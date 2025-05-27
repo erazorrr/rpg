@@ -17,6 +17,8 @@ import {StairsDownTile} from "./tiles/stairs-down.tile";
 import {StairsUpTile} from "./tiles/stairs-up.tile";
 import {Spell} from "./spell";
 import {FireBoltSpell} from "./spells/fire-bolt";
+import {Weapon} from "./items/weapons/weapon";
+import {Bow} from "./items/weapons/bow";
 
 export class Player extends CharacterGameObject implements Renderable, Interactive {
   private inputEmitter = new InputEmitter();
@@ -112,9 +114,10 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
 
   public inventory: Item[] = [
     new ShortSword(this.context).applyModifier(new CopperModifier()),
+    new Bow(this.context),
   ];
   public equipment: Equipment = {
-    weapon: this.inventory[0],
+    weapon: (this.inventory[0] as Weapon),
   };
 
   getIsBloody(): boolean {

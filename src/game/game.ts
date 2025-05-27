@@ -254,11 +254,24 @@ export class Game {
       }
       case GameMessageType.SelectTarget: {
         if (!this.selectedSpell) {
-          return;
+          if (!this.player.equipment.weapon?.isRanged) {
+            break;
+          }
+
+          const npc = (message.payload as { npc: Npc }).npc;
+          this.selectTarget.makeUninteractive();
+          this.selectTarget = null;
+          this.render();  // so the player can see the projectile
+          this.player.makeInteractive();
+          this.player.attack(npc);
+          this.tick();
+          this.render();
+          break;
         }
         const npc = (message.payload as { npc: Npc }).npc;
         this.selectTarget.makeUninteractive();
         this.selectTarget = null;
+        this.render(); // so the player can see the projectile
         this.player.makeInteractive();
         npc.applySpell(this.player, this.selectedSpell);
         this.player.spendMP(this.selectedSpell.getMPCost());
@@ -466,6 +479,22 @@ export class Game {
       }
     });
 
+    this.inputEmitter.on(InputEvent.A, this, () => {
+      if (this.isGameFinished() || this.spellBook || this.inventory || this.levelUpWindow || this.selectTarget) {
+        return;
+      }
+      if (!this.player.equipment.weapon?.isRanged) {
+        this.gameLog.log(`You need an equip ranged weapon to perform ranged attack`);
+        this.render();
+        return;
+      }
+
+      this.player.makeUninteractive();
+      this.selectTarget = new SelectTarget(this.generateGameObjectContext());
+      this.selectTarget.makeInteractive();
+      this.render();
+    });
+
     this.inputEmitter.on(InputEvent.ENTER, this, () => {
       if (this.gameFinished) {
         this.returnToMainMenu();
@@ -620,7 +649,8 @@ export class Game {
 
   private displayHelp() {
     this.gameLog.log(`Use arrows to move, [Space] to skip turn.`);
-    this.gameLog.log(`Walk on the enemy to attack. Use [c] to cast spells.`);
+    this.gameLog.log(`Walk on the enemy to attack. Use [a] to perform ranged attack.`);
+    this.gameLog.log(`Use [c] to cast spells.`);
   }
 
   private renderMenu() {
