@@ -15,4 +15,8 @@ export class ArmorState extends State {
   getInactiveMessage(character: CharacterGameObject): string {
     return `${character.getName()}'s sturdiness fades away!`;
   }
+
+  getName(): string {
+    return "Fortified";
+  }
 }

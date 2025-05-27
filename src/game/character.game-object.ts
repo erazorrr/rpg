@@ -9,6 +9,9 @@ import {SpectralHitMonsterModifier} from "./monster-modufiers/spectral-hit";
 import {Context} from "./context";
 import {Debug} from "../debug";
 import {State} from "./state";
+import {Spell} from "./spell";
+import {BackgroundColor} from "../io/background.color";
+import {ForegroundColor} from "../io/foreground.color";
 
 export abstract class CharacterGameObject extends GameObject implements Renderable {
   private combatLog = new Debug('combat.log');
@@ -18,15 +21,54 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
   public strength: number = 10;
   public endurance: number = 12;
   public dexterity: number = 10;
+  public wisdom: number = 10;
 
   public equipment: Equipment = {};
 
   public states: Set<State> = new Set();
 
-  abstract tick(): void;
+  tick() {
+    for (const state of this.states) {
+      if (state.tick() === 0) {
+        this.states.delete(state);
+        this.context.log(state.getInactiveMessage(this));
+      } else {
+        if (state.stats.damagePerTurn) {
+          this.damage(state.stats.damagePerTurn);
+        }
+      }
+    }
+  }
 
   constructor(context: Context, public position: Position) {
     super(context);
+  }
+
+  public getHp() {
+    return Math.floor(this.hp);
+  }
+
+  damage(damage: number) {
+    if (Math.random() * 10 < damage) {
+      this.spreadBlood();
+    }
+    this.hp = Math.max(0, this.hp - damage);
+    if (this.getHp() === 0) {
+      if (this === (this.context.getPlayer() as CharacterGameObject)) {
+        this.context.postGameMessage(GameMessage.die());
+        this.context.log(`${this.getName()} is dead! Game over!`);
+        this.context.log(`Press [Enter] to continue...`);
+      } else {
+        this.context.postGameMessage(GameMessage.kill(this));
+        this.context.log(`${this.getName()} is dead!`);
+      }
+    }
+  }
+
+  getWisdom(withStates = true) {
+    const bonus = Object.values(this.equipment).reduce((acc, e) => acc + (e?.stats?.wisdomBonus ? e.stats.wisdomBonus : 0), 0);
+    const states = withStates ? Array.from(this.states).reduce((acc, s) => acc + (s.stats?.wisdomBonus ?? 0), 0) : 0;
+    return this.wisdom + bonus + states;
   }
 
   getStrength(withStates = true) {
@@ -35,14 +77,16 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
     return this.strength + bonus + states;
   }
 
-  getEndurance() {
+  getEndurance(withStates = true) {
     const bonus = Object.values(this.equipment).reduce((acc, e) => acc + (e?.stats?.enduranceBonus ? e.stats.enduranceBonus : 0), 0);
-    return this.endurance + bonus;
+    const states = withStates ? Array.from(this.states).reduce((acc, s) => acc + (s.stats?.enduranceBonus ?? 0), 0) : 0;
+    return this.endurance + bonus + states;
   }
 
-  getDexterity() {
+  getDexterity(withStates = true) {
     const bonus = Object.values(this.equipment).reduce((acc, e) => acc + (e?.stats?.dexterityBonus ? e.stats.dexterityBonus : 0), 0);
-    return this.dexterity + bonus;
+    const states = withStates ? Array.from(this.states).reduce((acc, s) => acc + (s.stats?.dexterityBonus ?? 0), 0) : 0;
+    return this.dexterity + bonus + states;
   }
 
   public getSpeed() {
@@ -54,6 +98,12 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
     return Math.floor(8 + this.getEndurance() * multiplier + bonus);
   }
   public hp = this.getMaxHp();
+
+  public getMaxMp(multiplier = 2): number {
+    const bonus = Object.values(this.equipment).reduce((acc, e) => acc + (e?.stats?.maxMp ? e.stats.maxMp : 0), 0);
+    return Math.floor(32 + this.getWisdom() * multiplier + bonus);
+  }
+  public mp = this.getMaxMp();
 
   getAC(withStates = true): number {
     const base = 5;
@@ -68,13 +118,21 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
     return this.position.manhattanDistanceTo(p) === 1;
   }
 
+  protected isImmobile(): boolean {
+    return Boolean(Array.from(this.states).find(s => s.stats.isUnableToMove));
+  }
+
   public canMove(p: Position): boolean {
+    if (this.isImmobile()) {
+      return false;
+    }
     if (this.position.manhattanDistanceTo(p) !== 1) {
       return false;
     }
     if (!this.context.getCurrentMap().isNavigable(p)) {
       return false;
     }
+    return true;
   }
 
   abstract getBaseName(): string;
@@ -83,11 +141,24 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
   render() {
     const map = this.context.getCurrentMap();
     const tile = map.getTile(this.position);
+
+    let stateBackgroundColor: BackgroundColor | null = null;
+    let stateForegroundColor: ForegroundColor | null = null;
+    for (const state of this.states) {
+      if (state.getBackgroundColor()) {
+        stateBackgroundColor = state.getBackgroundColor();
+      }
+      if (state.getForegroundColor()) {
+        stateForegroundColor = state.getForegroundColor();
+      }
+    }
+
     this.context.getRenderer().put(
       new Position(this.position.x - map.getTopLeftCorner().x, this.position.y - map.getTopLeftCorner().y),
       tile.isExplored() ? {
         ...this.getChar(),
-        backgroundColor: tile.getChar().backgroundColor,
+        backgroundColor: stateBackgroundColor ? stateBackgroundColor : tile.getChar().backgroundColor,
+        color: stateForegroundColor ? stateForegroundColor : this.getChar().color,
       } : tile.getChar(),
     );
   };
@@ -111,16 +182,26 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
   }
 
   getDamageDice(): number {
-    return this.equipment.weapon ? this.equipment.weapon.stats.damageRoll : 4;
+    return (this.equipment.weapon && this.equipment.weapon.stats.damageRoll) ?? 4;
   }
 
   getDamageBonus(): number {
     const strengthModifier = Math.floor((this.getStrength() - 10) / 2);
-    const weaponModifier =  this.equipment.weapon ? this.equipment.weapon.stats.damageBonus : 0;
+    const weaponModifier = (this.equipment.weapon && this.equipment.weapon.stats.damageBonus) ?? 0;
     return strengthModifier + weaponModifier;
   }
 
-  private ATTACK_ROLL = 50;
+  getMagicDiceBonus(): number {
+    return (this.equipment.weapon && this.equipment.weapon.stats.magicRoll) ?? 0;
+  }
+
+  getMagicBonus(): number {
+    const wisdomModifier = Math.floor((this.getWisdom() - 10) / 2);
+    const weaponModifier = (this.equipment.weapon && this.equipment.weapon.stats.magicBonus) ?? 0;
+    return wisdomModifier + weaponModifier;
+  }
+
+  public ATTACK_ROLL = 50;
   public MAX_AC = this.ATTACK_ROLL - 5;
   attack(target: CharacterGameObject): void {
     this.combatLog.log(`${this.getName()}->${target.getName()}!`);
@@ -140,22 +221,13 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
         this.context.log(`${this.getName()} attacks ${target.getName()} for no damage!`);
       } else {
         this.context.log(`${this.getName()} attacks ${target.getName()} for ${damage} damage!`);
-        if (Math.random() * 10 < damage) {
-          target.spreadBlood();
-        }
+        target.damage(damage);
       }
-      target.hp = Math.max(0, target.hp - damage);
-      if (target.hp === 0) {
-        this.combatLog.log(`Target is dead!`);
-        target.spreadBlood();
-        if (target === this.context.getPlayer()) {
-          this.context.postGameMessage(GameMessage.die());
-          this.context.log(`${target.getName()} is dead! Game over!`);
-          this.context.log(`Press [Enter] to continue...`);
-        } else {
-          this.context.postGameMessage(GameMessage.kill(target));
-          this.context.log(`${target.getName()} is dead!`);
-        }
+      if (this.equipment.weapon?.stats?.hpPerHit) {
+        this.hp = Math.min(this.hp + this.equipment.weapon.stats.hpPerHit, this.getMaxHp());
+      }
+      if (target.equipment.chest?.stats?.mpPerHitReceived) {
+        target.mp = Math.min(target.mp + target.equipment.chest.stats.mpPerHitReceived, target.getMaxMp());
       }
     }
     else {
@@ -197,10 +269,64 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
 
   applyState(state: State) {
     for (const existingState of this.states) {
-      if (existingState.constructor === state.constructor) {
+      if (existingState.constructor === state.constructor || state.getIncompatibleStates().has(existingState.constructor as new () => State)) {
         this.states.delete(existingState);
       }
     }
     this.states.add(state);
+  }
+
+  applySpell(caster: CharacterGameObject, spell: Spell) {
+    if (spell.stats.state && !spell.stats.damageRoll) {
+      if (!spell.stats.stateChance || Math.random() < spell.stats.stateChance) {
+        const state = (spell.stats.state)();
+        this.context.log(state.getActiveMessage(this));
+        this.applyState(state);
+      }
+    }
+    if (spell.stats.restoreHp) {
+      if (spell.stats.restoreHp > 0) {
+        this.context.log(`${spell.getName()} restored ${this.getName()} ${spell.stats.restoreHp} health!`);
+        this.hp = Math.min(this.getMaxMp(), this.hp + spell.stats.restoreHp);
+      } else {
+        this.context.log(`${spell.getName()} drained ${-spell.stats.restoreHp} health from ${this.getName()}!`);
+        this.damage(-spell.stats.restoreHp);
+      }
+    }
+    if (spell.stats.damageRoll && spell.stats.damageBonus) {
+      this.combatLog.log(`Spell ${spell.getName()} on ${this.getName()}`);
+      const ac = this.getAC();
+      this.combatLog.log(`AC ${ac}`);
+      const attackRoll = Math.ceil(Math.random() * this.ATTACK_ROLL);
+      this.combatLog.log(`AttackRoll ${attackRoll}`);
+      if (attackRoll >= ac) {
+        const dice = spell.stats.damageRoll + caster.getMagicDiceBonus();
+        const bonus = spell.stats.damageBonus + caster.getMagicBonus();
+        const damageRoll = Math.ceil(Math.random() * dice);
+        this.combatLog.log(`DamageRoll ${damageRoll}`);
+        const damage = Math.max(damageRoll + bonus, 0);
+        this.combatLog.log(`Damage ${damage}`);
+        if (damage > 0) {
+          this.context.log(`${spell.getName()} hits ${this.getName()} for ${damage} damage!`);
+          this.damage(damage);
+        } else {
+          this.context.log(`${spell.getName()} hits ${this.getName()} for no damage!`);
+        }
+
+        if (spell.stats.state && spell.stats.stateChance) {
+          if (Math.random() < spell.stats.stateChance) {
+            const state = spell.stats.state();
+            this.context.log(state.getActiveMessage(this));
+            this.applyState(state);
+          }
+        }
+      } else {
+        this.context.log(`${spell.getName()} misses ${this.getName()}!`);
+      }
+    }
+  }
+
+  public spendMP(mp: number) {
+    this.mp -= mp;
   }
 }

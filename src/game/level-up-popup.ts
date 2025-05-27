@@ -16,7 +16,7 @@ export class LevelUpPopup extends GameObject implements Renderable, Interactive 
       [
         {
           id: 'STR',
-          label: `Increase strength: ${this.context.getPlayer().strength} -> ${this.context.getPlayer().strength + 1}`,
+          label: `Increase strength:  ${this.context.getPlayer().strength} -> ${this.context.getPlayer().strength + 1}`,
           onSelect: () => {
             this.increaseStrength();
           },
@@ -33,6 +33,13 @@ export class LevelUpPopup extends GameObject implements Renderable, Interactive 
           label: `Increase endurance: ${this.context.getPlayer().endurance} -> ${this.context.getPlayer().endurance + 1}`,
           onSelect: () => {
             this.increaseEndurance();
+          },
+        },
+        {
+          id: 'WSD',
+          label: `Increase wisdom:    ${this.context.getPlayer().wisdom} -> ${this.context.getPlayer().wisdom + 1}`,
+          onSelect: () => {
+            this.increaseWisdom();
           },
         },
       ],
@@ -66,6 +73,11 @@ export class LevelUpPopup extends GameObject implements Renderable, Interactive 
 
   private increaseEndurance() {
     this.context.getPlayer().endurance++;
+    this.commitPoint();
+  }
+
+  private increaseWisdom() {
+    this.context.getPlayer().wisdom++;
     this.commitPoint();
   }
 

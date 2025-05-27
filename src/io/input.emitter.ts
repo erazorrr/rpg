@@ -26,6 +26,8 @@ process.stdin.on('data', (_key) => {
     case 'e': queue.get(InputEvent.E)?.forEach(c => c(key)); break;
     case ' ': queue.get(InputEvent.SPACE)?.forEach(c => c(key)); break;
     case 'd': queue.get(InputEvent.D)?.forEach(c => c(key)); break;
+    case 'c': queue.get(InputEvent.C)?.forEach(c => c(key)); break;
+    case '?': queue.get(InputEvent.QUESTION)?.forEach(c => c(key)); break;
     default:
   }
 

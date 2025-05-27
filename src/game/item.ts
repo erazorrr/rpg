@@ -12,7 +12,8 @@ export enum ItemType {
   Boots,
   Ring,
   Amulet,
-  Potion
+  Potion,
+  Scroll,
 }
 
 export type ItemStats = {
@@ -22,12 +23,21 @@ export type ItemStats = {
   armor?: number;
 
   maxHp?: number;
+  maxMp?: number;
+
+  hpPerHit?: number;
+  mpPerHitReceived?: number;
+
+  magicRoll?: number;
+  magicBonus?: number;
 
   strengthBonus?: number;
   dexterityBonus?: number;
   enduranceBonus?: number;
+  wisdomBonus?: number;
 
   consumableHpReplenish?: number;
+  consumableMpReplenish?: number;
   consumableState?: State;
 };
 
@@ -60,7 +70,13 @@ export abstract class Item extends GameObject {
     strengthBonus: 'Str',
     dexterityBonus: 'Dex',
     enduranceBonus: 'End',
+    wisdomBonus: 'Wsd',
     consumableHpReplenish: 'HP',
+    consumableMpReplenish: 'MP',
+    hpPerHit: 'HpPerHit',
+    mpPerHitReceived: 'MpPerHitRcvd',
+    magicRoll: 'MgcRoll',
+    magicBonus: 'MgcBonus',
   }
   getName() {
     const prefix = this.modifiers

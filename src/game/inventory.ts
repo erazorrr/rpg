@@ -6,6 +6,7 @@ import {Interactive} from "./interactive.interface";
 import {Context} from "./context";
 import {Item} from "./item";
 import {Potion} from "./items/potions/potion";
+import {Scroll} from "./abstract.scroll";
 
 export class Inventory extends GameObject implements Renderable, Interactive {
   private list: List;
@@ -14,7 +15,7 @@ export class Inventory extends GameObject implements Renderable, Interactive {
     super(context);
     const items: Array<{id: string, label: string, onSelect: () => void}> = this.context.getPlayer().inventory.map((item, i) => {
       let prefix: string;
-      if (item instanceof Potion) {
+      if (item instanceof Potion || item instanceof Scroll) {
         prefix = '   ';
       } else if (Object.values(this.context.getPlayer().equipment).includes(item)) {
         prefix = '[x]';
@@ -27,7 +28,7 @@ export class Inventory extends GameObject implements Renderable, Interactive {
         onSelect: () => {},
       };
     });
-    this.list = new List('Inventory', items, new Position(10, 5), new Position(110, 20), true, activeItemId + '');
+    this.list = new List('Inventory', items, new Position(10, 5), new Position(130, 20), true, activeItemId + '');
   }
 
   makeInteractive(): void {
