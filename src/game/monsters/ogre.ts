@@ -12,6 +12,7 @@ export class Ogre extends Npc {
   strength = 14;
   dexterity = 6;
   endurance = 5;
+  wisdom = 2;
 
   protected getVisibilityRadius(): number {
     return 15;

@@ -469,6 +469,9 @@ export class Game {
     });
 
     this.inputEmitter.on(InputEvent.SPACE, this, () => {
+      if (this.isGameFinished() || this.spellBook || this.inventory || this.levelUpWindow || this.selectTarget) {
+        return;
+      }
       this.tick();
     });
 

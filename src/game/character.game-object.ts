@@ -5,7 +5,7 @@ import {Char} from "../io/char";
 import {GameMessage} from "./game-message";
 import {Equipment} from "./equipment";
 import {MonsterModifier} from "./monster-modifier";
-import {SpectralHitMonsterModifier} from "./monster-modufiers/spectral-hit";
+import {SpectralHitMonsterModifier} from "./monster-modifiers/spectral-hit";
 import {Context} from "./context";
 import {Debug} from "../debug";
 import {State} from "./state";
@@ -265,6 +265,9 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
     }
     if (modifier.stats.endurance) {
       this.endurance += modifier.stats.endurance;
+    }
+    if (modifier.stats.wisdom) {
+      this.wisdom += modifier.stats.wisdom;
     }
     return this;
   }

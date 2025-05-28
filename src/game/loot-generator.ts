@@ -84,6 +84,9 @@ import {MpPerHitReceived} from "./item-modifiers/mp-per-hit-received";
 import {Potion} from "./items/potions/potion";
 import {Bow} from "./items/weapons/bow";
 import {Crossbow} from "./items/weapons/crossbow";
+import {DexterityPotion} from "./items/potions/dexterity";
+import {ChampionDexterityPotion} from "./items/potions/champion-dexterity";
+import {CatGraceScroll} from "./items/scrolls/cat-grace.scroll";
 
 type ItemModifierBuilder = new () => ItemModifier;
 
@@ -129,8 +132,8 @@ export class LootGenerator extends GameObject {
       [[Robe], 8, [NopModifier], [...this.magicModifiers, AntiEndurance, AntiDexterity, AntiStrength, AntiHealth, MpPerHitReceived]],
       [[Staff, Wand], 10, [NopModifier], [...this.magicModifiers, ...this.magicWeaponModifiers]],
       [[ChainMail, PlateMail], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], [...this.commonModifiers, ...this.endModifiers]],
-      [[StrengthPotion, ArmorPotion], 50, [NopModifier], []],
-      [[ChampionArmorPotion, ChampionStrengthPotion], 150, [NopModifier], []],
+      [[StrengthPotion, ArmorPotion, DexterityPotion], 50, [NopModifier], []],
+      [[ChampionArmorPotion, ChampionStrengthPotion, ChampionDexterityPotion], 150, [NopModifier], []],
       [[LeatherBoots], 1, [NopModifier], [...this.commonModifiers, ...this.dexModifiers, ...this.magicModifiers]],
       [[MetalBoots, PlateBoots], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], [...this.commonModifiers, ...this.endModifiers]],
       [[LeatherGauntlets], 1, [NopModifier], [...this.commonModifiers, ...this.dexModifiers, ...this.magicModifiers]],
@@ -146,6 +149,7 @@ export class LootGenerator extends GameObject {
         IceRayScroll,
         IceShardScroll,
         MinorHealScroll,
+        CatGraceScroll,
       ], 30, [NopModifier], []],
     ];
     this.debug.log(`Building opposites...`);

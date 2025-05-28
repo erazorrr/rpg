@@ -2,6 +2,7 @@ import {CharacterGameObject} from "./character.game-object";
 import {Position} from "../io/position";
 import {Context} from "./context";
 import {Level} from "./level";
+import {Spell} from "./spell";
 
 export enum Action {
   Attack,
@@ -56,16 +57,52 @@ export abstract class Npc extends CharacterGameObject {
 
     switch (action) {
       case Action.Attack: {
-        if (this.canAttack(player.position)) {
-          this.attack(player);
-        } else {
-          if (this.isImmobile()) {
-            return;
+        if (this.getSpellLogic()) {
+          const visibleNpcs: Npc[] = [];
+          for (const npc of this.context.getCurrentGameLevel().getNpcs()) {
+            if (this.isVisible(npc.position)) {
+              visibleNpcs.push(npc);
+            }
           }
-          const path = this.context.buildPath(this.position, player.position, 100);
-          const restSpeed = this.step(path);
-          if (restSpeed > 0 && this.canAttack(player.position)) {
+          const spellArray: Array<{spell: Spell, target: CharacterGameObject}> = [];
+          if (this.getSpellLogic().attack.length > 0 && this.isVisible(player.position)) {
+            for (const spell of this.getSpellLogic().attack) {
+              spellArray.push({spell, target: player});
+            }
+          }
+          if (this.getSpellLogic().buffs.length > 0 && visibleNpcs.length > 0) {
+            for (const spell of this.getSpellLogic().buffs) {
+              for (const npc of visibleNpcs) {
+                spellArray.push({spell, target: npc});
+              }
+            }
+          }
+          if (spellArray.length > 0) {
+            const roll = Math.floor(Math.random() * spellArray.length);
+            const {spell, target} = spellArray[roll];
+            target.applySpell(this, spell);
+          } else {
+            if (this.isImmobile()) {
+              return;
+            }
+            const path = this.context.buildPath(this.position, player.position, 100);
+            const restSpeed = this.step(path);
+            if (restSpeed > 0 && this.canAttack(player.position)) {
+              this.attack(player);
+            }
+          }
+        } else {
+          if (this.canAttack(player.position)) {
             this.attack(player);
+          } else {
+            if (this.isImmobile()) {
+              return;
+            }
+            const path = this.context.buildPath(this.position, player.position, 100);
+            const restSpeed = this.step(path);
+            if (restSpeed > 0 && this.canAttack(player.position)) {
+              this.attack(player);
+            }
           }
         }
         break;
@@ -145,5 +182,12 @@ export abstract class Npc extends CharacterGameObject {
 
   protected isActive() {
     return this.context.getCurrentGameLevel() === this.gameLevel;
+  }
+
+  getSpellLogic(): {
+    buffs: Array<Spell>,
+    attack: Array<Spell>,
+  } | null {
+    return null;
   }
 }

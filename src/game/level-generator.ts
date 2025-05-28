@@ -12,10 +12,10 @@ import {Goblin} from "./monsters/goblin";
 import {Wolf} from "./monsters/wolf";
 import {Ogre} from "./monsters/ogre";
 import {Skeleton} from "./monsters/skeleton";
-import {StrengthMonsterModifier} from "./monster-modufiers/strength";
-import {DexterityMonsterModifier} from "./monster-modufiers/dexterity";
-import {EnduranceMonsterModifier} from "./monster-modufiers/endurance";
-import {SpectralHitMonsterModifier} from "./monster-modufiers/spectral-hit";
+import {StrengthMonsterModifier} from "./monster-modifiers/strength";
+import {DexterityMonsterModifier} from "./monster-modifiers/dexterity";
+import {EnduranceMonsterModifier} from "./monster-modifiers/endurance";
+import {SpectralHitMonsterModifier} from "./monster-modifiers/spectral-hit";
 import {StairsDownTile} from "./tiles/stairs-down.tile";
 import {StairsUpTile} from "./tiles/stairs-up.tile";
 import {FloorTile} from "./tiles/floor.tile";
@@ -25,6 +25,10 @@ import {Debug} from "../debug";
 import {TorchTile} from "./tiles/torch.tile";
 import {GoblinHunter} from "./monsters/goblin-hunter";
 import {SkeletonArcher} from "./monsters/skeleton-archer";
+import {GoblinMage} from "./monsters/goblin-mage";
+import {OgreMage} from "./monsters/ogre-mage";
+import {SkeletonMage} from "./monsters/skeleton-mage";
+import {WisdomMonsterModifier} from "./monster-modifiers/wisdom";
 
 enum Direction {
   Up = 'up',
@@ -98,9 +102,9 @@ export class LevelGenerator extends GameObject {
 
   private npcs = [
     [[], []],
-    [[Goblin, GoblinHunter, Wolf], [EnduranceMonsterModifier]],
-    [[Ogre, Goblin, GoblinHunter], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier]],
-    [[Ogre, Skeleton, Goblin, GoblinHunter, SkeletonArcher], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier, SpectralHitMonsterModifier]],
+    [[Goblin, GoblinHunter, GoblinMage], [EnduranceMonsterModifier]],
+    [[Ogre, Goblin, GoblinHunter, OgreMage, GoblinMage], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier, WisdomMonsterModifier]],
+    [[Ogre, Skeleton, Goblin, GoblinHunter, SkeletonArcher, OgreMage, SkeletonMage, GoblinMage], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier, SpectralHitMonsterModifier, WisdomMonsterModifier]],
   ] as const;
   private generateNpcs(template: LevelTemplate) {
     this.debug.log(`generateNpcs for ${template.level.levelNo}...`);
