@@ -72,17 +72,23 @@ export class Renderer {
   }
 
   renderProjectile(path: Position[], projectile: Char) {
-    plannedProjectiles.push({
-      path,
-      projectile,
-    });
+    if (path.length > 0) {
+      plannedProjectiles.push({
+        path,
+        projectile,
+      });
+    }
   }
 
+  private ANIMATION_MAX_LENGTH_MS = 150;
+  private ANIMATION_TICK_MAX_LENGTH = 20;
   private flushProjectiles() {
     let j = 0;
+    let maxPathLength = 0;
     while (plannedProjectiles.length > 0) {
       for (let i = 0; i < plannedProjectiles.length; i++) {
         const { path, projectile } = plannedProjectiles[i];
+        maxPathLength = Math.max(maxPathLength, path.length);
         const current = path[j];
         const previous = path[j - 1];
         if (previous && buffer[previous.serialize()]) {
@@ -100,12 +106,16 @@ export class Renderer {
         }
       }
       j++;
-      this.pause(20);
+      this.pause(Math.min(this.ANIMATION_TICK_MAX_LENGTH, Math.round(this.ANIMATION_MAX_LENGTH_MS / maxPathLength)));
     }
   }
 
-  flush(isBuffered = true): void {
-    this.flushProjectiles();
+  flush(isBuffered = true, drawProjectiles = true): void {
+    if (drawProjectiles) {
+      this.flushProjectiles();
+    } else {
+      plannedProjectiles.splice(0);
+    }
 
     for (const key in buffer) {
       if (!isBuffered || prevBuffer[key] !== buffer[key]) {

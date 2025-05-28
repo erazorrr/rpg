@@ -71,10 +71,8 @@ import {Staff} from "./items/weapons/staff";
 import {Wand} from "./items/weapons/wand";
 import {BloodSacrificeScroll} from "./items/scrolls/blood-sacrifice.scroll";
 import {EmpowerScroll} from "./items/scrolls/empower.scroll";
-import {FireBoltScroll} from "./items/scrolls/fire-bolt.scroll";
 import {FortifyScroll} from "./items/scrolls/fortify.scroll";
 import {IceShardScroll} from "./items/scrolls/ice-shard.scroll";
-import {MinorHealScroll} from "./items/scrolls/minor-heal.scroll";
 import {FireLanceScroll} from "./items/scrolls/fire-lance.scroll";
 import {FreezeScroll} from "./items/scrolls/freeze.scroll";
 import {HealScroll} from "./items/scrolls/heal.scroll";
@@ -141,14 +139,14 @@ export class LootGenerator extends GameObject {
       [[
         BloodSacrificeScroll,
         EmpowerScroll,
-        FireBoltScroll,
+        // FireBoltScroll,
         FireLanceScroll,
         FortifyScroll,
         FreezeScroll,
         HealScroll,
         IceRayScroll,
         IceShardScroll,
-        MinorHealScroll,
+        // MinorHealScroll,
         CatGraceScroll,
       ], 30, [NopModifier], []],
     ];

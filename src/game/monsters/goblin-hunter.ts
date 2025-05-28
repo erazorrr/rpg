@@ -11,7 +11,7 @@ export class GoblinHunter extends Goblin {
   getChar(): Char {
     return {
       char: 'g',
-      color: ForegroundColor.Yellow,
+      color: ForegroundColor.DarkOrange,
       backgroundColor: BackgroundColor.Green,
     };
   }

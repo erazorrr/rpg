@@ -10,7 +10,7 @@ import {PlateBoots} from "../items/boots/plate-boots";
 
 export class Skeleton extends Npc {
   strength = 16;
-  dexterity = 10;
+  dexterity = 8;
   endurance = 4;
 
   getShout() {

@@ -10,13 +10,12 @@ import {Crossbow} from "../items/weapons/crossbow";
 
 export class SkeletonArcher extends Skeleton {
   strength = 10;
-  dexterity = 16;
   endurance = 3;
 
   getChar(): Char {
     return {
       char: 'S',
-      color: ForegroundColor.Orange1,
+      color: ForegroundColor.DarkOrange,
       backgroundColor: BackgroundColor.Green,
     };
   }

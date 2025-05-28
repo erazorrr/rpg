@@ -9,12 +9,8 @@ import {IronModifier} from "../item-modifiers/weapon/material/iron";
 
 export class Goblin extends Npc {
   strength = 6;
-  dexterity = 8;
+  dexterity = 4;
   endurance = 3;
-
-  protected getVisibilityRadius(): number {
-    return 40;
-  }
 
   getCowardice(): number {
     return 0.3;

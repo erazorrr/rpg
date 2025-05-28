@@ -56,18 +56,23 @@ export abstract class GameObject {
       if (!(x0 === rootPosition.x && y0 === rootPosition.y)) {
         const pos = new Position(x0, y0);
 
+        if (!this.canPassLight(pos)) {
+          return null;
+        }
+
         const dxStep = x0 - prevX;
         const dyStep = y0 - prevY;
         if (Math.abs(dxStep) === 1 && Math.abs(dyStep) === 1) {
           const pos1 = new Position(prevX, y0);
           const pos2 = new Position(x0, prevY);
-          if (!this.canPassLight(pos1) || !this.canPassLight(pos2)) {
+          if (!this.canPassLight(pos1) && !this.canPassLight(pos2)) {
             return null;
           }
-        }
-
-        if (!this.canPassLight(pos)) {
-          return null;
+          if (this.canPassLight(pos1)) {
+            result.push(pos1);
+          } else {
+            result.push(pos2);
+          }
         }
 
         result.push(pos);

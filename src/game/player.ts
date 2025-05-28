@@ -1,5 +1,5 @@
 import {Renderable} from "../io/renderable.interface";
-import {Position} from "../io/position";
+import {Position, SerializedPosition} from "../io/position";
 import {ForegroundColor} from "../io/foreground.color";
 import {BackgroundColor} from "../io/background.color";
 import {Char} from "../io/char";
@@ -19,6 +19,7 @@ import {Spell} from "./spell";
 import {FireBoltSpell} from "./spells/fire-bolt";
 import {Weapon} from "./items/weapons/weapon";
 import {Bow} from "./items/weapons/bow";
+import {MinorHealSpell} from "./spells/minor-heal";
 
 export class Player extends CharacterGameObject implements Renderable, Interactive {
   private inputEmitter = new InputEmitter();
@@ -67,7 +68,6 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
       if (this.context.getCurrentMap().getTile(targetPosition) instanceof StairsUpTile) {
         this.context.log(`${this.getName()} sees the stairs down. [Enter] to ascend.`);
       }
-      this.explore();
       this.context.tick();
     }
   }
@@ -124,6 +124,35 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
     return true;
   }
 
+  private debugRenderTracings() {
+    const map = this.context.getCurrentMap();
+    setTimeout(() => {
+      const alreadyRendered: Set<SerializedPosition> = new Set();
+      for (let dx = -this.getVisibilityRadius(); dx <= this.getVisibilityRadius(); dx++) {
+        for (let dy = -this.getVisibilityRadius(); dy <= this.getVisibilityRadius(); dy++) {
+          const targetPosition = this.position.shift(dx, dy);
+          const tile = map.getTile(targetPosition);
+          if (this.context.getPlayer() && tile && Math.floor(this.context.getPlayer().position.manhattanDistanceTo(targetPosition)) === 10) {
+            const visibilityPath = this.isVisible(targetPosition);
+            const backgroundColor = Math.floor(Math.random() * 255);
+            const color = Math.floor(Math.random() * 255);
+            if (visibilityPath && !visibilityPath.find(_p => alreadyRendered.has(_p.serialize()))) {
+              for (const p of visibilityPath) {
+                this.context.getRenderer().put(new Position(p.x - map.getTopLeftCorner().x, p.y - map.getTopLeftCorner().y), {
+                  char: 'X',
+                  backgroundColor,
+                  color,
+                });
+                alreadyRendered.add(p.serialize());
+              }
+            }
+          }
+        }
+      }
+      this.context.getRenderer().flush(true, false);
+    }, 300);
+  }
+
   public explore() {
     const map = this.context.getCurrentMap();
 
@@ -145,5 +174,11 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
 
   public knownSpells: Set<Spell> = new Set([
     new FireBoltSpell(),
+    new MinorHealSpell(),
   ]);
+
+  tick() {
+    super.tick();
+    this.explore();
+  }
 }

@@ -17,10 +17,6 @@ export class TreasureGoblin extends Npc {
     super(context, gameLevel, position);
   }
 
-  protected getVisibilityRadius(): number {
-    return 60;
-  }
-
   getCowardice(): number {
     return 1.0;
   }

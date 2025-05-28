@@ -705,9 +705,10 @@ export class Game {
         this.renderMenu();
         break;
     }
-    this.renderer.flush(isBuffered);
+    const hasOpenedPopup = this.inventory || this.levelUpWindow || this.spellBook || this.selectTarget;
+    const drawProjectiles = !hasOpenedPopup;
+    this.renderer.flush(isBuffered, drawProjectiles);
   }
-
 
   // A* pathfinding: returns a path of Position[] from 'from' to 'to', or [] if no path.
   private buildPath(from: Position, to: Position, maxRadius, map = this.getCurrentLevel().map): Position[] {
