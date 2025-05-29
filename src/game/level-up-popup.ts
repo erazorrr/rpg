@@ -8,7 +8,7 @@ import {Interactive} from "./interactive.interface";
 
 export class LevelUpPopup extends GameObject implements Renderable, Interactive {
   private attributesList: List;
-  private pointsLeft = 2;
+  private pointsLeft = 5;
 
   private generateList(activeItemId = 'NOP') {
     this.attributesList = new List(
