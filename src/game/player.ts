@@ -28,12 +28,7 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
   public xp = 0;
 
   public nextLevelXp() {
-    switch (this.level) {
-      case 1: return 300;
-      case 2: return 800;
-      case 3: return 1500;
-      default: return Math.floor(Math.pow(3, this.level - 1)) * 100;
-    }
+    return this.level * this.level * this.level * 400 + 100;
   }
 
   public getMaxHp(): number {
