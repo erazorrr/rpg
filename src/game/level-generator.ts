@@ -267,7 +267,7 @@ export class LevelGenerator extends GameObject {
     return true;
   }
 
-  private generateRoom(tiles: Tile[][], entrance: Position, direction: Direction, tries = 20): {doors: Array<{position: Position, direction: Direction}>, freeTiles: Position[]} | null {
+  private generateRoom(tiles: Tile[][], entrance: Position, direction: Direction, tries = 50): {doors: Array<{position: Position, direction: Direction}>, freeTiles: Position[]} | null {
     this.debug.log(`generateRoom from ${entrance.serialize()}, direction: ${direction}...`);
     let triesLeft = tries;
     let width: number;
