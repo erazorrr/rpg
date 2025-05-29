@@ -160,11 +160,11 @@ export class Game {
       case GameMessageType.StartLevelUp:
         this.levelUpWindow = new LevelUpPopup(this.generateGameObjectContext());
         this.levelUpWindow.makeInteractive();
-        this.player.makeUninteractive();
+        this.player?.makeUninteractive();
         this.render();
         break;
       case GameMessageType.FinishLevelUp:
-        this.levelUpWindow.makeUninteractive();
+        this.levelUpWindow?.makeUninteractive();
         this.levelUpWindow = null;
         this.player.hp = this.player.getMaxHp();
         this.player.mp = this.player.getMaxMp();
@@ -207,7 +207,7 @@ export class Game {
           this.selectTarget.makeUninteractive();
           this.selectTarget = null;
         }
-        this.player.makeUninteractive();
+        this.player?.makeUninteractive();
         this.gameFinished = true;
         this.render();
         break;
@@ -247,7 +247,7 @@ export class Game {
             break;
           }
         }
-        this.spellBook.makeUninteractive();
+        this.spellBook?.makeUninteractive();
         this.spellBook = null;
         this.render();
         break;
@@ -259,7 +259,7 @@ export class Game {
           }
 
           const npc = (message.payload as { npc: Npc }).npc;
-          this.selectTarget.makeUninteractive();
+          this.selectTarget?.makeUninteractive();
           this.selectTarget = null;
           this.render();  // so the player can see the projectile
           this.player.makeInteractive();
@@ -269,7 +269,7 @@ export class Game {
           break;
         }
         const npc = (message.payload as { npc: Npc }).npc;
-        this.selectTarget.makeUninteractive();
+        this.selectTarget?.makeUninteractive();
         this.selectTarget = null;
         this.render(); // so the player can see the projectile
         this.player.makeInteractive();
@@ -449,7 +449,7 @@ export class Game {
         return;
       }
       this.inventory = this.buildInventory();
-      this.player.makeUninteractive();
+      this.player?.makeUninteractive();
       this.inventory.makeInteractive();
       this.gameLog.log(`[Enter] to equip/unequip or consume, [d] to drop, [Escape] to exit inventory`);
       this.render();
@@ -492,7 +492,7 @@ export class Game {
         return;
       }
 
-      this.player.makeUninteractive();
+      this.player?.makeUninteractive();
       this.selectTarget = new SelectTarget(this.generateGameObjectContext());
       this.selectTarget.makeInteractive();
       this.render();
@@ -555,12 +555,12 @@ export class Game {
           if (this.player.mp > this.player.getMaxMp()) {
             this.player.mp = this.player.getMaxMp();
           }
-          this.inventory.makeUninteractive();
+          this.inventory?.makeUninteractive();
           this.inventory = this.buildInventory();
           this.inventory.makeInteractive();
           this.tick();
         }
-        this.inventory.makeUninteractive();
+        this.inventory?.makeUninteractive();
         this.inventory = this.buildInventory();
         this.inventory.makeInteractive();
         this.render();
@@ -591,7 +591,7 @@ export class Game {
         this.gameFinished = true;
         this.gameLog.log(`You win! Your score is ${this.player.xp}!`);
         this.gameLog.log(`Press [Enter] to continue...`);
-        this.player.makeUninteractive();
+        this.player?.makeUninteractive();
         this.render();
       }
     });
@@ -622,7 +622,7 @@ export class Game {
       if (this.isGameFinished() || this.inventory || this.levelUpWindow || this.selectTarget) {
         return;
       }
-      this.player.makeUninteractive();
+      this.player?.makeUninteractive();
       this.spellBook = new SpellBook(this.generateGameObjectContext());
       this.spellBook.makeInteractive();
       this.gameLog.log(`[Enter] to select a spell, [Escape] to exit spell book`);
@@ -637,14 +637,14 @@ export class Game {
   }
 
   private closeInventory() {
-    this.inventory.makeUninteractive();
+    this.inventory?.makeUninteractive();
     this.player.makeInteractive();
     this.inventory = null;
     this.gameLog.clear();
   }
 
   private closeSpellBook() {
-    this.spellBook.makeUninteractive();
+    this.spellBook?.makeUninteractive();
     this.player.makeInteractive();
     this.spellBook = null;
     this.gameLog.clear();

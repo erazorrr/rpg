@@ -111,7 +111,7 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
     const boots = this.equipment.boots ? this.equipment.boots.stats.armor : 0;
     const gauntlets = this.equipment.gauntlets ? this.equipment.gauntlets.stats.armor : 0;
     const states = withStates ? Array.from(this.states).reduce((acc, s) => acc + (s.stats?.armor ?? 0), 0) : 0;
-    return Math.min(this.MAX_AC, states + base + armor + boots + gauntlets + Math.floor((this.getDexterity() - 10) * 0.5));
+    return Math.min(this.MAX_AC, states + base + armor + boots + gauntlets + Math.floor((this.getDexterity() - 10) / 3));
   }
 
   public canAttack(p: Position): boolean {
@@ -192,7 +192,7 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
   getDamageBonus(): number {
     const weaponModifier = (this.equipment.weapon && this.equipment.weapon.stats.damageBonus) ?? 0;
     const attributeModifier = this.equipment.weapon?.isRanged
-      ? Math.floor((this.getDexterity() - 10) / 2)
+      ? Math.floor((this.getDexterity() - 10) / 4)
       : Math.floor((this.getStrength() - 10) / 2);
     return attributeModifier + weaponModifier;
   }
