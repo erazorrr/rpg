@@ -28,7 +28,7 @@ export abstract class GameObject {
 
     const distance = rootPosition.distanceTo(targetPosition);
 
-    if (distance > radius) {
+    if (distance >= radius) {
       return null;
     }
 
