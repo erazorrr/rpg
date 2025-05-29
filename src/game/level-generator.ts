@@ -102,9 +102,9 @@ export class LevelGenerator extends GameObject {
 
   private npcs = [
     [[], []],
-    [[Goblin, GoblinHunter, GoblinMage], [EnduranceMonsterModifier]],
-    [[Ogre, Goblin, GoblinHunter, OgreMage, GoblinMage], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier, WisdomMonsterModifier]],
-    [[Ogre, Skeleton, Goblin, GoblinHunter, SkeletonArcher, OgreMage, SkeletonMage, GoblinMage], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier, SpectralHitMonsterModifier, WisdomMonsterModifier]],
+    [[[Goblin, 50], [GoblinHunter, 30], [GoblinMage, 20]], [EnduranceMonsterModifier]],
+    [[[Ogre, 20], [Goblin, 30], [GoblinHunter, 20], [OgreMage, 10], [GoblinMage, 20]], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier, WisdomMonsterModifier]],
+    [[[Ogre, 20], [Skeleton, 15], [GoblinHunter, 20], [SkeletonArcher, 10], [OgreMage, 10], [SkeletonMage, 5], [GoblinMage, 20]], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier, SpectralHitMonsterModifier, WisdomMonsterModifier]],
   ] as const;
   private generateNpcs(template: LevelTemplate) {
     this.debug.log(`generateNpcs for ${template.level.levelNo}...`);
@@ -123,7 +123,13 @@ export class LevelGenerator extends GameObject {
         position = template.freeTiles[freePositionIdx];
       } while (template.level.getNpcAt(position));
       template.freeTiles.splice(freePositionIdx, 1);
-      const npc = new npcs[Math.floor(Math.random() * npcs.length)](this.context, template.level, position);
+      let npcRoll = Math.floor(Math.random() * 100);
+      let npcIndex = 0;
+      while (npcRoll - npcs[npcIndex][1] > 0) {
+        npcRoll -= npcs[npcIndex][1];
+        npcIndex++;
+      }
+      const npc = new npcs[npcIndex][0](this.context, template.level, position);
       const modifiersRoll = Math.floor(Math.random() * 100);
       let modifiersCount;
       if (modifiersRoll < 50) {
