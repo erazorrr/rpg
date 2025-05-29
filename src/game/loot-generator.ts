@@ -85,12 +85,14 @@ import {Crossbow} from "./items/weapons/crossbow";
 import {DexterityPotion} from "./items/potions/dexterity";
 import {ChampionDexterityPotion} from "./items/potions/champion-dexterity";
 import {CatGraceScroll} from "./items/scrolls/cat-grace.scroll";
+import {ChampionHpPerHit} from "./item-modifiers/champion-hp-per-hit";
 
 type ItemModifierBuilder = new () => ItemModifier;
 
 export class LootGenerator extends GameObject {
   private debug: Debug = new Debug('loot-generator.log');
   private readonly commonModifiers: ItemModifierBuilder[];
+  private readonly strModifiers: ItemModifierBuilder[];
   private readonly dexModifiers: ItemModifierBuilder[];
   private readonly endModifiers: ItemModifierBuilder[];
   private readonly magicModifiers: ItemModifierBuilder[];
@@ -102,12 +104,13 @@ export class LootGenerator extends GameObject {
     super(context);
 
     this.commonModifiers = [
+      AntiEndurance, AntiDexterity, AntiStrength, AntiHealth, AntiWisdom,
+    ];
+    this.strModifiers = [
       Strength,
-      AntiEndurance, AntiDexterity, AntiStrength, AntiHealth,
       ChampionStrength,
       GiantStrength,
       LeviathanStrength,
-      AntiWisdom,
     ];
     this.endModifiers = [
       GiantHealth, GiantEndurance, Health, Endurance,
@@ -124,37 +127,36 @@ export class LootGenerator extends GameObject {
       Power, ChampionPower, GiantPower,
     ];
     const _items: Array<[Array<new (ctx: Context) => Item>, number, ItemModifierBuilder[], ItemModifierBuilder[]]> = [
-      [[ShortSword, HandAxe, GreatAxe, LongSword], 1, [CopperModifier, IronModifier, SteelModifier], [...this.commonModifiers, ...this.endModifiers, HpPerHit]],
+      [[ShortSword, HandAxe, GreatAxe, LongSword], 1, [CopperModifier, IronModifier, SteelModifier], [...this.commonModifiers, ...this.strModifiers, ...this.endModifiers, HpPerHit, ChampionHpPerHit]],
       [[Bow, Crossbow], 2, [NopModifier], [...this.commonModifiers, ...this.dexModifiers]],
       [[LeatherArmor], 1, [NopModifier], [...this.commonModifiers, ...this.dexModifiers]],
       [[Robe], 8, [NopModifier], [...this.magicModifiers, AntiEndurance, AntiDexterity, AntiStrength, AntiHealth, MpPerHitReceived]],
       [[Staff, Wand], 10, [NopModifier], [...this.magicModifiers, ...this.magicWeaponModifiers]],
-      [[ChainMail, PlateMail], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], [...this.commonModifiers, ...this.endModifiers]],
+      [[ChainMail, PlateMail], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], [...this.strModifiers, ...this.commonModifiers, ...this.endModifiers]],
       [[StrengthPotion, ArmorPotion, DexterityPotion], 50, [NopModifier], []],
       [[ChampionArmorPotion, ChampionStrengthPotion, ChampionDexterityPotion], 150, [NopModifier], []],
       [[LeatherBoots], 1, [NopModifier], [...this.commonModifiers, ...this.dexModifiers, ...this.magicModifiers]],
-      [[MetalBoots, PlateBoots], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], [...this.commonModifiers, ...this.endModifiers]],
+      [[MetalBoots, PlateBoots], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], [...this.commonModifiers, ...this.strModifiers, ...this.endModifiers]],
       [[LeatherGauntlets], 1, [NopModifier], [...this.commonModifiers, ...this.dexModifiers, ...this.magicModifiers]],
-      [[MetalGauntlets, PlateGauntlets], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], [...this.commonModifiers, ...this.endModifiers]],
+      [[MetalGauntlets, PlateGauntlets], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], [...this.strModifiers, ...this.commonModifiers, ...this.endModifiers]],
       [[
         BloodSacrificeScroll,
         EmpowerScroll,
-        // FireBoltScroll,
         FireLanceScroll,
         FortifyScroll,
         FreezeScroll,
         HealScroll,
         IceRayScroll,
         IceShardScroll,
-        // MinorHealScroll,
         CatGraceScroll,
       ], 30, [NopModifier], []],
     ];
     this.debug.log(`Building opposites...`);
-    this.opposites = [...this.commonModifiers, ...this.magicModifiers, ...this.magicWeaponModifiers, ...this.dexModifiers, ...this.endModifiers].reduce((acc, mod) => {
+    const allModifiers = [...this.commonModifiers, ...this.magicModifiers, ...this.magicWeaponModifiers, ...this.dexModifiers, ...this.endModifiers, ...this.strModifiers];
+    this.opposites = allModifiers.reduce((acc, mod) => {
       acc.set(mod, new Set());
       const instance = new mod();
-      for (const otherMod of [...this.commonModifiers, ...this.magicModifiers, ...this.magicWeaponModifiers, ...this.dexModifiers, ...this.endModifiers]) {
+      for (const otherMod of allModifiers) {
         for (const [key, value] of Object.entries(new otherMod().stats)) {
           if (value && instance.stats[key] && instance.stats[key] !== 0 && mod !== otherMod) {
             acc.get(mod)!.add(otherMod);
