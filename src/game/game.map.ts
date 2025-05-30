@@ -7,6 +7,7 @@ import {Context} from "./context";
 import {TorchTile} from "./tiles/torch.tile";
 import {FloorTile} from "./tiles/floor.tile";
 import {BackgroundColor} from "../io/background.color";
+import {Char} from "../io/char";
 
 export class GameMap extends GameObject implements Renderable {
   constructor(context: Context, private tiles: Tile[][], private initialPosition: Position, public width: number, public height: number, private containerWidth: number, private containerHeight: number) {
@@ -44,6 +45,13 @@ export class GameMap extends GameObject implements Renderable {
 
   setTile(position: Position, tile: Tile): void {
     this.tiles[position.x][position.y] = tile;
+  }
+
+  renderProjectile(path: Position[], projectile: Char) {
+    const modifiedPath = path.map(p =>
+      new Position(p.x - this.getTopLeftCorner().x + 1, p.y - this.getTopLeftCorner().y + 1)
+    );
+    return this.context.getRenderer().renderProjectile(modifiedPath, projectile);
   }
 
   private TORCH_RADIUS = 6;

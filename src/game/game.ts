@@ -160,11 +160,11 @@ export class Game {
       case GameMessageType.StartLevelUp:
         this.levelUpWindow = new LevelUpPopup(this.generateGameObjectContext());
         this.levelUpWindow.makeInteractive();
-        this.player.makeUninteractive();
+        this.player?.makeUninteractive();
         this.render();
         break;
       case GameMessageType.FinishLevelUp:
-        this.levelUpWindow.makeUninteractive();
+        this.levelUpWindow?.makeUninteractive();
         this.levelUpWindow = null;
         this.player.hp = this.player.getMaxHp();
         this.player.mp = this.player.getMaxMp();
@@ -207,7 +207,7 @@ export class Game {
           this.selectTarget.makeUninteractive();
           this.selectTarget = null;
         }
-        this.player.makeUninteractive();
+        this.player?.makeUninteractive();
         this.gameFinished = true;
         this.render();
         break;
@@ -247,18 +247,31 @@ export class Game {
             break;
           }
         }
-        this.spellBook.makeUninteractive();
+        this.spellBook?.makeUninteractive();
         this.spellBook = null;
         this.render();
         break;
       }
       case GameMessageType.SelectTarget: {
         if (!this.selectedSpell) {
-          return;
+          if (!this.player.equipment.weapon?.isRanged) {
+            break;
+          }
+
+          const npc = (message.payload as { npc: Npc }).npc;
+          this.selectTarget?.makeUninteractive();
+          this.selectTarget = null;
+          this.render();  // so the player can see the projectile
+          this.player.makeInteractive();
+          this.player.attack(npc);
+          this.tick();
+          this.render();
+          break;
         }
         const npc = (message.payload as { npc: Npc }).npc;
-        this.selectTarget.makeUninteractive();
+        this.selectTarget?.makeUninteractive();
         this.selectTarget = null;
+        this.render(); // so the player can see the projectile
         this.player.makeInteractive();
         npc.applySpell(this.player, this.selectedSpell);
         this.player.spendMP(this.selectedSpell.getMPCost());
@@ -436,7 +449,7 @@ export class Game {
         return;
       }
       this.inventory = this.buildInventory();
-      this.player.makeUninteractive();
+      this.player?.makeUninteractive();
       this.inventory.makeInteractive();
       this.gameLog.log(`[Enter] to equip/unequip or consume, [d] to drop, [Escape] to exit inventory`);
       this.render();
@@ -456,6 +469,9 @@ export class Game {
     });
 
     this.inputEmitter.on(InputEvent.SPACE, this, () => {
+      if (this.isGameFinished() || this.spellBook || this.inventory || this.levelUpWindow || this.selectTarget) {
+        return;
+      }
       this.tick();
     });
 
@@ -464,6 +480,22 @@ export class Game {
         this.displayHelp();
         this.render();
       }
+    });
+
+    this.inputEmitter.on(InputEvent.A, this, () => {
+      if (this.isGameFinished() || this.spellBook || this.inventory || this.levelUpWindow || this.selectTarget) {
+        return;
+      }
+      if (!this.player.equipment.weapon?.isRanged) {
+        this.gameLog.log(`You need an equip ranged weapon to perform ranged attack`);
+        this.render();
+        return;
+      }
+
+      this.player?.makeUninteractive();
+      this.selectTarget = new SelectTarget(this.generateGameObjectContext());
+      this.selectTarget.makeInteractive();
+      this.render();
     });
 
     this.inputEmitter.on(InputEvent.ENTER, this, () => {
@@ -523,12 +555,12 @@ export class Game {
           if (this.player.mp > this.player.getMaxMp()) {
             this.player.mp = this.player.getMaxMp();
           }
-          this.inventory.makeUninteractive();
+          this.inventory?.makeUninteractive();
           this.inventory = this.buildInventory();
           this.inventory.makeInteractive();
           this.tick();
         }
-        this.inventory.makeUninteractive();
+        this.inventory?.makeUninteractive();
         this.inventory = this.buildInventory();
         this.inventory.makeInteractive();
         this.render();
@@ -559,7 +591,7 @@ export class Game {
         this.gameFinished = true;
         this.gameLog.log(`You win! Your score is ${this.player.xp}!`);
         this.gameLog.log(`Press [Enter] to continue...`);
-        this.player.makeUninteractive();
+        this.player?.makeUninteractive();
         this.render();
       }
     });
@@ -590,7 +622,7 @@ export class Game {
       if (this.isGameFinished() || this.inventory || this.levelUpWindow || this.selectTarget) {
         return;
       }
-      this.player.makeUninteractive();
+      this.player?.makeUninteractive();
       this.spellBook = new SpellBook(this.generateGameObjectContext());
       this.spellBook.makeInteractive();
       this.gameLog.log(`[Enter] to select a spell, [Escape] to exit spell book`);
@@ -605,14 +637,14 @@ export class Game {
   }
 
   private closeInventory() {
-    this.inventory.makeUninteractive();
+    this.inventory?.makeUninteractive();
     this.player.makeInteractive();
     this.inventory = null;
     this.gameLog.clear();
   }
 
   private closeSpellBook() {
-    this.spellBook.makeUninteractive();
+    this.spellBook?.makeUninteractive();
     this.player.makeInteractive();
     this.spellBook = null;
     this.gameLog.clear();
@@ -620,7 +652,8 @@ export class Game {
 
   private displayHelp() {
     this.gameLog.log(`Use arrows to move, [Space] to skip turn.`);
-    this.gameLog.log(`Walk on the enemy to attack. Use [c] to cast spells.`);
+    this.gameLog.log(`Walk on the enemy to attack. Use [a] to perform ranged attack.`);
+    this.gameLog.log(`Use [c] to cast spells.`);
   }
 
   private renderMenu() {
@@ -672,9 +705,10 @@ export class Game {
         this.renderMenu();
         break;
     }
-    this.renderer.flush(isBuffered);
+    const hasOpenedPopup = this.inventory || this.levelUpWindow || this.spellBook || this.selectTarget;
+    const drawProjectiles = !hasOpenedPopup;
+    this.renderer.flush(isBuffered, drawProjectiles);
   }
-
 
   // A* pathfinding: returns a path of Position[] from 'from' to 'to', or [] if no path.
   private buildPath(from: Position, to: Position, maxRadius, map = this.getCurrentLevel().map): Position[] {

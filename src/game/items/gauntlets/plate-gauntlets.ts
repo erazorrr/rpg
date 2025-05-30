@@ -8,7 +8,7 @@ import {PRICE_PER_ARMOR} from "../../prices";
 export class PlateGauntlets extends Gauntlets {
   getChar(): Char {
     return {
-      char: 'g',
+      char: 'u',
       color: ForegroundColor.DarkBlue,
       backgroundColor: BackgroundColor.Black,
     };

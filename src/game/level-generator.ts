@@ -12,10 +12,10 @@ import {Goblin} from "./monsters/goblin";
 import {Wolf} from "./monsters/wolf";
 import {Ogre} from "./monsters/ogre";
 import {Skeleton} from "./monsters/skeleton";
-import {StrengthMonsterModifier} from "./monster-modufiers/strength";
-import {DexterityMonsterModifier} from "./monster-modufiers/dexterity";
-import {EnduranceMonsterModifier} from "./monster-modufiers/endurance";
-import {SpectralHitMonsterModifier} from "./monster-modufiers/spectral-hit";
+import {StrengthMonsterModifier} from "./monster-modifiers/strength";
+import {DexterityMonsterModifier} from "./monster-modifiers/dexterity";
+import {EnduranceMonsterModifier} from "./monster-modifiers/endurance";
+import {SpectralHitMonsterModifier} from "./monster-modifiers/spectral-hit";
 import {StairsDownTile} from "./tiles/stairs-down.tile";
 import {StairsUpTile} from "./tiles/stairs-up.tile";
 import {FloorTile} from "./tiles/floor.tile";
@@ -23,6 +23,12 @@ import {WallTile} from "./tiles/wall.tile";
 import {TreasureGoblin} from "./monsters/treasure-goblin";
 import {Debug} from "../debug";
 import {TorchTile} from "./tiles/torch.tile";
+import {GoblinHunter} from "./monsters/goblin-hunter";
+import {SkeletonArcher} from "./monsters/skeleton-archer";
+import {GoblinMage} from "./monsters/goblin-mage";
+import {OgreMage} from "./monsters/ogre-mage";
+import {SkeletonMage} from "./monsters/skeleton-mage";
+import {WisdomMonsterModifier} from "./monster-modifiers/wisdom";
 
 enum Direction {
   Up = 'up',
@@ -96,9 +102,9 @@ export class LevelGenerator extends GameObject {
 
   private npcs = [
     [[], []],
-    [[Goblin, Wolf], [EnduranceMonsterModifier]],
-    [[Ogre, Goblin], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier]],
-    [[Ogre, Skeleton, Goblin], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier, SpectralHitMonsterModifier]],
+    [[[Goblin, 50], [GoblinHunter, 30], [GoblinMage, 20]], [EnduranceMonsterModifier]],
+    [[[Ogre, 20], [Goblin, 30], [GoblinHunter, 20], [OgreMage, 10], [GoblinMage, 20]], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier, WisdomMonsterModifier]],
+    [[[Ogre, 20], [Skeleton, 15], [GoblinHunter, 20], [SkeletonArcher, 10], [OgreMage, 10], [SkeletonMage, 5], [GoblinMage, 20]], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier, SpectralHitMonsterModifier, WisdomMonsterModifier]],
   ] as const;
   private generateNpcs(template: LevelTemplate) {
     this.debug.log(`generateNpcs for ${template.level.levelNo}...`);
@@ -117,14 +123,20 @@ export class LevelGenerator extends GameObject {
         position = template.freeTiles[freePositionIdx];
       } while (template.level.getNpcAt(position));
       template.freeTiles.splice(freePositionIdx, 1);
-      const npc = new npcs[Math.floor(Math.random() * npcs.length)](this.context, template.level, position);
+      let npcRoll = Math.floor(Math.random() * 100);
+      let npcIndex = 0;
+      while (npcRoll - npcs[npcIndex][1] > 0) {
+        npcRoll -= npcs[npcIndex][1];
+        npcIndex++;
+      }
+      const npc = new npcs[npcIndex][0](this.context, template.level, position);
       const modifiersRoll = Math.floor(Math.random() * 100);
       let modifiersCount;
-      if (modifiersRoll < 50) {
+      if (modifiersRoll < 45) {
         modifiersCount = 0;
-      } else if (modifiersRoll < 75) {
+      } else if (modifiersRoll < 70) {
         modifiersCount = 1;
-      } else if (modifiersRoll < 97) {
+      } else if (modifiersRoll < 90) {
         modifiersCount = 2;
       } else {
         modifiersCount = 3;
@@ -261,7 +273,7 @@ export class LevelGenerator extends GameObject {
     return true;
   }
 
-  private generateRoom(tiles: Tile[][], entrance: Position, direction: Direction, tries = 20): {doors: Array<{position: Position, direction: Direction}>, freeTiles: Position[]} | null {
+  private generateRoom(tiles: Tile[][], entrance: Position, direction: Direction, tries = 50): {doors: Array<{position: Position, direction: Direction}>, freeTiles: Position[]} | null {
     this.debug.log(`generateRoom from ${entrance.serialize()}, direction: ${direction}...`);
     let triesLeft = tries;
     let width: number;

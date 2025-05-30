@@ -1,4 +1,5 @@
 import {State} from "./state";
+import {Char} from "../io/char";
 
 export enum SpellTarget {
   Monster,
@@ -20,4 +21,8 @@ export abstract class Spell {
 
   abstract getName(): string;
   abstract getMPCost(): number;
+
+  getProjectile(): Char | null {
+    return null;
+  }
 }

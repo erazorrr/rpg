@@ -2,6 +2,7 @@ export type MonsterModifierStats = {
   strength?: number;
   dexterity?: number;
   endurance?: number;
+  wisdom?: number;
 };
 
 export abstract class MonsterModifier {

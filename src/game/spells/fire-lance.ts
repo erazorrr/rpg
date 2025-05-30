@@ -1,5 +1,8 @@
 import {Spell, SpellTarget} from "../spell";
 import {BurningState} from "../states/burning.state";
+import {Char} from "../../io/char";
+import {BackgroundColor} from "../../io/background.color";
+import {ForegroundColor} from "../../io/foreground.color";
 
 export class FireLanceSpell extends Spell {
   constructor() {
@@ -17,5 +20,13 @@ export class FireLanceSpell extends Spell {
 
   getMPCost(): number {
     return 25;
+  }
+
+  getProjectile(): Char | null {
+    return {
+      char: '•',
+      backgroundColor: BackgroundColor.Black,
+      color: ForegroundColor.LightGoldenrod3,
+    };
   }
 }

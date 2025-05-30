@@ -1,5 +1,8 @@
 import {Spell, SpellTarget} from "../spell";
 import {FrozenState} from "../states/frozen.state";
+import {Char} from "../../io/char";
+import {BackgroundColor} from "../../io/background.color";
+import {ForegroundColor} from "../../io/foreground.color";
 
 export class IceShardSpell extends Spell {
   constructor() {
@@ -17,5 +20,13 @@ export class IceShardSpell extends Spell {
 
   getMPCost(): number {
     return 10;
+  }
+
+  getProjectile(): Char | null {
+    return {
+      char: '•',
+      backgroundColor: BackgroundColor.Black,
+      color: ForegroundColor.SkyBlue1,
+    };
   }
 }

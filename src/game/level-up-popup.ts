@@ -8,9 +8,9 @@ import {Interactive} from "./interactive.interface";
 
 export class LevelUpPopup extends GameObject implements Renderable, Interactive {
   private attributesList: List;
-  private pointsLeft = 2;
+  private pointsLeft = 5;
 
-  private generateList() {
+  private generateList(activeItemId = 'NOP') {
     this.attributesList = new List(
       `Level Up - ${this.pointsLeft} points left`,
       [
@@ -44,7 +44,9 @@ export class LevelUpPopup extends GameObject implements Renderable, Interactive 
         },
       ],
       new Position(10, 5),
-      new Position(110, 20)
+      new Position(110, 20),
+      true,
+      activeItemId,
     );
   }
 
@@ -54,10 +56,10 @@ export class LevelUpPopup extends GameObject implements Renderable, Interactive 
       this.context.postGameMessage(GameMessage.finishLevelUp());
     } else {
       this.makeUninteractive();
-      this.generateList();
+      this.generateList(this.attributesList.getActiveId());
       this.makeInteractive();
       this.render();
-      this.context.getRenderer().flush();
+      this.context.getRenderer().flush(true, false);
     }
   }
 

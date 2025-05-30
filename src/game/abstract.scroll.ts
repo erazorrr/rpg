@@ -12,7 +12,7 @@ export abstract class Scroll extends Item {
 
   getChar(): Char {
     return {
-      char: 'S',
+      char: '~',
       color: ForegroundColor.SandyBrown,
       backgroundColor: BackgroundColor.Black,
     }

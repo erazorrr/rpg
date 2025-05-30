@@ -21,19 +21,19 @@ export abstract class GameObject {
     return true;
   }
 
-  public isVisible(rootPosition: Position, targetPosition: Position, radius: number): boolean {
+  public isVisible(rootPosition: Position, targetPosition: Position, radius: number): Position[] | null {
     if (rootPosition.equals(targetPosition)) {
-      return true;
+      return [];
     }
 
     const distance = rootPosition.distanceTo(targetPosition);
 
-    if (distance > radius) {
-      return false;
+    if (distance >= radius) {
+      return null;
     }
 
     if (distance === 1) {
-      return true;
+      return [];
     }
 
     let x0 = rootPosition.x;
@@ -50,23 +50,32 @@ export abstract class GameObject {
     let prevX = x0;
     let prevY = y0;
 
+    const result: Position[] = [];
+
     while (!(x0 === x1 && y0 === y1)) {
       if (!(x0 === rootPosition.x && y0 === rootPosition.y)) {
         const pos = new Position(x0, y0);
+
+        if (!this.canPassLight(pos)) {
+          return null;
+        }
 
         const dxStep = x0 - prevX;
         const dyStep = y0 - prevY;
         if (Math.abs(dxStep) === 1 && Math.abs(dyStep) === 1) {
           const pos1 = new Position(prevX, y0);
           const pos2 = new Position(x0, prevY);
-          if (!this.canPassLight(pos1) || !this.canPassLight(pos2)) {
-            return false;
+          if (!this.canPassLight(pos1) && !this.canPassLight(pos2)) {
+            return null;
+          }
+          if (this.canPassLight(pos1)) {
+            result.push(pos1);
+          } else {
+            result.push(pos2);
           }
         }
 
-        if (!this.canPassLight(pos)) {
-          return false;
-        }
+        result.push(pos);
       }
 
       prevX = x0;
@@ -83,6 +92,6 @@ export abstract class GameObject {
       }
     }
 
-    return true;
+    return result;
   }
 }

@@ -30,7 +30,10 @@ export class List extends Field {
       if (this.activeId === this.items[0].id) {
         this.activeId = this.items[this.items.length - 1].id;
       } else {
-        const index = this.items.findIndex(i => i.id === this.activeId);
+        let index = this.items.findIndex(i => i.id === this.activeId);
+        if (index === -1) {
+          index = this.items.length;
+        }
         this.activeId = this.items[index - 1].id;
       }
       this.render(renderer);
@@ -77,7 +80,7 @@ export class List extends Field {
       y++;
     }
 
-    renderer.flush();
+    renderer.flush(true, false);
   }
 
   getActiveId() {

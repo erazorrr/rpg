@@ -8,7 +8,7 @@ export class StairsDownTile extends Tile {
     return {
       char: '>',
       color: ForegroundColor.Grey50,
-      backgroundColor: BackgroundColor.Yellow,
+      backgroundColor: BackgroundColor.Aqua,
     };
   }
   isNavigable(): boolean {

@@ -1,5 +1,5 @@
 export const PRICE_PER_ARMOR = 1.75;
-export const PRICE_PER_DEXTERITY = PRICE_PER_ARMOR / 2;
+export const PRICE_PER_DEXTERITY = PRICE_PER_ARMOR / 3;
 
 export const PRICE_PER_DAMAGE_ROLL = 0.5;
 export const PRICE_PER_DAMAGE = 1;
