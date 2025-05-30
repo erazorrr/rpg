@@ -10,7 +10,8 @@ import {Crossbow} from "../items/weapons/crossbow";
 
 export class SkeletonArcher extends Skeleton {
   strength = 10;
-  endurance = 3;
+  dexterity = 12;
+  endurance = 4;
 
   getChar(): Char {
     return {

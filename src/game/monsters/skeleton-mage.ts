@@ -15,8 +15,8 @@ import {Wand} from "../items/weapons/wand";
 export class SkeletonMage extends Skeleton {
   strength = 10;
   dexterity = 10;
-  endurance = 2;
-  wisdom = 4;
+  endurance = 3;
+  wisdom = 8;
 
 
   getChar(): Char {

@@ -11,7 +11,7 @@ import {PlateBoots} from "../items/boots/plate-boots";
 export class Skeleton extends Npc {
   strength = 16;
   dexterity = 8;
-  endurance = 4;
+  endurance = 5;
 
   getShout() {
     return `${this.getName()} shrieks!`;
