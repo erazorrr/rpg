@@ -20,6 +20,7 @@ import {FireBoltSpell} from "./spells/fire-bolt";
 import {Weapon} from "./items/weapons/weapon";
 import {Bow} from "./items/weapons/bow";
 import {MinorHealSpell} from "./spells/minor-heal";
+import {Wand} from "./items/weapons/wand";
 
 export class Player extends CharacterGameObject implements Renderable, Interactive {
   private inputEmitter = new InputEmitter();
@@ -115,6 +116,7 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
   public inventory: Item[] = [
     new ShortSword(this.context).applyModifier(new CopperModifier()),
     new Bow(this.context),
+    new Wand(this.context),
   ];
   public equipment: Equipment = {
     weapon: (this.inventory[0] as Weapon),

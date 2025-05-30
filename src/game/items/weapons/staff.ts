@@ -15,12 +15,12 @@ export class Staff extends Weapon {
   }
 
   private static baseStats = {
-    magicDiceBonus: 6,
+    magicRoll: 6,
     magicBonus: 3,
   };
 
   constructor(context: Context) {
-    super(context, {...Staff.baseStats}, Math.round(PRICE_PER_MAGIC_DICE_BONUS * Staff.baseStats.magicDiceBonus + PRICE_PER_MAGIC_BONUS * Staff.baseStats.magicBonus));
+    super(context, {...Staff.baseStats}, Math.round(PRICE_PER_MAGIC_DICE_BONUS * Staff.baseStats.magicRoll + PRICE_PER_MAGIC_BONUS * Staff.baseStats.magicBonus));
   }
 
   getBaseName(): string {
