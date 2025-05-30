@@ -328,7 +328,7 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
       this.combatLog.log(`AC ${ac}`);
       const attackRoll = Math.ceil(Math.random() * this.ATTACK_ROLL);
       this.combatLog.log(`AttackRoll ${attackRoll}`);
-      if (attackRoll >= ac) {
+      if (attackRoll >= ac || caster.modifiers.find(m => m instanceof SpectralHitMonsterModifier)) {
         const dice = spell.stats.damageRoll + caster.getMagicDiceBonus();
         const bonus = spell.stats.damageBonus + caster.getMagicBonus();
         const damageRoll = Math.ceil(Math.random() * dice);
