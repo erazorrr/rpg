@@ -5,6 +5,6 @@ export class MpPerHitReceived extends ItemModifier {
   constructor() {
     super('archont', {
       mpPerHitReceived: 1,
-    }, Math.round(30 * PRICE_PER_MANA_POINT), true);
+    }, Math.round(25 * PRICE_PER_MANA_POINT), true);
   }
 }

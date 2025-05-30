@@ -19,7 +19,7 @@ export class IceShardSpell extends Spell {
   }
 
   getMPCost(): number {
-    return 10;
+    return 6;
   }
 
   getProjectile(): Char | null {

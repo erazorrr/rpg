@@ -19,7 +19,7 @@ export class FireLanceSpell extends Spell {
   }
 
   getMPCost(): number {
-    return 25;
+    return 10;
   }
 
   getProjectile(): Char | null {
