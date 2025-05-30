@@ -132,11 +132,11 @@ export class LevelGenerator extends GameObject {
       const npc = new npcs[npcIndex][0](this.context, template.level, position);
       const modifiersRoll = Math.floor(Math.random() * 100);
       let modifiersCount;
-      if (modifiersRoll < 50) {
+      if (modifiersRoll < 45) {
         modifiersCount = 0;
-      } else if (modifiersRoll < 75) {
+      } else if (modifiersRoll < 70) {
         modifiersCount = 1;
-      } else if (modifiersRoll < 97) {
+      } else if (modifiersRoll < 90) {
         modifiersCount = 2;
       } else {
         modifiersCount = 3;
