@@ -86,6 +86,9 @@ import {DexterityPotion} from "./items/potions/dexterity";
 import {ChampionDexterityPotion} from "./items/potions/champion-dexterity";
 import {CatGraceScroll} from "./items/scrolls/cat-grace.scroll";
 import {ChampionHpPerHit} from "./item-modifiers/champion-hp-per-hit";
+import {Bracelet} from "./items/gauntlets/bracelet";
+import {WisdomPotion} from "./items/potions/wisdom";
+import {ChampionWisdomPotion} from "./items/potions/champion-wisdom";
 
 type ItemModifierBuilder = new () => ItemModifier;
 
@@ -133,11 +136,12 @@ export class LootGenerator extends GameObject {
       [[Robe], 8, [NopModifier], [...this.magicModifiers, AntiEndurance, AntiDexterity, AntiStrength, AntiHealth, MpPerHitReceived]],
       [[Staff, Wand], 10, [NopModifier], [...this.magicModifiers, ...this.magicWeaponModifiers]],
       [[ChainMail, PlateMail], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], [...this.strModifiers, ...this.commonModifiers, ...this.endModifiers]],
-      [[StrengthPotion, ArmorPotion, DexterityPotion], 50, [NopModifier], []],
-      [[ChampionArmorPotion, ChampionStrengthPotion, ChampionDexterityPotion], 150, [NopModifier], []],
+      [[StrengthPotion, ArmorPotion, DexterityPotion, WisdomPotion], 50, [NopModifier], []],
+      [[ChampionArmorPotion, ChampionStrengthPotion, ChampionDexterityPotion, ChampionWisdomPotion], 150, [NopModifier], []],
       [[LeatherBoots], 1, [NopModifier], [...this.commonModifiers, ...this.dexModifiers, ...this.magicModifiers]],
       [[MetalBoots, PlateBoots], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], [...this.commonModifiers, ...this.strModifiers, ...this.endModifiers]],
       [[LeatherGauntlets], 1, [NopModifier], [...this.commonModifiers, ...this.dexModifiers, ...this.magicModifiers]],
+      [[Bracelet], 1, [NopModifier], [...this.magicModifiers, AntiEndurance, AntiDexterity, AntiStrength, AntiHealth]],
       [[MetalGauntlets, PlateGauntlets], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], [...this.strModifiers, ...this.commonModifiers, ...this.endModifiers]],
       [[
         BloodSacrificeScroll,
@@ -268,11 +272,17 @@ export class LootGenerator extends GameObject {
     let lookUp = this.loot;
     let possibleItems: Item[];
     const potionsRoll = Math.random();
-    if (potionsRoll < this.HEALTH_POTION_PROBABILITY) {
+    const healthProbability = this.context.getPlayer().inventory.find(i => i.stats.consumableHpReplenish)
+      ? this.HEALTH_POTION_PROBABILITY
+      : 0.5;
+    const manaProbability = this.context.getPlayer().inventory.find(i => i.stats.consumableMpReplenish)
+      ? this.MANA_POTION_PROBABILITY
+      : 0.5;
+    if (potionsRoll < healthProbability) {
       // health potion
       lookUp = this.healthPotions;
       roll = Math.round(cost);
-    } else if (potionsRoll < (this.HEALTH_POTION_PROBABILITY + this.MANA_POTION_PROBABILITY)) {
+    } else if (potionsRoll < healthProbability + manaProbability) {
       // mana potion
       lookUp = this.manaPotions;
       roll = Math.round(cost);

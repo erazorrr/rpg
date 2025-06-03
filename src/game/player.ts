@@ -21,6 +21,8 @@ import {Weapon} from "./items/weapons/weapon";
 import {Bow} from "./items/weapons/bow";
 import {MinorHealSpell} from "./spells/minor-heal";
 import {Wand} from "./items/weapons/wand";
+import {ManaPotion} from "./items/potions/mana";
+import {HealthPotion} from "./items/potions/health";
 
 export class Player extends CharacterGameObject implements Renderable, Interactive {
   private inputEmitter = new InputEmitter();
@@ -117,6 +119,9 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
     new ShortSword(this.context).applyModifier(new CopperModifier()),
     new Bow(this.context),
     new Wand(this.context),
+    new ManaPotion(this.context),
+    new ManaPotion(this.context),
+    new HealthPotion(this.context),
   ];
   public equipment: Equipment = {
     weapon: (this.inventory[0] as Weapon),
