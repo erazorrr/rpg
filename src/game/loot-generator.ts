@@ -272,12 +272,38 @@ export class LootGenerator extends GameObject {
     let lookUp = this.loot;
     let possibleItems: Item[];
     const potionsRoll = Math.random();
-    const healthProbability = this.context.getPlayer().inventory.find(i => i.stats.consumableHpReplenish)
-      ? this.HEALTH_POTION_PROBABILITY
-      : 0.5;
-    const manaProbability = this.context.getPlayer().inventory.find(i => i.stats.consumableMpReplenish)
-      ? this.MANA_POTION_PROBABILITY
-      : 0.5;
+    let healthPotionsCount = 0;
+    let manaPotionsCount = 0;
+    for (const item of this.context.getPlayer().inventory) {
+      if (item.stats.consumableHpReplenish) {
+        healthPotionsCount++;
+      }
+      if (item.stats.consumableMpReplenish) {
+        manaPotionsCount++;
+      }
+    }
+    const playerWisdom = this.context.getPlayer().getWisdom(false);
+    const playerDexterity = this.context.getPlayer().getDexterity(false);
+    const playerStrength = this.context.getPlayer().getStrength(false);
+    let healthProbability: number;
+    if (playerStrength > playerWisdom && playerStrength > playerDexterity) {
+      switch (healthPotionsCount) {
+        case 0: case 1: healthProbability = 0.5; break;
+        default: healthProbability = this.HEALTH_POTION_PROBABILITY; break;
+      }
+    } else {
+      healthProbability = this.HEALTH_POTION_PROBABILITY;
+    }
+    let manaProbability: number;
+    if (playerWisdom > playerStrength && playerWisdom > playerDexterity) {
+      switch (manaPotionsCount) {
+        case 0: manaProbability = 0.8; healthProbability = 0; break;
+        case 1: manaProbability = 0.5; break;
+        default: manaProbability = this.MANA_POTION_PROBABILITY; break;
+      }
+    } else {
+      manaProbability = this.MANA_POTION_PROBABILITY;
+    }
     if (potionsRoll < healthProbability) {
       // health potion
       lookUp = this.healthPotions;
