@@ -102,7 +102,7 @@ export class LevelGenerator extends GameObject {
 
   private npcs = [
     [[], []],
-    [[[Goblin, 50], [GoblinHunter, 30], [GoblinMage, 20]], [EnduranceMonsterModifier]],
+    [[[Goblin, 90], [GoblinHunter, 10], [GoblinMage, 10]], [EnduranceMonsterModifier]],
     [[[Ogre, 20], [Goblin, 30], [GoblinHunter, 20], [OgreMage, 10], [GoblinMage, 20]], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier, WisdomMonsterModifier]],
     [[[Ogre, 20], [Skeleton, 15], [GoblinHunter, 20], [SkeletonArcher, 10], [OgreMage, 10], [SkeletonMage, 5], [GoblinMage, 20]], [StrengthMonsterModifier, DexterityMonsterModifier, EnduranceMonsterModifier, SpectralHitMonsterModifier, WisdomMonsterModifier]],
   ] as const;
@@ -113,7 +113,7 @@ export class LevelGenerator extends GameObject {
       return;
     }
 
-    const npcCount = 350;
+    const npcCount = 300;
     const [npcs, _modifiers] = this.npcs[template.level.levelNo];
     for (let i = 0; i < npcCount; i++) {
       let position: Position;

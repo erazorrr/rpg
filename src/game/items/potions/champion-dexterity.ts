@@ -11,7 +11,7 @@ export class ChampionDexterityPotion extends Potion {
   }
 
   getBaseName(): string {
-    return "Champion agility Potion";
+    return "Champion agility potion";
   }
 
   getChar(): Char {

@@ -4,7 +4,7 @@ import {FrozenState} from "../states/frozen.state";
 export class FreezeSpell extends Spell {
   constructor() {
     super(SpellTarget.Monster, {
-      stateChance: 0.75,
+      stateChance: 0.8,
       state: () => new FrozenState(10),
     }, 1);
   }

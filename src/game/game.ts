@@ -35,6 +35,7 @@ import {SpellBook} from "./spell-book";
 import {Spell, SpellTarget} from "./spell";
 import {SelectTarget} from "./select-target";
 import {Scroll} from "./abstract.scroll";
+import {Bracelet} from "./items/gauntlets/bracelet";
 
 export class Game {
   private state = GameState.Menu;
@@ -323,7 +324,7 @@ export class Game {
   private dropLoot(item: Item, position: Position): boolean {
     const targetPosition = this.findPositionForLoot(position);
     if (targetPosition) {
-      this.getCurrentLevel()?.putItem(position, item.clone());
+      this.getCurrentLevel()?.putItem(targetPosition, item.clone());
       return true;
     }
     return false;
@@ -514,7 +515,7 @@ export class Game {
               this.player.equipment.chest = item;
             } else if (item instanceof Boots) {
               this.player.equipment.boots = item;
-            } else if (item instanceof Gauntlets) {
+            } else if (item instanceof Gauntlets || item instanceof Bracelet) {
               this.player.equipment.gauntlets = item;
             } else if (item instanceof Potion) {
               this.gameLog.log(`You drank ${item.getName()}`);
@@ -654,6 +655,7 @@ export class Game {
     this.gameLog.log(`Use arrows to move, [Space] to skip turn.`);
     this.gameLog.log(`Walk on the enemy to attack. Use [a] to perform ranged attack.`);
     this.gameLog.log(`Use [c] to cast spells.`);
+    this.gameLog.log(`Use [i] to open inventory.`);
   }
 
   private renderMenu() {

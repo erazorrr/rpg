@@ -18,7 +18,6 @@
         - add antidote that removes poisonous state
 
 ## Easy
-- Items dropped should not destroy items that lay on the current tile
 - Add ring items
 - Add amulet items
 - Monsters' shouting should attract other monsters
