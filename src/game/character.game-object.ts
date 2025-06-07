@@ -107,9 +107,9 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
 
   getAC(withStates = true): number {
     const base = 5;
-    const armor = this.equipment.chest ? this.equipment.chest.stats.armor : 0;
-    const boots = this.equipment.boots ? this.equipment.boots.stats.armor : 0;
-    const gauntlets = this.equipment.gauntlets ? this.equipment.gauntlets.stats.armor : 0;
+    const armor = this.equipment.chest?.stats?.armor ? this.equipment.chest.stats.armor : 0;
+    const boots = this.equipment.boots?.stats?.armor ? this.equipment.boots.stats.armor : 0;
+    const gauntlets = this.equipment.gauntlets?.stats?.armor ? this.equipment.gauntlets.stats.armor : 0;
     const states = withStates ? Array.from(this.states).reduce((acc, s) => acc + (s.stats?.armor ?? 0), 0) : 0;
     return Math.min(this.MAX_AC, states + base + armor + boots + gauntlets + Math.floor((this.getDexterity() - 10) / 3));
   }
