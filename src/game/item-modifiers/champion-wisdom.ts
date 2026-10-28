@@ -2,6 +2,8 @@ import {ItemModifier} from "../item-modifier";
 import {PRICE_PER_WISDOM} from "../prices";
 
 export class ChampionWisdom extends ItemModifier {
+  public static readonly saveId = "champion-wisdom";
+
   constructor() {
     super('apprentice wisdom', {
       wisdomBonus: 4,

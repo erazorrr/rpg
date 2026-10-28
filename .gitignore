@@ -2,3 +2,6 @@ node_modules
 dist
 build
 .idea
+docs
+AGENTS.md
+*.log

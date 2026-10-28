@@ -2,6 +2,8 @@ import {ItemModifier} from "../../../item-modifier";
 import {PRICE_PER_DAMAGE} from "../../../prices";
 
 export class IronModifier extends ItemModifier {
+  public static readonly saveId = "iron-weapon";
+
   constructor() {
     super('Iron', {
       damageBonus: 1,

@@ -1,6 +1,7 @@
 import {CharacterGameObject} from "./character.game-object";
 import {ForegroundColor} from "../io/foreground.color";
 import {BackgroundColor} from "../io/background.color";
+import {Saveable, StateSave} from "./save-data";
 
 export type StateStats = {
   damageRoll?: number;
@@ -20,7 +21,11 @@ export type StateStats = {
   isUnableToMove?: boolean;
 };
 
-export abstract class State {
+export abstract class State implements Saveable<StateSave> {
+  public get saveId(): string {
+    return (this.constructor as typeof State & {readonly saveId: string}).saveId;
+  }
+
   private turnsLeft: number;
   protected constructor(public stats: StateStats, public turns: number) {
     this.turnsLeft = turns;
@@ -42,6 +47,18 @@ export abstract class State {
 
   tick(): number {
     return --this.turnsLeft;
+  }
+
+  public getTurnsLeft(): number {
+    return this.turnsLeft;
+  }
+
+  public toSaveData(): StateSave {
+    return {
+      kind: this.saveId,
+      turns: this.turnsLeft,
+      stats: this.stats,
+    };
   }
 
   abstract getName(): string;

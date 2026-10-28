@@ -4,6 +4,8 @@ import {ForegroundColor} from "../../io/foreground.color";
 import {BackgroundColor} from "../../io/background.color";
 
 export class Wolf extends Npc {
+  public static readonly saveId: string = "wolf";
+
   strength = 8;
   dexterity = 12;
   endurance = 2;

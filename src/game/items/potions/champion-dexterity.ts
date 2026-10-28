@@ -6,6 +6,7 @@ import {BackgroundColor} from "../../../io/background.color";
 import {DexterityState} from "../../states/dexterity.state";
 
 export class ChampionDexterityPotion extends Potion {
+  public static readonly saveId = "champion-dexterity-potion";
   public constructor(context: Context) {
     super(context, {consumableState: new DexterityState(50, 12)}, 8);
   }

@@ -6,6 +6,7 @@ import {Chest} from "./chest";
 import {PRICE_PER_ARMOR} from "../../prices";
 
 export class ChainMail extends Chest {
+  public static readonly saveId = "chain-mail";
   getChar(): Char {
     return {
       char: 'U',

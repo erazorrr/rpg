@@ -6,6 +6,8 @@ import {Bow} from "../items/weapons/bow";
 import {LeatherArmor} from "../items/chest/leather-armor";
 
 export class GoblinHunter extends Goblin {
+  public static readonly saveId: string = "goblin-hunter";
+
   endurance = 1;
 
   getChar(): Char {

@@ -5,6 +5,8 @@ import {BackgroundColor} from "../../io/background.color";
 import {ForegroundColor} from "../../io/foreground.color";
 
 export class FireLanceSpell extends Spell {
+  public static readonly saveId = "fire-lance";
+
   constructor() {
     super(SpellTarget.Monster, {
       damageRoll: 10,

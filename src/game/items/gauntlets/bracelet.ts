@@ -5,6 +5,7 @@ import {ForegroundColor} from "../../../io/foreground.color";
 import {BackgroundColor} from "../../../io/background.color";
 
 export class Bracelet extends Item {
+  public static readonly saveId = "bracelet";
   constructor(context: Context) {
     super(context, ItemType.Gauntlets, {...Bracelet.baseStats}, 1);
   }

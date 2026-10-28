@@ -36,8 +36,14 @@ import {Spell, SpellTarget} from "./spell";
 import {SelectTarget} from "./select-target";
 import {Scroll} from "./abstract.scroll";
 import {Bracelet} from "./items/gauntlets/bracelet";
+import {GameSaveCodec} from "./game-save-codec";
+import {SaveGameService} from "./save-game";
+import {List} from "../io/list";
 
 export class Game {
+  private static readonly PAUSE_MENU_WIDTH = 50;
+  private static readonly PAUSE_MENU_HEIGHT = 15;
+
   private state = GameState.Menu;
   private renderer = new Renderer();
   private inputEmitter = new InputEmitter();
@@ -48,6 +54,9 @@ export class Game {
   private spellBook: SpellBook | null = null;
   private selectTarget: SelectTarget | null = null;
   private levelUpWindow: LevelUpPopup | null = null;
+  private pauseMenu: List | null = null;
+  private saveFile = new SaveGameService();
+  private saveCodec = new GameSaveCodec();
 
   private selectedSpell: Spell | null = null;
 
@@ -125,6 +134,8 @@ export class Game {
 
       this.mainMenu.setRBPosition(new Position(process.stdout.columns - 1, process.stdout.rows - 1));
 
+      this.centerPauseMenu();
+
       this.levelGenerator.setContainerSize(this.gameField.getWidth(), this.gameField.getHeight());
 
       for (const level of this.levels) {
@@ -173,7 +184,28 @@ export class Game {
         this.render();
         break;
       case GameMessageType.NewGame:
+        if (this.saveFile.exists()) {
+          try { this.saveFile.delete(); } catch (e) { this.gameLog.log(`Could not replace save: ${e instanceof Error ? e.message : e}`); return; }
+        }
         this.newGame();
+        break;
+      case GameMessageType.Continue:
+        this.loadGame();
+        break;
+      case GameMessageType.Save:
+        this.saveCurrentGame(false);
+        break;
+      case GameMessageType.ExitAndSave:
+        this.saveCurrentGame(true);
+        break;
+      case GameMessageType.DeleteInvalidSave:
+        try {
+          this.saveFile.delete();
+          this.goToMainMenu();
+        } catch (e) {
+          this.gameLog.log(`Could not delete invalid save: ${e instanceof Error ? e.message : e}`);
+          this.render();
+        }
         break;
       case GameMessageType.Exit:
         this.exit();
@@ -210,6 +242,7 @@ export class Game {
         }
         this.player?.makeUninteractive();
         this.gameFinished = true;
+        try { this.saveFile.delete(); } catch (e) { this.gameLog.log(`Could not delete save: ${e instanceof Error ? e.message : e}`); }
         this.render();
         break;
       case GameMessageType.PickUp: {
@@ -353,6 +386,8 @@ export class Game {
 
   private goToMainMenu() {
     this.player?.makeUninteractive();
+    const slot = this.saveFile.inspect(this.saveCodec.validate.bind(this.saveCodec));
+    this.mainMenu.setSaveState(slot.valid, slot.error);
     this.mainMenu?.makeInteractive();
     this.state = GameState.Menu;
     this.render();
@@ -430,12 +465,19 @@ export class Game {
     destroyNpc: this.destroyNpc.bind(this),
     getCurrentGameLevel: () => this.getCurrentLevel(),
   }, this.gameField.getWidth(), this.gameField.getHeight());
-  private newGame() {
+  private newGame(restored?: {player: Player, levels: Level[], currentLevelIndex: number}) {
     this.gameFinished = false;
     this.mainMenu?.makeUninteractive();
 
-    this.levels.push(this.levelGenerator.generateLevel(0));
-    this.player = new Player(this.generateGameObjectContext(), this.getCurrentLevel().map.getInitialPosition());
+    if (restored) {
+      this.player = restored.player;
+      this.levels = restored.levels;
+      this.currentLevelIndex = restored.currentLevelIndex;
+    } else {
+      this.levels.push(this.levelGenerator.generateLevel(0));
+      this.player = new Player(this.generateGameObjectContext(), this.getCurrentLevel().map.getInitialPosition());
+      this.player.explore();
+    }
 
     this.player.makeInteractive();
 
@@ -590,6 +632,7 @@ export class Game {
         this.render();
       } else if (this.getCurrentLevel().map.getTile(this.player.position) instanceof ExitTile) {
         this.gameFinished = true;
+        try { this.saveFile.delete(); } catch (e) { this.gameLog.log(`Could not delete save: ${e instanceof Error ? e.message : e}`); }
         this.gameLog.log(`You win! Your score is ${this.player.xp}!`);
         this.gameLog.log(`Press [Enter] to continue...`);
         this.player?.makeUninteractive();
@@ -598,7 +641,9 @@ export class Game {
     });
 
     this.inputEmitter.on(InputEvent.ESCAPE, this, () => {
-      if (this.inventory) {
+      if (this.pauseMenu) {
+        this.closePauseMenu();
+      } else if (this.inventory) {
         this.closeInventory();
         this.render();
       } else if (this.spellBook) {
@@ -610,6 +655,8 @@ export class Game {
         this.selectTarget = null;
         this.gameLog.clear();
         this.render();
+      } else if (!this.levelUpWindow && !this.gameFinished) {
+        this.openPauseMenu();
       }
     });
 
@@ -630,8 +677,13 @@ export class Game {
       this.render();
     });
 
-    this.gameLog.log(`${this.player.getName()} found himself in an unknown place.`);
-    this.displayHelp();
+    if (restored) {
+      this.gameLog.clear();
+      this.gameLog.log(`Game restored.`);
+    } else {
+      this.gameLog.log(`${this.player.getName()} found himself in an unknown place.`);
+      this.displayHelp();
+    }
 
     this.state = GameState.Game;
     this.render();
@@ -642,6 +694,77 @@ export class Game {
     this.player.makeInteractive();
     this.inventory = null;
     this.gameLog.clear();
+  }
+
+  private openPauseMenu(): void {
+    this.player?.makeUninteractive();
+    const [topLeft, bottomRight] = this.getCenteredPauseMenuBounds();
+    this.pauseMenu = new List('Paused', [
+      {id: 'resume', label: 'Resume', onSelect: () => this.closePauseMenu()},
+      {id: 'save', label: 'Save Game', onSelect: () => this.receiveGameMessage(GameMessage.save())},
+      {id: 'exit-save', label: 'Exit & Save', onSelect: () => this.receiveGameMessage(GameMessage.exitAndSave())},
+    ], topLeft, bottomRight);
+    this.pauseMenu.makeInteractive(this.renderer);
+    this.render();
+  }
+
+  private getCenteredPauseMenuBounds(): [Position, Position] {
+    const width = Math.min(Game.PAUSE_MENU_WIDTH, process.stdout.columns);
+    const height = Math.min(Game.PAUSE_MENU_HEIGHT, process.stdout.rows);
+    const left = Math.floor((process.stdout.columns - width) / 2);
+    const top = Math.floor((process.stdout.rows - height) / 2);
+
+    return [
+      new Position(left, top),
+      new Position(left + width - 1, top + height - 1),
+    ];
+  }
+
+  private centerPauseMenu(): void {
+    if (!this.pauseMenu) return;
+
+    const [topLeft, bottomRight] = this.getCenteredPauseMenuBounds();
+    this.pauseMenu.setLTPosition(topLeft);
+    this.pauseMenu.setRBPosition(bottomRight);
+  }
+
+  private closePauseMenu(): void {
+    this.pauseMenu?.makeUninteractive();
+    this.pauseMenu = null;
+    this.player?.makeInteractive();
+    this.render();
+  }
+
+  private saveCurrentGame(exitAfterSave: boolean): void {
+    if (!this.player || this.gameFinished) return;
+    try {
+      const data = this.saveCodec.serialize(this.player, this.levels, this.currentLevelIndex);
+      this.saveFile.write(data, this.saveCodec.validate.bind(this.saveCodec));
+      this.gameLog.log('Game saved.');
+      if (exitAfterSave) this.exit();
+      else this.closePauseMenu();
+    } catch (e) {
+      this.gameLog.log(`Could not save game: ${e instanceof Error ? e.message : e}`);
+      this.render();
+    }
+  }
+
+  private loadGame(): void {
+    try {
+      this.mainMenu.makeUninteractive();
+      const data = this.saveFile.read(this.saveCodec.validate.bind(this.saveCodec));
+      const restored = this.saveCodec.restore(
+        this.generateGameObjectContext(),
+        data,
+        this.gameField.getWidth(),
+        this.gameField.getHeight(),
+      );
+      this.newGame(restored);
+    } catch (e) {
+      this.gameLog.clear();
+      this.gameLog.log(`Could not load save: ${e instanceof Error ? e.message : e}`);
+      this.goToMainMenu();
+    }
   }
 
   private closeSpellBook() {
@@ -696,6 +819,9 @@ export class Game {
     if (this.selectTarget) {
       this.selectTarget.render();
     }
+    if (this.pauseMenu) {
+      this.pauseMenu.render(this.renderer);
+    }
   }
 
   private render(isBuffered = true) {
@@ -707,7 +833,7 @@ export class Game {
         this.renderMenu();
         break;
     }
-    const hasOpenedPopup = this.inventory || this.levelUpWindow || this.spellBook || this.selectTarget;
+    const hasOpenedPopup = this.inventory || this.levelUpWindow || this.spellBook || this.selectTarget || this.pauseMenu;
     const drawProjectiles = !hasOpenedPopup;
     this.renderer.flush(isBuffered, drawProjectiles);
   }

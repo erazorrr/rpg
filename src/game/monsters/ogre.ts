@@ -9,6 +9,8 @@ import {PlateMail} from "../items/chest/plate-mail";
 import {PlateGauntlets} from "../items/gauntlets/plate-gauntlets";
 
 export class Ogre extends Npc {
+  public static readonly saveId: string = "ogre";
+
   strength = 14;
   dexterity = 6;
   endurance = 5;

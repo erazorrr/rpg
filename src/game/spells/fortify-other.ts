@@ -2,6 +2,8 @@ import {Spell, SpellTarget} from "../spell";
 import {ArmorState} from "../states/armor.state";
 
 export class FortifyOtherSpell extends Spell {
+  public static readonly saveId = "fortify-other";
+
   constructor() {
     super(SpellTarget.Monster, {
       state: () => new ArmorState(30, 15),

@@ -13,6 +13,8 @@ import {FreezeSpell} from "../spells/freeze";
 import {Wand} from "../items/weapons/wand";
 
 export class SkeletonMage extends Skeleton {
+  public static readonly saveId: string = "skeleton-mage";
+
   strength = 10;
   dexterity = 10;
   endurance = 3;

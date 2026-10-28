@@ -24,6 +24,10 @@ import {Wand} from "./items/weapons/wand";
 import {AntiWisdom} from "./item-modifiers/anti-wisdom";
 import {AntiDexterity} from "./item-modifiers/anti-dexterity";
 import {AntiStrength} from "./item-modifiers/anti-strength";
+import {PlayerSave} from "./save-data";
+import {restoreItem} from "./items/item.factory";
+import {restoreSpell} from "./spells/spell.factory";
+import {restoreState} from "./state.factory";
 
 export class Player extends CharacterGameObject implements Renderable, Interactive {
   private inputEmitter = new InputEmitter();
@@ -32,7 +36,17 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
   public xp = 0;
 
   public nextLevelXp() {
-    return this.level * this.level * this.level * 400 + 100;
+    return Player.xpForNextLevel(this.level);
+  }
+
+  public static inferLevelFromXp(xp: number): number {
+    let level = 1;
+    while (xp >= Player.xpForNextLevel(level)) level++;
+    return level;
+  }
+
+  private static xpForNextLevel(level: number): number {
+    return level * level * level * 400 + 100;
   }
 
   public getMaxHp(): number {
@@ -52,9 +66,10 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
   constructor(
     context: Context,
     position: Position,
+    explore = true,
   ) {
     super(context, position);
-    this.explore();
+    if (explore && this.context.getPlayer()) this.explore();
   }
 
   private moveTo(targetPosition: Position): void {
@@ -188,6 +203,52 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
     new FireBoltSpell(),
     new MinorHealSpell(),
   ]);
+
+  public toSaveData(): PlayerSave {
+    return {
+      ...super.toSaveData(),
+      level: this.level,
+      xp: this.xp,
+      inventory: this.inventory.map(item => item.toSaveData()),
+      equipmentIndexes: Object.fromEntries(
+        Object.entries(this.equipment).map(([slot, item]) => [
+          slot,
+          item ? this.inventory.indexOf(item) : undefined,
+        ]),
+      ),
+      knownSpells: Array.from(this.knownSpells).map(spell => spell.saveId),
+    };
+  }
+
+  public static fromSaveData(context: Context, data: PlayerSave): Player {
+    const player = new Player(
+      context,
+      new Position(data.position.x, data.position.y),
+      false,
+    );
+    player.strength = data.strength;
+    player.dexterity = data.dexterity;
+    player.endurance = data.endurance;
+    player.wisdom = data.wisdom;
+    player.states = new Set(data.states.map(restoreState));
+    player.inventory = data.inventory.map(item => restoreItem(context, item));
+    player.equipment = {};
+    for (const [slot, index] of Object.entries(data.equipmentIndexes)) {
+      if (
+        index !== undefined &&
+        (!Number.isInteger(index) || index < 0 || index >= player.inventory.length)
+      ) {
+        throw new Error('Invalid equipment reference');
+      }
+      if (index !== undefined) player.equipment[slot] = player.inventory[index];
+    }
+    player.hp = data.hp;
+    player.mp = data.mp;
+    player.level = data.level;
+    player.xp = data.xp;
+    player.knownSpells = new Set(data.knownSpells.map(restoreSpell));
+    return player;
+  }
 
   tick() {
     super.tick();

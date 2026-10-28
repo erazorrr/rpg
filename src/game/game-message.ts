@@ -14,6 +14,10 @@ export enum GameMessageType {
   SelectSpell,
   SelectTarget,
   Move,
+  Continue,
+  Save,
+  ExitAndSave,
+  DeleteInvalidSave,
 }
 
 export class GameMessage {
@@ -61,4 +65,9 @@ export class GameMessage {
   static selectTarget(npc: Npc) {
     return new GameMessage(GameMessageType.SelectTarget, {npc});
   }
+
+  static continueGame(): GameMessage { return new GameMessage(GameMessageType.Continue); }
+  static save(): GameMessage { return new GameMessage(GameMessageType.Save); }
+  static exitAndSave(): GameMessage { return new GameMessage(GameMessageType.ExitAndSave); }
+  static deleteInvalidSave(): GameMessage { return new GameMessage(GameMessageType.DeleteInvalidSave); }
 }

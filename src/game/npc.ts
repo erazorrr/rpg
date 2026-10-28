@@ -3,6 +3,7 @@ import {Position} from "../io/position";
 import {Context} from "./context";
 import {Level} from "./level";
 import {Spell} from "./spell";
+import {NpcSave} from "./save-data";
 
 export enum Action {
   Attack,
@@ -11,6 +12,10 @@ export enum Action {
 }
 
 export abstract class Npc extends CharacterGameObject {
+  public get saveId(): string {
+    return (this.constructor as typeof Npc & {readonly saveId: string}).saveId;
+  }
+
   abstract getXp(): number;
   abstract getBaseLootCost(): number;
 
@@ -28,6 +33,30 @@ export abstract class Npc extends CharacterGameObject {
   }
 
   protected previousAction: Action = Action.Nothing;
+
+  public getPreviousAction(): Action {
+    return this.previousAction;
+  }
+
+  public restorePreviousAction(action: Action): void {
+    this.previousAction = action;
+  }
+
+  public toSaveData(): NpcSave {
+    const character = super.toSaveData();
+    for (const modifier of this.getModifiers()) {
+      character.strength -= modifier.stats.strength ?? 0;
+      character.dexterity -= modifier.stats.dexterity ?? 0;
+      character.endurance -= modifier.stats.endurance ?? 0;
+      character.wisdom -= modifier.stats.wisdom ?? 0;
+    }
+    return {
+      ...character,
+      kind: this.saveId,
+      previousAction: this.previousAction,
+      modifiers: this.getModifiers().map(modifier => modifier.saveId),
+    };
+  }
 
   private step(path: Position[]): number {
     let speed = this.getSpeed() - 1;

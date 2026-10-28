@@ -6,6 +6,7 @@ import {BackgroundColor} from "../../../io/background.color";
 import {ArmorState} from "../../states/armor.state";
 
 export class ArmorPotion extends Potion {
+  public static readonly saveId = "armor-potion";
   public constructor(context: Context) {
     super(context, {consumableState: new ArmorState(30, 10)}, 4);
   }

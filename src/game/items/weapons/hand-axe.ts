@@ -6,6 +6,7 @@ import {ForegroundColor} from "../../../io/foreground.color";
 import {PRICE_PER_DAMAGE, PRICE_PER_DAMAGE_ROLL} from "../../prices";
 
 export class HandAxe extends Weapon {
+  public static readonly saveId = "hand-axe";
   getChar(): Char {
     return {
       char: 'p',

@@ -6,6 +6,7 @@ import {BackgroundColor} from "../../../io/background.color";
 import {WisdomState} from "../../states/wisdom.state";
 
 export class WisdomPotion extends Potion {
+  public static readonly saveId = "wisdom-potion";
   public constructor(context: Context) {
     super(context, {consumableState: new WisdomState(30, 6)}, 4);
   }

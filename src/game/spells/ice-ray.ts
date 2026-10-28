@@ -5,6 +5,8 @@ import {BackgroundColor} from "../../io/background.color";
 import {ForegroundColor} from "../../io/foreground.color";
 
 export class IceRaySpell extends Spell {
+  public static readonly saveId = "ice-ray";
+
   constructor() {
     super(SpellTarget.Monster, {
       damageRoll: 8,

@@ -7,6 +7,7 @@ import {BackgroundColor} from "../../../io/background.color";
 import {PRICE_PER_HP_POINT} from "../../prices";
 
 export class SmallHealthPotion extends Potion {
+  public static readonly saveId = "small-health-potion";
   private static baseStats: ItemStats = {
     consumableHpReplenish: 10,
   };

@@ -2,6 +2,8 @@ import {ItemModifier} from "../item-modifier";
 import {PRICE_PER_MAGIC_DICE_BONUS} from "../prices";
 
 export class Focus extends ItemModifier {
+  public static readonly saveId = "focus";
+
   constructor() {
     super('focus', {
       magicRoll: 2,

@@ -8,6 +8,8 @@ import {ChainMail} from "../items/chest/chain-mail";
 import {IronModifier} from "../item-modifiers/weapon/material/iron";
 
 export class Goblin extends Npc {
+  public static readonly saveId: string = "goblin";
+
   strength = 6;
   dexterity = 4;
   endurance = 3;

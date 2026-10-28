@@ -2,6 +2,8 @@ import {ItemModifier} from "../item-modifier";
 import {PRICE_PER_ENDURANCE} from "../prices";
 
 export class AntiEndurance extends ItemModifier {
+  public static readonly saveId = "anti-endurance";
+
   constructor() {
     super('breathlessness', {
       enduranceBonus: -2,

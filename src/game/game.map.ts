@@ -8,9 +8,19 @@ import {TorchTile} from "./tiles/torch.tile";
 import {FloorTile} from "./tiles/floor.tile";
 import {BackgroundColor} from "../io/background.color";
 import {Char} from "../io/char";
+import {MapSave, Saveable} from "./save-data";
+import {restoreTile} from "./tiles/tile.factory";
 
-export class GameMap extends GameObject implements Renderable {
-  constructor(context: Context, private tiles: Tile[][], private initialPosition: Position, public width: number, public height: number, private containerWidth: number, private containerHeight: number) {
+export class GameMap extends GameObject implements Renderable, Saveable<MapSave> {
+  constructor(
+    context: Context,
+    private tiles: Tile[][],
+    private initialPosition: Position,
+    public width: number,
+    public height: number,
+    private containerWidth: number,
+    private containerHeight: number,
+  ) {
     super(context);
   }
 
@@ -21,6 +31,33 @@ export class GameMap extends GameObject implements Renderable {
 
   public getInitialPosition(): Position {
     return this.initialPosition;
+  }
+
+  public toSaveData(): MapSave {
+    return {
+      width: this.width,
+      height: this.height,
+      initialPosition: this.initialPosition,
+      tiles: this.tiles.map(column => column.map(tile => tile.toSaveData())),
+    };
+  }
+
+  public static fromSaveData(
+    context: Context,
+    data: MapSave,
+    containerWidth: number,
+    containerHeight: number,
+  ): GameMap {
+    const tiles = data.tiles.map(column => column.map(restoreTile));
+    return new GameMap(
+      context,
+      tiles,
+      new Position(data.initialPosition.x, data.initialPosition.y),
+      data.width,
+      data.height,
+      containerWidth,
+      containerHeight,
+    );
   }
 
   getTile(position: Position): Tile | undefined {

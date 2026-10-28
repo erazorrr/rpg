@@ -9,6 +9,8 @@ import {PlateGauntlets} from "../items/gauntlets/plate-gauntlets";
 import {PlateBoots} from "../items/boots/plate-boots";
 
 export class Skeleton extends Npc {
+  public static readonly saveId: string = "skeleton";
+
   strength = 16;
   dexterity = 8;
   endurance = 5;

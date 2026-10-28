@@ -8,6 +8,8 @@ import {EmpowerOtherSpell} from "../spells/empower-other";
 import {FortifyOtherSpell} from "../spells/fortify-other";
 
 export class OgreMage extends Ogre {
+  public static readonly saveId: string = "ogre-mage";
+
   strength = 12;
   wisdom = 2;
   endurance = 3;

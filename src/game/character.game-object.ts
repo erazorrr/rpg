@@ -12,8 +12,9 @@ import {State} from "./state";
 import {Spell} from "./spell";
 import {BackgroundColor} from "../io/background.color";
 import {ForegroundColor} from "../io/foreground.color";
+import {CharacterSave, Saveable} from "./save-data";
 
-export abstract class CharacterGameObject extends GameObject implements Renderable {
+export abstract class CharacterGameObject extends GameObject implements Renderable, Saveable<CharacterSave> {
   private combatLog = new Debug('combat.log');
 
   abstract getIsBloody(): boolean;
@@ -42,6 +43,22 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
 
   constructor(context: Context, public position: Position) {
     super(context);
+  }
+
+  public toSaveData(): CharacterSave {
+    return {
+      position: this.position,
+      hp: this.hp,
+      mp: this.mp,
+      strength: this.strength,
+      dexterity: this.dexterity,
+      endurance: this.endurance,
+      wisdom: this.wisdom,
+      equipment: Object.fromEntries(
+        Object.entries(this.equipment).map(([slot, item]) => [slot, item?.toSaveData()]),
+      ),
+      states: Array.from(this.states).map(state => state.toSaveData()),
+    };
   }
 
   public getHp() {
@@ -255,6 +272,9 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
   }
 
   protected modifiers: MonsterModifier[] = [];
+  public getModifiers(): readonly MonsterModifier[] {
+    return this.modifiers;
+  }
   applyModifier(modifier: MonsterModifier) {
     this.modifiers.push(modifier);
     if (modifier.stats.strength) {

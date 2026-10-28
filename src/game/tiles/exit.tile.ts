@@ -4,6 +4,8 @@ import {ForegroundColor} from "../../io/foreground.color";
 import {BackgroundColor} from "../../io/background.color";
 
 export class ExitTile extends Tile {
+  public static readonly saveId = "exit";
+
   getBaseChar(): Char {
     return {
       char: 'X',

@@ -17,6 +17,10 @@ export type SpellStats = {
 };
 
 export abstract class Spell {
+  public get saveId(): string {
+    return (this.constructor as typeof Spell & {readonly saveId: string}).saveId;
+  }
+
   protected constructor(public readonly target: SpellTarget, public readonly stats: SpellStats, public readonly level: number) {}
 
   abstract getName(): string;

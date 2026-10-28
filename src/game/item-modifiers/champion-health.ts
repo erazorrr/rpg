@@ -2,6 +2,8 @@ import {ItemModifier} from "../item-modifier";
 import {PRICE_PER_HP} from "../prices";
 
 export class ChampionHealth extends ItemModifier {
+  public static readonly saveId = "champion-health";
+
   constructor() {
     super('champion health', {
       maxHp: 10,

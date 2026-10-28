@@ -4,6 +4,8 @@ import {ForegroundColor} from "../../io/foreground.color";
 import {BackgroundColor} from "../../io/background.color";
 
 export class WaterTile extends Tile {
+  public static readonly saveId = "water";
+
   getBaseChar(): Char {
     return {
       char: Math.random() < 0.01 ? ' ' : '~',

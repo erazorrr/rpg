@@ -2,6 +2,8 @@ import {Spell, SpellTarget} from "../spell";
 import {StrengthState} from "../states/strength.state";
 
 export class EmpowerOtherSpell extends Spell {
+  public static readonly saveId = "empower-other";
+
   constructor() {
     super(SpellTarget.Monster, {
       state: () => new StrengthState(30, 8),

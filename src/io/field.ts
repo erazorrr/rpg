@@ -75,7 +75,9 @@ export class Field extends Renderer implements Renderable  {
       renderer.put(new Position(this.rbPosition.x, this.ltPosition.y), this.RTC);
 
       let x = this.ltPosition.x + 1;
-      const titleStart = Math.floor((this.rbPosition.x - this.title.length) / 2);
+      const titleStart = this.ltPosition.x + Math.floor(
+        (this.rbPosition.x - this.ltPosition.x + 1 - this.title.length) / 2,
+      );
       while (x < titleStart) {
         renderer.put(new Position(x, this.ltPosition.y), this.H);
         x++;

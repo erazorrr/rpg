@@ -6,6 +6,7 @@ import {Context} from "../../context";
 import {PRICE_PER_MAGIC_BONUS, PRICE_PER_MAGIC_DICE_BONUS} from "../../prices";
 
 export class Staff extends Weapon {
+  public static readonly saveId = "staff";
   getChar(): Char {
     return {
       char: 'I',

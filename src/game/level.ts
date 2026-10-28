@@ -3,8 +3,9 @@ import {Npc} from "./npc";
 import {Position, SerializedPosition} from "../io/position";
 import {Item} from "./item";
 import {Tile} from "./tiles/abstract.tile";
+import {LevelSave, Saveable} from "./save-data";
 
-export class Level {
+export class Level implements Saveable<LevelSave> {
   private npcs: Npc[] = [];
   private items: Map<SerializedPosition, Item> = new Map();
 
@@ -44,6 +45,18 @@ export class Level {
 
   public getItemsAndPositions() {
     return this.items.entries();
+  }
+
+  public toSaveData(): LevelSave {
+    return {
+      levelNo: this.levelNo,
+      map: this.map.toSaveData(),
+      npcs: this.npcs.map(npc => npc.toSaveData()),
+      items: Array.from(this.items.entries()).map(([position, item]) => ({
+        position: Position.deserialize(position),
+        item: item.toSaveData(),
+      })),
+    };
   }
 
   public findTile(c: new () => Tile): Position {

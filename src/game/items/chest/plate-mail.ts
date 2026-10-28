@@ -6,6 +6,7 @@ import {Chest} from "./chest";
 import {PRICE_PER_ARMOR} from "../../prices";
 
 export class PlateMail extends Chest {
+  public static readonly saveId = "plate-mail";
   getChar(): Char {
     return {
       char: 'U',

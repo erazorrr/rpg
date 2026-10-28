@@ -9,6 +9,8 @@ import {Skeleton} from "./skeleton";
 import {Crossbow} from "../items/weapons/crossbow";
 
 export class SkeletonArcher extends Skeleton {
+  public static readonly saveId: string = "skeleton-archer";
+
   strength = 10;
   dexterity = 12;
   endurance = 4;

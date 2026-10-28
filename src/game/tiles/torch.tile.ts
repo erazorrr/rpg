@@ -4,6 +4,8 @@ import {ForegroundColor} from "../../io/foreground.color";
 import {BackgroundColor} from "../../io/background.color";
 
 export class TorchTile extends Tile {
+  public static readonly saveId = "torch";
+
   getBaseChar(): Char {
     return {
       char: ' ',

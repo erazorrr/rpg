@@ -5,8 +5,11 @@ import {BackgroundColor} from "../../io/background.color";
 import {Context} from "../context";
 import {Position} from "../../io/position";
 import {Level} from "../level";
+import {NpcSave} from "../save-data";
 
 export class TreasureGoblin extends Npc {
+  public static readonly saveId: string = "treasure-goblin";
+
   strength = 6;
   dexterity = 10;
   endurance = 3;
@@ -56,6 +59,24 @@ export class TreasureGoblin extends Npc {
 
   getBaseLootCost(): number {
     return this._baseLootCost;
+  }
+
+  public getTimer(): number { return this.timer; }
+  public hasTimerStarted(): boolean { return this.timerStarted; }
+  public restoreTimer(timer: number, started: boolean): void {
+    this.timer = timer;
+    this.timerStarted = started;
+  }
+
+  public toSaveData(): NpcSave {
+    return {
+      ...super.toSaveData(),
+      treasure: {
+        cost: this._baseLootCost,
+        timer: this.timer,
+        started: this.timerStarted,
+      },
+    };
   }
 
   public equipment = {};

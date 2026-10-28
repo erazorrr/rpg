@@ -6,6 +6,7 @@ import {Chest} from "./chest";
 import {PRICE_PER_ARMOR} from "../../prices";
 
 export class Robe extends Chest {
+  public static readonly saveId = "robe";
   getChar(): Char {
     return {
       char: 'U',

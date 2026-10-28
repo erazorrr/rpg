@@ -4,6 +4,8 @@ import {ForegroundColor} from "../../io/foreground.color";
 import {BackgroundColor} from "../../io/background.color";
 
 export class WallTile extends Tile {
+  public static readonly saveId = "wall";
+
   getBaseChar(): Char {
     return {
       char: ' ',

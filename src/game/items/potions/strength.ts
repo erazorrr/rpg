@@ -6,6 +6,7 @@ import {ForegroundColor} from "../../../io/foreground.color";
 import {BackgroundColor} from "../../../io/background.color";
 
 export class StrengthPotion extends Potion {
+  public static readonly saveId = "strength-potion";
   public constructor(context: Context) {
     super(context, {consumableState: new StrengthState(30, 6)}, 4);
   }

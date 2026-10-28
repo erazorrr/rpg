@@ -2,6 +2,8 @@ import {ItemModifier} from "../item-modifier";
 import {PRICE_PER_DEXTERITY} from "../prices";
 
 export class AntiDexterity extends ItemModifier {
+  public static readonly saveId = "anti-dexterity";
+
   constructor() {
     super('clumsiness', {
       dexterityBonus: -2,

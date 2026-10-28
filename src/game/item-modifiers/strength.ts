@@ -2,6 +2,8 @@ import {ItemModifier} from "../item-modifier";
 import {PRICE_PER_STRENGTH} from "../prices";
 
 export class Strength extends ItemModifier {
+  public static readonly saveId = "strength";
+
   constructor() {
     super('strength', {
       strengthBonus: 2,

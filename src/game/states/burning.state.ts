@@ -4,6 +4,8 @@ import {FrozenState} from "./frozen.state";
 import {BackgroundColor} from "../../io/background.color";
 
 export class BurningState extends State {
+  public static readonly saveId = "burning";
+
   constructor(turns: number, damagePerTurn: number) {
     super({
       damagePerTurn,

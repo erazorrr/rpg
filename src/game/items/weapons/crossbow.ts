@@ -6,6 +6,7 @@ import {ForegroundColor} from "../../../io/foreground.color";
 import {PRICE_PER_DAMAGE, PRICE_PER_DAMAGE_ROLL} from "../../prices";
 
 export class Crossbow extends Weapon {
+  public static readonly saveId = "crossbow";
   getChar(): Char {
     return {
       char: '}',

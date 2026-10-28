@@ -2,6 +2,8 @@ import {State} from "../state";
 import {CharacterGameObject} from "../character.game-object";
 
 export class DexterityState extends State {
+  public static readonly saveId = "dexterity";
+
   constructor(turns: number, dexterityBonus: number) {
     super({
       dexterityBonus,

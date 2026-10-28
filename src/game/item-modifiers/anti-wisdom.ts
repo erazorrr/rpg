@@ -2,6 +2,8 @@ import {ItemModifier} from "../item-modifier";
 import {PRICE_PER_WISDOM} from "../prices";
 
 export class AntiWisdom extends ItemModifier {
+  public static readonly saveId = "anti-wisdom";
+
   constructor() {
     super('stupidity', {
       wisdomBonus: -2,

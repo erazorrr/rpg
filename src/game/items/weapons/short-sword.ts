@@ -6,6 +6,7 @@ import {BackgroundColor} from "../../../io/background.color";
 import {PRICE_PER_DAMAGE, PRICE_PER_DAMAGE_ROLL} from "../../prices";
 
 export class ShortSword extends Weapon {
+  public static readonly saveId = "short-sword";
   getChar(): Char {
     return {
       char: '/',

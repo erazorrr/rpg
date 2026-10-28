@@ -48,6 +48,21 @@ export class MainMenu extends GameObject implements Renderable, Interactive {
     false,
   );
 
+  public setSaveState(valid: boolean, invalidSaveError?: string): void {
+    const entries: Array<{id: string, label: string, onSelect: () => void}> = [];
+    if (valid) entries.push({id: 'continue', label: 'Continue', onSelect: () => this.context.postGameMessage(GameMessage.continueGame())});
+    if (invalidSaveError) {
+      entries.push({
+        id: 'delete-invalid',
+        label: `Delete save — cannot load: ${invalidSaveError}`,
+        onSelect: () => this.context.postGameMessage(GameMessage.deleteInvalidSave()),
+      });
+    }
+    entries.push({id: 'new', label: 'New game', onSelect: () => this.context.postGameMessage(GameMessage.newGame())});
+    entries.push({id: 'exit', label: 'Exit', onSelect: () => this.context.postGameMessage(GameMessage.exit())});
+    this.mainMenu = new List('', entries, new Position(10, 5), new Position(40, 15), false);
+  }
+
   makeInteractive(): void {
     this.mainMenu.makeInteractive(this.field);
   }

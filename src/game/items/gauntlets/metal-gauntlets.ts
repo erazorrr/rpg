@@ -6,6 +6,7 @@ import {Context} from "../../context";
 import {PRICE_PER_ARMOR} from "../../prices";
 
 export class MetalGauntlets extends Gauntlets {
+  public static readonly saveId = "metal-gauntlets";
   getChar(): Char {
     return {
       char: 'u',

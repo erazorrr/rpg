@@ -6,6 +6,10 @@ export type MonsterModifierStats = {
 };
 
 export abstract class MonsterModifier {
+  public get saveId(): string {
+    return (this.constructor as typeof MonsterModifier & {readonly saveId: string}).saveId;
+  }
+
   protected constructor(
     public name: string,
     public stats: MonsterModifierStats,

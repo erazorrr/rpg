@@ -4,6 +4,7 @@ import {ItemModifier} from "./item-modifier";
 import {Char} from "../io/char";
 import {Position} from "../io/position";
 import {State} from "./state";
+import {ItemSave, Saveable} from "./save-data";
 
 export enum ItemType {
   Weapon,
@@ -41,7 +42,10 @@ export type ItemStats = {
   consumableState?: State;
 };
 
-export abstract class Item extends GameObject {
+export abstract class Item extends GameObject implements Saveable<ItemSave> {
+  public get saveId(): string {
+    return (this.constructor as typeof Item & {readonly saveId: string}).saveId;
+  }
   protected constructor(context: Context, public type: ItemType, public stats: ItemStats, public baseCost: number) {
     super(context);
   }
@@ -103,6 +107,16 @@ export abstract class Item extends GameObject {
   }
 
   private modifiers: ItemModifier[] = [];
+  public getModifiers(): readonly ItemModifier[] {
+    return this.modifiers;
+  }
+
+  public toSaveData(): ItemSave {
+    return {
+      kind: this.saveId,
+      modifiers: this.modifiers.map(modifier => modifier.saveId),
+    };
+  }
   applyModifier(modifier: ItemModifier) {
     this.modifiers.push(modifier);
     for (const [key, value] of Object.entries(modifier.stats)) {

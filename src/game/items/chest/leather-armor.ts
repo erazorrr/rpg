@@ -6,6 +6,7 @@ import {Context} from "../../context";
 import {PRICE_PER_ARMOR} from "../../prices";
 
 export class LeatherArmor extends Chest {
+  public static readonly saveId = "leather-armor";
   getChar(): Char {
     return {
       char: 'U',

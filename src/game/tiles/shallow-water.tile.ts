@@ -4,6 +4,8 @@ import {ForegroundColor} from "../../io/foreground.color";
 import {BackgroundColor} from "../../io/background.color";
 
 export class ShallowWaterTile extends Tile {
+  public static readonly saveId = "shallow-water";
+
   getBaseChar(): Char {
     return {
       char: ' ',

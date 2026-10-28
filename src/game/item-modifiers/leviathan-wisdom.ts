@@ -2,6 +2,8 @@ import {ItemModifier} from "../item-modifier";
 import {PRICE_PER_WISDOM} from "../prices";
 
 export class LeviathanWisdom extends ItemModifier {
+  public static readonly saveId = "leviathan-wisdom";
+
   constructor() {
     super('elder wisdom', {
       wisdomBonus: 10,

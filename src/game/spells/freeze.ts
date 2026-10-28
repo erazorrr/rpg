@@ -2,6 +2,8 @@ import {Spell, SpellTarget} from "../spell";
 import {FrozenState} from "../states/frozen.state";
 
 export class FreezeSpell extends Spell {
+  public static readonly saveId = "freeze";
+
   constructor() {
     super(SpellTarget.Monster, {
       stateChance: 0.8,

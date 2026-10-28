@@ -6,6 +6,8 @@ import {Spell} from "../spell";
 import {FireBoltSpell} from "../spells/fire-bolt";
 
 export class GoblinMage extends Goblin {
+  public static readonly saveId: string = "goblin-mage";
+
   strength = 6;
   dexterity = 6;
   endurance = 1;

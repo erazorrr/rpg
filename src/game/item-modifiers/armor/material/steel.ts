@@ -2,6 +2,8 @@ import {ItemModifier} from "../../../item-modifier";
 import {PRICE_PER_ARMOR} from "../../../prices";
 
 export class SteelArmorModifier extends ItemModifier {
+  public static readonly saveId = "steel-armor";
+
   constructor() {
     super('Steel', {
       armor: 2,

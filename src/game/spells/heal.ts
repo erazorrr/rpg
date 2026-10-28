@@ -1,6 +1,8 @@
 import {Spell, SpellTarget} from "../spell";
 
 export class HealSpell extends Spell {
+  public static readonly saveId = "heal";
+
   constructor() {
     super(SpellTarget.Self, {
       restoreHp: 30,

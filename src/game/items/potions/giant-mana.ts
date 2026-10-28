@@ -7,6 +7,7 @@ import {BackgroundColor} from "../../../io/background.color";
 import {PRICE_PER_MANA_POINT} from "../../prices";
 
 export class GiantManaPotion extends Potion {
+  public static readonly saveId = "giant-mana-potion";
   private static baseStats: ItemStats = {
     consumableMpReplenish: 100,
   };
