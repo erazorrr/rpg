@@ -1,6 +1,5 @@
 import {GameObject} from "./abstract.game-object";
 import {Position} from "../io/position";
-import {Renderable} from "../io/renderable.interface";
 import {Char} from "../io/char";
 import {GameMessage} from "./game-message";
 import {Equipment} from "./equipment";
@@ -13,8 +12,9 @@ import {Spell} from "./spell";
 import {BackgroundColor} from "../io/background.color";
 import {ForegroundColor} from "../io/foreground.color";
 import {CharacterSave, Saveable} from "./save-data";
+import {AnimationFrame, ProjectileImpact} from "./animation";
 
-export abstract class CharacterGameObject extends GameObject implements Renderable, Saveable<CharacterSave> {
+export abstract class CharacterGameObject extends GameObject implements Saveable<CharacterSave> {
   private combatLog = new Debug('combat.log');
 
   abstract getIsBloody(): boolean;
@@ -157,9 +157,9 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
   }
 
   abstract getBaseName(): string;
-  abstract getChar(): Char;
+  abstract getChar(frame?: AnimationFrame): Char;
 
-  render() {
+  render(frame?: AnimationFrame) {
     const map = this.context.getCurrentMap();
     const tile = map.getTile(this.position);
 
@@ -177,10 +177,10 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
     this.context.getRenderer().put(
       new Position(this.position.x - map.getTopLeftCorner().x, this.position.y - map.getTopLeftCorner().y),
       tile.isExplored() ? {
-        ...this.getChar(),
-        backgroundColor: stateBackgroundColor ? stateBackgroundColor : tile.getChar().backgroundColor,
-        color: stateForegroundColor ? stateForegroundColor : this.getChar().color,
-      } : tile.getChar(),
+        ...this.getChar(frame),
+        backgroundColor: stateBackgroundColor ? stateBackgroundColor : tile.getChar(frame, this.position).backgroundColor,
+        color: stateForegroundColor ? stateForegroundColor : this.getChar(frame).color,
+      } : tile.getChar(frame, this.position),
     );
   };
 
@@ -228,24 +228,18 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
   public MAX_AC = this.ATTACK_ROLL - 5;
   attack(target: CharacterGameObject): void {
     this.combatLog.log(`${this.getName()}->${target.getName()}!`);
+    let projectilePath: Position[] | null = null;
     if (this.equipment.weapon?.isRanged) {
-      // rendering projectile
       const path = this.isVisible(target.position);
-      this.context.getCurrentMap().renderProjectile(
-        path,
-        {
-          char: '•',
-          backgroundColor: BackgroundColor.Black,
-          color: ForegroundColor.Grey50,
-        }
-      );
+      projectilePath = path ? [...path, target.position] : null;
     }
     const ac = target.getAC();
     this.combatLog.log(`AC ${ac}`);
     const attackRoll = Math.ceil(Math.random() * this.ATTACK_ROLL);
     this.combatLog.log(`AttackRoll ${attackRoll}`);
     const verb = this.equipment.weapon?.isRanged ? 'shoots' : 'hits';
-    if (attackRoll >= ac || this.modifiers.find(m => m instanceof SpectralHitMonsterModifier)) {
+    const didHit = Boolean(attackRoll >= ac || this.modifiers.find(m => m instanceof SpectralHitMonsterModifier));
+    if (didHit) {
       // hit
       const dice = this.getDamageDice();
       const bonus = this.getDamageBonus();
@@ -268,6 +262,17 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
     }
     else {
       this.context.log(`${this.getName()} ${verb} ${target.getName()} but misses!`);
+    }
+    if (projectilePath) {
+      this.context.presentProjectile?.({
+        path: projectilePath,
+        projectile: {
+          char: '•',
+          backgroundColor: BackgroundColor.Black,
+          color: ForegroundColor.Grey50,
+        },
+        impact: didHit ? 'hit' : 'miss',
+      });
     }
   }
 
@@ -320,12 +325,14 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
 
   applySpell(caster: CharacterGameObject, spell: Spell) {
     const projectile = spell.getProjectile();
+    let projectilePath: Position[] | null = null;
     if (projectile) {
       const path = caster.isVisible(this.position);
       if (path) {
-        this.context.getCurrentMap().renderProjectile(path, projectile);
+        projectilePath = [...path, this.position];
       }
     }
+    let impact: ProjectileImpact = 'neutral';
     if (spell.stats.state && !spell.stats.damageRoll) {
       if (!spell.stats.stateChance || Math.random() < spell.stats.stateChance) {
         const state = (spell.stats.state)();
@@ -349,6 +356,7 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
       const attackRoll = Math.ceil(Math.random() * this.ATTACK_ROLL);
       this.combatLog.log(`AttackRoll ${attackRoll}`);
       if (attackRoll >= ac || caster.modifiers.find(m => m instanceof SpectralHitMonsterModifier)) {
+        impact = 'hit';
         const dice = spell.stats.damageRoll + caster.getMagicDiceBonus();
         const bonus = spell.stats.damageBonus + caster.getMagicBonus();
         const damageRoll = Math.ceil(Math.random() * dice);
@@ -370,8 +378,12 @@ export abstract class CharacterGameObject extends GameObject implements Renderab
           }
         }
       } else {
+        impact = 'miss';
         this.context.log(`${spell.getName()} misses ${this.getName()}!`);
       }
+    }
+    if (projectile && projectilePath) {
+      this.context.presentProjectile?.({path: projectilePath, projectile, impact});
     }
   }
 

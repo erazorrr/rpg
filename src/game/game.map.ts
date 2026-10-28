@@ -7,9 +7,9 @@ import {Context} from "./context";
 import {TorchTile} from "./tiles/torch.tile";
 import {FloorTile} from "./tiles/floor.tile";
 import {BackgroundColor} from "../io/background.color";
-import {Char} from "../io/char";
 import {MapSave, Saveable} from "./save-data";
 import {restoreTile} from "./tiles/tile.factory";
+import {AnimationFrame} from "./animation";
 
 export class GameMap extends GameObject implements Renderable, Saveable<MapSave> {
   constructor(
@@ -84,22 +84,15 @@ export class GameMap extends GameObject implements Renderable, Saveable<MapSave>
     this.tiles[position.x][position.y] = tile;
   }
 
-  renderProjectile(path: Position[], projectile: Char) {
-    const modifiedPath = path.map(p =>
-      new Position(p.x - this.getTopLeftCorner().x + 1, p.y - this.getTopLeftCorner().y + 1)
-    );
-    return this.context.getRenderer().renderProjectile(modifiedPath, projectile);
-  }
-
   private TORCH_RADIUS = 6;
-  render(renderer: Renderer) {
+  render(renderer: Renderer, frame?: AnimationFrame) {
     const topLeftCorner = this.getTopLeftCorner();
     const startX = topLeftCorner.x;
     const startY = topLeftCorner.y;
 
     for (let i = startX; i < Math.min(startX + this.containerWidth, this.width); i++) {
       for (let j = startY; j < Math.min(startY + this.containerHeight, this.height); j++) {
-        renderer.put(new Position(i - startX, j - startY), this.tiles[i][j].getChar());
+        renderer.put(new Position(i - startX, j - startY), this.tiles[i][j].getChar(frame, new Position(i, j)));
       }
     }
 
@@ -116,14 +109,14 @@ export class GameMap extends GameObject implements Renderable, Saveable<MapSave>
     for (const torch of torches) {
       for (let i = torch.x - this.TORCH_RADIUS; i <= torch.x + this.TORCH_RADIUS; i++) {
         for (let j = torch.y - this.TORCH_RADIUS; j <= torch.y + this.TORCH_RADIUS; j++) {
-          if (!this.tiles[i]?.[i] || !(this.tiles[i][j] instanceof FloorTile) || !this.tiles[i][j].isExplored()) {
+          if (!this.tiles[i]?.[j] || !(this.tiles[i][j] instanceof FloorTile) || !this.tiles[i][j].isExplored()) {
             continue;
           }
           const position = new Position(i, j);
           if (position.distanceTo(torch) <= this.TORCH_RADIUS) {
             if (this.isVisible(torch, position, this.TORCH_RADIUS)) {
               renderer.put(new Position(i - startX, j - startY), {
-                ...this.tiles[i][j].getChar(),
+                ...this.tiles[i][j].getChar(frame, position),
                 backgroundColor: this.tiles[i][j].getIsBloody() ? BackgroundColor.Red3a : BackgroundColor.Orange4b,
               });
             }
@@ -133,17 +126,17 @@ export class GameMap extends GameObject implements Renderable, Saveable<MapSave>
     }
 
     for (const torch of torches) {
-      const flickeringRoll = Math.random() < 0.1 ? 1 : 0;
+      const torchPhase = (torch.x * 17 + torch.y * 31 + Math.floor((frame?.frame ?? 0) / 3)) % 2;
       for (let i = torch.x - this.TORCH_RADIUS; i <= torch.x + this.TORCH_RADIUS; i++) {
         for (let j = torch.y - this.TORCH_RADIUS; j <= torch.y + this.TORCH_RADIUS; j++) {
-          if (!this.tiles[i]?.[i] || !(this.tiles[i][j] instanceof FloorTile) || !this.tiles[i][j].isExplored()) {
+          if (!this.tiles[i]?.[j] || !(this.tiles[i][j] instanceof FloorTile) || !this.tiles[i][j].isExplored()) {
             continue;
           }
           const position = new Position(i, j);
-          if (position.distanceTo(torch) <= (2 + flickeringRoll)) {
+          if (position.distanceTo(torch) <= (2 + torchPhase)) {
             if (this.isVisible(torch, position, this.TORCH_RADIUS)) {
               renderer.put(new Position(i - startX, j - startY), {
-                ...this.tiles[i][j].getChar(),
+                ...this.tiles[i][j].getChar(frame, position),
                 backgroundColor: this.tiles[i][j].getIsBloody() ? BackgroundColor.Red3a : BackgroundColor.LightGoldenrod3,
               });
             }

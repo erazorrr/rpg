@@ -2,13 +2,15 @@ import {Char} from "../../io/char";
 import {ForegroundColor} from "../../io/foreground.color";
 import {BackgroundColor} from "../../io/background.color";
 import {Saveable, TileSave} from "../save-data";
+import {AnimationFrame} from "../animation";
+import {Position} from "../../io/position";
 
 export abstract class Tile implements Saveable<TileSave> {
   public get saveId(): string {
     return (this.constructor as typeof Tile & {readonly saveId: string}).saveId;
   }
 
-  abstract getBaseChar(): Char;
+  abstract getBaseChar(frame?: AnimationFrame, position?: Position): Char;
   abstract isNavigable(): boolean;
 
   protected isBloody = false;
@@ -29,9 +31,9 @@ export abstract class Tile implements Saveable<TileSave> {
     return this.explored;
   }
 
-  getChar(): Char {
+  getChar(frame?: AnimationFrame, position?: Position): Char {
     if (this.explored) {
-      return this.getBaseChar();
+      return this.getBaseChar(frame, position);
     } else {
       return {
         char: ' ',

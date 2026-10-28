@@ -59,7 +59,7 @@ export class LevelUpPopup extends GameObject implements Renderable, Interactive 
       this.generateList(this.attributesList.getActiveId());
       this.makeInteractive();
       this.render();
-      this.context.getRenderer().flush(true, false);
+      this.context.getRenderer().flush(true);
     }
   }
 

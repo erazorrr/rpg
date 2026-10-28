@@ -6,6 +6,7 @@ import {Position} from "../io/position";
 import {CharacterGameObject} from "./character.game-object";
 import {Item} from "./item";
 import {Level} from "./level";
+import {ProjectilePresentation} from "./animation";
 
 export interface Context {
   getPlayer(): Player;
@@ -20,4 +21,5 @@ export interface Context {
   log(message: string): void;
   destroyNpc(npc: CharacterGameObject): void;
   getCurrentGameLevel(): Level;
+  presentProjectile?(projectile: ProjectilePresentation): void;
 }

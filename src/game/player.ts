@@ -1,4 +1,3 @@
-import {Renderable} from "../io/renderable.interface";
 import {Position, SerializedPosition} from "../io/position";
 import {ForegroundColor} from "../io/foreground.color";
 import {BackgroundColor} from "../io/background.color";
@@ -29,7 +28,7 @@ import {restoreItem} from "./items/item.factory";
 import {restoreSpell} from "./spells/spell.factory";
 import {restoreState} from "./state.factory";
 
-export class Player extends CharacterGameObject implements Renderable, Interactive {
+export class Player extends CharacterGameObject implements Interactive {
   private inputEmitter = new InputEmitter();
 
   public level = 1;
@@ -176,7 +175,7 @@ export class Player extends CharacterGameObject implements Renderable, Interacti
           }
         }
       }
-      this.context.getRenderer().flush(true, false);
+      this.context.getRenderer().flush(true);
     }, 300);
   }
 

@@ -6,6 +6,7 @@ import {Context} from "../context";
 import {Position} from "../../io/position";
 import {Level} from "../level";
 import {NpcSave} from "../save-data";
+import {AnimationFrame} from "../animation";
 
 export class TreasureGoblin extends Npc {
   public static readonly saveId: string = "treasure-goblin";
@@ -24,10 +25,13 @@ export class TreasureGoblin extends Npc {
     return 1.0;
   }
 
-  getChar(): Char {
+  getChar(frame?: AnimationFrame): Char {
+    const cadence = this.timerStarted ? 2 : 3;
+    const colors = [ForegroundColor.Gold1, ForegroundColor.Yellow1, ForegroundColor.Gold3b];
+    const phase = Math.floor((frame?.frame ?? 0) / cadence) % colors.length;
     return {
       char: 't',
-      color: ForegroundColor.Gold1,
+      color: colors[phase],
       backgroundColor: BackgroundColor.Green,
     };
   }

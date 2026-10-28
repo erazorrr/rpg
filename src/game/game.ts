@@ -39,6 +39,8 @@ import {Bracelet} from "./items/gauntlets/bracelet";
 import {GameSaveCodec} from "./game-save-codec";
 import {SaveGameService} from "./save-game";
 import {List} from "../io/list";
+import {performance} from "node:perf_hooks";
+import {AnimationFrame, ProjectileEffect, ProjectilePresentation} from "./animation";
 
 export class Game {
   private static readonly PAUSE_MENU_WIDTH = 50;
@@ -59,6 +61,16 @@ export class Game {
   private saveCodec = new GameSaveCodec();
 
   private selectedSpell: Spell | null = null;
+
+  private animationStartedAtMs = performance.now();
+  private animationTimer: NodeJS.Timeout | null = null;
+  private effectTimer: NodeJS.Timeout | null = null;
+  private renderScheduled = false;
+  private isRendering = false;
+  private isPresentingAction = false;
+  private pendingProjectiles: ProjectilePresentation[] = [];
+  private activeProjectiles: ProjectileEffect[] = [];
+  private projectileBatchComplete: (() => void) | null = null;
 
   private gameLog: GameLog = new GameLog(30);
 
@@ -100,6 +112,7 @@ export class Game {
       getItem: (position: Position) => this.getCurrentLevel()?.getItem(position),
       destroyNpc: this.destroyNpc.bind(this),
       getCurrentGameLevel: () => this.getCurrentLevel(),
+      presentProjectile: this.queueProjectile.bind(this),
     };
   }
   private healthBar = new HealthBar(this.generateMenuFieldContext());
@@ -244,6 +257,8 @@ export class Game {
         this.gameFinished = true;
         try { this.saveFile.delete(); } catch (e) { this.gameLog.log(`Could not delete save: ${e instanceof Error ? e.message : e}`); }
         this.render();
+        this.stopPresentationClock();
+        this.cancelProjectiles();
         break;
       case GameMessageType.PickUp: {
         const item = this.getCurrentLevel()?.getItem(this.player.position);
@@ -287,6 +302,7 @@ export class Game {
         break;
       }
       case GameMessageType.SelectTarget: {
+        if (this.isPresentingAction) break;
         if (!this.selectedSpell) {
           if (!this.player.equipment.weapon?.isRanged) {
             break;
@@ -295,23 +311,23 @@ export class Game {
           const npc = (message.payload as { npc: Npc }).npc;
           this.selectTarget?.makeUninteractive();
           this.selectTarget = null;
-          this.render();  // so the player can see the projectile
-          this.player.makeInteractive();
-          this.player.attack(npc);
-          this.tick();
           this.render();
+          this.isPresentingAction = true;
+          this.player.makeUninteractive();
+          this.player.attack(npc);
+          this.presentPendingProjectiles(() => this.tick(true));
           break;
         }
         const npc = (message.payload as { npc: Npc }).npc;
         this.selectTarget?.makeUninteractive();
         this.selectTarget = null;
-        this.render(); // so the player can see the projectile
-        this.player.makeInteractive();
+        this.render();
+        this.isPresentingAction = true;
+        this.player.makeUninteractive();
         npc.applySpell(this.player, this.selectedSpell);
         this.player.spendMP(this.selectedSpell.getMPCost());
         this.selectedSpell = null;
-        this.tick();
-        this.render();
+        this.presentPendingProjectiles(() => this.tick(true));
         break;
       }
     }
@@ -363,15 +379,147 @@ export class Game {
     return false;
   }
 
-  private tick() {
+  private queueProjectile(projectile: ProjectilePresentation): void {
+    if (!this.gameFinished && projectile.path.length > 0) {
+      this.pendingProjectiles.push({
+        ...projectile,
+        path: projectile.path.map(position => new Position(position.x, position.y)),
+      });
+    }
+  }
+
+  private presentPendingProjectiles(onComplete: () => void): void {
+    if (this.pendingProjectiles.length === 0) {
+      onComplete();
+      return;
+    }
+
+    const startedAtMs = performance.now();
+    this.activeProjectiles = this.pendingProjectiles.map(projectile => ({
+      ...projectile,
+      startedAtMs,
+      travelMs: Math.min(450, Math.max(80, projectile.path.length * 30)),
+      impactMs: 100,
+    }));
+    this.pendingProjectiles = [];
+    this.projectileBatchComplete = onComplete;
+    this.suspendPresentationInputs();
+    this.scheduleEffectFrame();
+    this.render();
+  }
+
+  private suspendPresentationInputs(): void {
+    this.player?.makeUninteractive();
+    this.inventory?.makeUninteractive();
+    this.spellBook?.makeUninteractive();
+    this.selectTarget?.makeUninteractive();
+    this.levelUpWindow?.makeUninteractive();
+    this.pauseMenu?.makeUninteractive();
+  }
+
+  private scheduleEffectFrame(): void {
+    if (this.effectTimer || this.activeProjectiles.length === 0) return;
+    this.effectTimer = setTimeout(() => {
+      this.effectTimer = null;
+      const now = performance.now();
+      const isComplete = this.activeProjectiles.every(effect =>
+        now >= effect.startedAtMs + effect.travelMs + effect.impactMs
+      );
+      if (isComplete) {
+        this.activeProjectiles = [];
+        const onComplete = this.projectileBatchComplete;
+        this.projectileBatchComplete = null;
+        try {
+          this.render();
+        } finally {
+          onComplete?.();
+        }
+      } else {
+        this.requestRender();
+        this.scheduleEffectFrame();
+      }
+    }, 30);
+    this.effectTimer.unref?.();
+  }
+
+  private finishActionPresentation(): void {
+    this.isPresentingAction = false;
+    if (this.state === GameState.Game && !this.gameFinished) {
+      if (this.inventory) this.inventory.makeInteractive();
+      else if (this.spellBook) this.spellBook.makeInteractive();
+      else if (this.selectTarget) this.selectTarget.makeInteractive();
+      else if (this.levelUpWindow) this.levelUpWindow.makeInteractive();
+      else if (this.pauseMenu) this.pauseMenu.makeInteractive(this.renderer);
+      else this.player?.makeInteractive();
+    }
+    this.render();
+  }
+
+  private cancelProjectiles(): void {
+    if (this.effectTimer) clearTimeout(this.effectTimer);
+    this.effectTimer = null;
+    this.pendingProjectiles = [];
+    this.activeProjectiles = [];
+    this.projectileBatchComplete = null;
+    this.isPresentingAction = false;
+  }
+
+  private startPresentationClock(): void {
+    this.stopPresentationClock();
+    this.animationStartedAtMs = performance.now();
+    const schedule = () => {
+      this.animationTimer = setTimeout(() => {
+        this.animationTimer = null;
+        if (this.state !== GameState.Game || this.gameFinished) return;
+        this.requestRender();
+        schedule();
+      }, 100);
+      this.animationTimer.unref?.();
+    };
+    schedule();
+  }
+
+  private stopPresentationClock(): void {
+    if (this.animationTimer) clearTimeout(this.animationTimer);
+    this.animationTimer = null;
+  }
+
+  private getAnimationFrame(): AnimationFrame {
+    const elapsedMs = Math.max(0, performance.now() - this.animationStartedAtMs);
+    return {frame: Math.floor(elapsedMs / 100), elapsedMs};
+  }
+
+  private requestRender(): void {
+    if (this.renderScheduled) return;
+    this.renderScheduled = true;
+    setImmediate(() => {
+      this.renderScheduled = false;
+      this.render();
+    });
+  }
+
+  private tick(unlockAfterPresentation = false) {
     const level = this.getCurrentLevel();
     if (level) {
       for (const npc of level.getNpcs()) {
         npc.tick();
+        if (this.gameFinished) break;
       }
     }
-    this.player.tick();
-    this.render();
+    if (!this.gameFinished) this.player.tick();
+    if (this.gameFinished) {
+      this.pendingProjectiles = [];
+      this.render();
+      return;
+    }
+    if (this.pendingProjectiles.length > 0) {
+      this.isPresentingAction = true;
+      this.player.makeUninteractive();
+      this.presentPendingProjectiles(() => this.finishActionPresentation());
+    } else {
+      this.render();
+      if (unlockAfterPresentation) this.finishActionPresentation();
+    }
   }
 
   start() {
@@ -380,11 +528,15 @@ export class Game {
   }
 
   private exit() {
+    this.stopPresentationClock();
+    this.cancelProjectiles();
     this.renderer.showCursor();
     process.exit(0);
   }
 
   private goToMainMenu() {
+    this.stopPresentationClock();
+    this.cancelProjectiles();
     this.player?.makeUninteractive();
     const slot = this.saveFile.inspect(this.saveCodec.validate.bind(this.saveCodec));
     this.mainMenu.setSaveState(slot.valid, slot.error);
@@ -447,6 +599,7 @@ export class Game {
       getItem: (position: Position) => this.getCurrentLevel()?.getItem(position),
       destroyNpc: this.destroyNpc.bind(this),
       getCurrentGameLevel: () => this.getCurrentLevel(),
+      presentProjectile: this.queueProjectile.bind(this),
     };
   }
 
@@ -464,6 +617,7 @@ export class Game {
     getItem: (position: Position) => this.getCurrentLevel()?.getItem(position),
     destroyNpc: this.destroyNpc.bind(this),
     getCurrentGameLevel: () => this.getCurrentLevel(),
+    presentProjectile: this.queueProjectile.bind(this),
   }, this.gameField.getWidth(), this.gameField.getHeight());
   private newGame(restored?: {player: Player, levels: Level[], currentLevelIndex: number}) {
     this.gameFinished = false;
@@ -482,6 +636,7 @@ export class Game {
     this.player.makeInteractive();
 
     this.inputEmitter.on(InputEvent.I, this, () => {
+      if (this.isPresentingAction) return;
       if (this.inventory) {
         this.closeInventory();
         this.render();
@@ -499,6 +654,7 @@ export class Game {
     });
 
     this.inputEmitter.on(InputEvent.D, this, () => {
+      if (this.isPresentingAction) return;
       if (this.inventory) {
         const item = this.inventory.getSelectedItem();
         if (item) {
@@ -512,6 +668,7 @@ export class Game {
     });
 
     this.inputEmitter.on(InputEvent.SPACE, this, () => {
+      if (this.isPresentingAction) return;
       if (this.isGameFinished() || this.spellBook || this.inventory || this.levelUpWindow || this.selectTarget) {
         return;
       }
@@ -519,6 +676,7 @@ export class Game {
     });
 
     this.inputEmitter.on(InputEvent.QUESTION, this, () => {
+      if (this.isPresentingAction) return;
       if (!this.inventory && !this.spellBook) {
         this.displayHelp();
         this.render();
@@ -526,6 +684,7 @@ export class Game {
     });
 
     this.inputEmitter.on(InputEvent.A, this, () => {
+      if (this.isPresentingAction) return;
       if (this.isGameFinished() || this.spellBook || this.inventory || this.levelUpWindow || this.selectTarget) {
         return;
       }
@@ -542,6 +701,7 @@ export class Game {
     });
 
     this.inputEmitter.on(InputEvent.ENTER, this, () => {
+      if (this.isPresentingAction) return;
       if (this.gameFinished) {
         this.returnToMainMenu();
       } else if (this.inventory) {
@@ -605,7 +765,7 @@ export class Game {
         }
         this.inventory?.makeUninteractive();
         this.inventory = this.buildInventory();
-        this.inventory.makeInteractive();
+        if (!this.isPresentingAction) this.inventory.makeInteractive();
         this.render();
       } else if (this.spellBook || this.selectTarget) {
         // TODO
@@ -637,10 +797,13 @@ export class Game {
         this.gameLog.log(`Press [Enter] to continue...`);
         this.player?.makeUninteractive();
         this.render();
+        this.stopPresentationClock();
+        this.cancelProjectiles();
       }
     });
 
     this.inputEmitter.on(InputEvent.ESCAPE, this, () => {
+      if (this.isPresentingAction) return;
       if (this.pauseMenu) {
         this.closePauseMenu();
       } else if (this.inventory) {
@@ -661,6 +824,7 @@ export class Game {
     });
 
     this.inputEmitter.on(InputEvent.C, this, () => {
+      if (this.isPresentingAction) return;
       if (this.spellBook) {
         this.closeSpellBook();
         this.render();
@@ -686,6 +850,8 @@ export class Game {
     }
 
     this.state = GameState.Game;
+    this.cancelProjectiles();
+    this.startPresentationClock();
     this.render();
   }
 
@@ -785,7 +951,39 @@ export class Game {
     this.mainMenu.render();
   }
 
-  private renderGame() {
+  private renderTransientEffects(frame: AnimationFrame): void {
+    const now = performance.now();
+    const map = this.getCurrentLevel().map;
+    const topLeft = map.getTopLeftCorner();
+    for (const effect of this.activeProjectiles) {
+      const elapsed = now - effect.startedAtMs;
+      const totalMs = effect.travelMs + effect.impactMs;
+      if (elapsed < 0 || elapsed >= totalMs) continue;
+
+      let worldPosition: Position;
+      let char = effect.projectile.char;
+      if (elapsed < effect.travelMs) {
+        const progress = elapsed / effect.travelMs;
+        const index = Math.min(effect.path.length - 1, Math.floor(progress * effect.path.length));
+        worldPosition = effect.path[index];
+      } else {
+        worldPosition = effect.path[effect.path.length - 1];
+        char = effect.impact === 'hit' ? '*' : effect.impact === 'miss' ? '.' : effect.projectile.char;
+      }
+      const tile = map.getTile(worldPosition);
+      if (!tile?.isExplored()) continue;
+      this.gameField.put(
+        new Position(worldPosition.x - topLeft.x, worldPosition.y - topLeft.y),
+        {
+          char,
+          color: effect.projectile.color,
+          backgroundColor: tile.getChar(frame, worldPosition).backgroundColor,
+        },
+      );
+    }
+  }
+
+  private renderGame(frame: AnimationFrame) {
     this.gameField.render(this.renderer);
     this.menuField.render(this.renderer);
     this.logField.render(this.renderer);
@@ -799,14 +997,15 @@ export class Game {
     this.playerStats.render();
 
     const level = this.getCurrentLevel();
-    level.map.render(this.gameField);
+    level.map.render(this.gameField, frame);
     for (const [serializedPosition, item] of level.getItemsAndPositions()) {
       item.renderAt(Position.deserialize(serializedPosition));
     }
-    this.player.render();
+    this.player.render(frame);
     for (const npc of level.getNpcs()) {
-      npc.render();
+      npc.render(frame);
     }
+    this.renderTransientEffects(frame);
     if (this.inventory) {
       this.inventory.render();
     }
@@ -825,17 +1024,21 @@ export class Game {
   }
 
   private render(isBuffered = true) {
-    switch (this.state) {
-      case GameState.Game:
-        this.renderGame();
-        break;
-      case GameState.Menu:
-        this.renderMenu();
-        break;
+    if (this.isRendering) return;
+    this.isRendering = true;
+    try {
+      switch (this.state) {
+        case GameState.Game:
+          this.renderGame(this.getAnimationFrame());
+          break;
+        case GameState.Menu:
+          this.renderMenu();
+          break;
+      }
+      this.renderer.flush(isBuffered);
+    } finally {
+      this.isRendering = false;
     }
-    const hasOpenedPopup = this.inventory || this.levelUpWindow || this.spellBook || this.selectTarget || this.pauseMenu;
-    const drawProjectiles = !hasOpenedPopup;
-    this.renderer.flush(isBuffered, drawProjectiles);
   }
 
   // A* pathfinding: returns a path of Position[] from 'from' to 'to', or [] if no path.

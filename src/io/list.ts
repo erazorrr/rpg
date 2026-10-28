@@ -80,7 +80,7 @@ export class List extends Field {
       y++;
     }
 
-    renderer.flush(true, false);
+    renderer.flush(true);
   }
 
   getActiveId() {
