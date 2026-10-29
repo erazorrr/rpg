@@ -9,7 +9,7 @@ export abstract class GameObject {
 
   private canPassLight(position: Position): boolean {
     const tile = this.context.getCurrentMap().getTile(position);
-    if (!tile || !tile.isNavigable()) {
+    if (!tile || tile.blocksLight()) {
       return false;
     }
     if (this.context.getPlayer().position.equals(position)) {

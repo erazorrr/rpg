@@ -216,4 +216,19 @@ describe('GameSaveCodec', () => {
 
     expect(legacy.player.level).toBe(4);
   });
+
+  it('rejects unknown tile kinds and statue inscriptions', () => {
+    const codec = new GameSaveCodec();
+    const world = createWorld();
+    const saved = codec.serialize(world.player, world.levels, world.currentLevelIndex);
+    const unknownTile = JSON.parse(JSON.stringify(saved));
+    unknownTile.levels[0].map.tiles[0][0].kind = 'unknown';
+    expect(() => codec.validate(unknownTile)).toThrow('Invalid tile');
+
+    const unknownInscription = JSON.parse(JSON.stringify(saved));
+    unknownInscription.levels[0].map.tiles[0][0] = {
+      kind: 'statue', explored: true, bloody: false, inscriptionId: 'unknown',
+    };
+    expect(() => codec.validate(unknownInscription)).toThrow('Invalid tile');
+  });
 });

@@ -27,6 +27,11 @@ import {PlayerSave} from "./save-data";
 import {restoreItem} from "./items/item.factory";
 import {restoreSpell} from "./spells/spell.factory";
 import {restoreState} from "./state.factory";
+import {
+  getDungeonBiomeDiscoveryMessage,
+  getDungeonBiomeForFloor,
+} from "./dungeon-generation/dungeon-biomes";
+import {DungeonBiome} from "./dungeon-generation/dungeon-layout";
 
 export class Player extends CharacterGameObject implements Interactive {
   private inputEmitter = new InputEmitter();
@@ -87,6 +92,11 @@ export class Player extends CharacterGameObject implements Interactive {
         this.context.log(`${this.getName()} sees the stairs down. [Enter] to ascend.`);
       }
       this.context.tick();
+    } else {
+      const tile = this.context.getCurrentMap().getTile(targetPosition);
+      for (const message of tile?.getBumpMessages() ?? []) {
+        this.context.log(message);
+      }
     }
   }
 
@@ -181,6 +191,7 @@ export class Player extends CharacterGameObject implements Interactive {
 
   public explore() {
     const map = this.context.getCurrentMap();
+    const visibleBiomes = new Set<DungeonBiome>();
 
     for (let dx = -this.getVisibilityRadius(); dx <= this.getVisibilityRadius(); dx++) {
       for (let dy = -this.getVisibilityRadius(); dy <= this.getVisibilityRadius(); dy++) {
@@ -191,9 +202,18 @@ export class Player extends CharacterGameObject implements Interactive {
           if (this.position.manhattanDistanceTo(targetPosition) <= this.getVisibilityRadius()) {
             if (this.isVisible(targetPosition)) {
               tile.setExplored(true);
+              const biome = getDungeonBiomeForFloor(tile);
+              if (biome) visibleBiomes.add(biome);
             }
           }
         }
+      }
+    }
+
+    const level = this.context.getCurrentGameLevel();
+    for (const biome of visibleBiomes) {
+      if (level.discoverDungeonBiome(biome)) {
+        this.context.log(getDungeonBiomeDiscoveryMessage(biome));
       }
     }
   }

@@ -27,6 +27,7 @@ export type TileSave = {
   kind: string;
   explored: boolean;
   bloody: boolean;
+  inscriptionId?: string;
 };
 
 export type MapSave = {

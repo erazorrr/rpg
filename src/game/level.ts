@@ -4,12 +4,28 @@ import {Position, SerializedPosition} from "../io/position";
 import {Item} from "./item";
 import {Tile} from "./tiles/abstract.tile";
 import {LevelSave, Saveable} from "./save-data";
+import {getDungeonBiomeForFloor} from "./dungeon-generation/dungeon-biomes";
+import {DungeonBiome} from "./dungeon-generation/dungeon-layout";
 
 export class Level implements Saveable<LevelSave> {
   private npcs: Npc[] = [];
   private items: Map<SerializedPosition, Item> = new Map();
+  private discoveredDungeonBiomes: Set<DungeonBiome> = new Set();
 
   constructor(public levelNo: number, public map: GameMap) {
+    for (let x = 0; x < map.width; x++) {
+      for (let y = 0; y < map.height; y++) {
+        const tile = map.getTile(new Position(x, y));
+        const biome = tile?.isExplored() ? getDungeonBiomeForFloor(tile) : undefined;
+        if (biome) this.discoveredDungeonBiomes.add(biome);
+      }
+    }
+  }
+
+  public discoverDungeonBiome(biome: DungeonBiome): boolean {
+    if (this.discoveredDungeonBiomes.has(biome)) return false;
+    this.discoveredDungeonBiomes.add(biome);
+    return true;
   }
 
   public getItem(position: Position): Item | undefined {

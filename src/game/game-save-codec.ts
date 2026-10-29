@@ -9,6 +9,8 @@ import {restoreItem} from './items/item.factory';
 import {restoreMonsterModifier} from './monster-modifiers/monster-modifier.factory';
 import {restoreNpc} from './monsters/npc.factory';
 import {restoreState} from './state.factory';
+import {knownTileSaveIds} from './tiles/tile.factory';
+import {isStatueInscriptionId} from './tiles/statue-inscriptions';
 
 function restoreCharacter(
   context: Context,
@@ -118,6 +120,16 @@ export class GameSaveCodec {
         )
       )
         throw new Error('Invalid map in save file');
+      for (const column of level.map.tiles) {
+        for (const tile of column) {
+          if (
+            !tile || typeof tile !== 'object' ||
+            typeof tile.kind !== 'string' || !knownTileSaveIds.has(tile.kind) ||
+            typeof tile.explored !== 'boolean' || typeof tile.bloody !== 'boolean' ||
+            (tile.kind === 'statue' && !isStatueInscriptionId(tile.inscriptionId))
+          ) throw new Error('Invalid tile in save file');
+        }
+      }
     }
   }
 }

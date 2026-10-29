@@ -4,12 +4,10 @@ import {Renderer} from "../io/renderer";
 import {Tile} from "./tiles/abstract.tile";
 import {GameObject} from "./abstract.game-object";
 import {Context} from "./context";
-import {TorchTile} from "./tiles/torch.tile";
-import {FloorTile} from "./tiles/floor.tile";
-import {BackgroundColor} from "../io/background.color";
 import {MapSave, Saveable} from "./save-data";
 import {restoreTile} from "./tiles/tile.factory";
 import {AnimationFrame} from "./animation";
+import {sampleLight, strongestLight} from './tile-light';
 
 export class GameMap extends GameObject implements Renderable, Saveable<MapSave> {
   constructor(
@@ -84,7 +82,7 @@ export class GameMap extends GameObject implements Renderable, Saveable<MapSave>
     this.tiles[position.x][position.y] = tile;
   }
 
-  private TORCH_RADIUS = 6;
+  private static readonly MAX_LIGHT_RADIUS = 6;
   render(renderer: Renderer, frame?: AnimationFrame) {
     const topLeftCorner = this.getTopLeftCorner();
     const startX = topLeftCorner.x;
@@ -96,52 +94,27 @@ export class GameMap extends GameObject implements Renderable, Saveable<MapSave>
       }
     }
 
-    const torches: Position[] = [];
-    for (let i = Math.max(0, startX - this.TORCH_RADIUS); i < Math.min(startX + this.containerWidth + this.TORCH_RADIUS, this.width); i++) {
-      for (let j = Math.max(0, startY - this.TORCH_RADIUS); j < Math.min(startY + this.containerHeight + this.TORCH_RADIUS, this.height); j++) {
-        if (this.tiles[i][j] instanceof TorchTile && !this.context.getPlayer().position.equals(new Position(i, j)) && !this.context.getCharacter(new Position(i, j))) {
-          torches.push(new Position(i, j));
-        }
+    const sources: Array<{position: Position; light: NonNullable<ReturnType<Tile['getLight']>>}> = [];
+    const radius = GameMap.MAX_LIGHT_RADIUS;
+    for (let i = Math.max(0, startX - radius); i < Math.min(startX + this.containerWidth + radius, this.width); i++) {
+      for (let j = Math.max(0, startY - radius); j < Math.min(startY + this.containerHeight + radius, this.height); j++) {
+        const position = new Position(i, j);
+        const light = this.tiles[i][j].getLight(frame, position);
+        if (light && this.tiles[i][j].isExplored()) sources.push({position, light});
       }
     }
-
-
-    for (const torch of torches) {
-      for (let i = torch.x - this.TORCH_RADIUS; i <= torch.x + this.TORCH_RADIUS; i++) {
-        for (let j = torch.y - this.TORCH_RADIUS; j <= torch.y + this.TORCH_RADIUS; j++) {
-          if (!this.tiles[i]?.[j] || !(this.tiles[i][j] instanceof FloorTile) || !this.tiles[i][j].isExplored()) {
-            continue;
-          }
-          const position = new Position(i, j);
-          if (position.distanceTo(torch) <= this.TORCH_RADIUS) {
-            if (this.isVisible(torch, position, this.TORCH_RADIUS)) {
-              renderer.put(new Position(i - startX, j - startY), {
-                ...this.tiles[i][j].getChar(frame, position),
-                backgroundColor: this.tiles[i][j].getIsBloody() ? BackgroundColor.Red3a : BackgroundColor.Orange4b,
-              });
-            }
-          }
-        }
-      }
-    }
-
-    for (const torch of torches) {
-      const torchPhase = (torch.x * 17 + torch.y * 31 + Math.floor((frame?.frame ?? 0) / 3)) % 2;
-      for (let i = torch.x - this.TORCH_RADIUS; i <= torch.x + this.TORCH_RADIUS; i++) {
-        for (let j = torch.y - this.TORCH_RADIUS; j <= torch.y + this.TORCH_RADIUS; j++) {
-          if (!this.tiles[i]?.[j] || !(this.tiles[i][j] instanceof FloorTile) || !this.tiles[i][j].isExplored()) {
-            continue;
-          }
-          const position = new Position(i, j);
-          if (position.distanceTo(torch) <= (2 + torchPhase)) {
-            if (this.isVisible(torch, position, this.TORCH_RADIUS)) {
-              renderer.put(new Position(i - startX, j - startY), {
-                ...this.tiles[i][j].getChar(frame, position),
-                backgroundColor: this.tiles[i][j].getIsBloody() ? BackgroundColor.Red3a : BackgroundColor.LightGoldenrod3,
-              });
-            }
-          }
-        }
+    for (let i = startX; i < Math.min(startX + this.containerWidth, this.width); i++) {
+      for (let j = startY; j < Math.min(startY + this.containerHeight, this.height); j++) {
+        const target = new Position(i, j);
+        const tile = this.tiles[i][j];
+        if (!tile.isExplored()) continue;
+        const samples = sources.flatMap(source => {
+          const sample = sampleLight(source.light, source.position, target, tile.getIsBloody());
+          if (!sample || !this.isVisible(source.position, target, source.light.radius + 1)) return [];
+          return [sample];
+        });
+        const selected = strongestLight(samples);
+        if (selected) renderer.put(new Position(i - startX, j - startY), {...tile.getChar(frame, target), backgroundColor: selected.color});
       }
     }
   }

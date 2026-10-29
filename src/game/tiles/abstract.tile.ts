@@ -1,9 +1,18 @@
 import {Char} from "../../io/char";
 import {ForegroundColor} from "../../io/foreground.color";
-import {BackgroundColor} from "../../io/background.color";
 import {Saveable, TileSave} from "../save-data";
 import {AnimationFrame} from "../animation";
 import {Position} from "../../io/position";
+import {BackgroundColor} from "../../io/background.color";
+
+export type TileLight = {
+  radius: number;
+  innerRadius: number;
+  innerColor: BackgroundColor;
+  outerColor: BackgroundColor;
+  bloodyInnerColor: BackgroundColor;
+  bloodyOuterColor: BackgroundColor;
+};
 
 export abstract class Tile implements Saveable<TileSave> {
   public get saveId(): string {
@@ -12,6 +21,20 @@ export abstract class Tile implements Saveable<TileSave> {
 
   abstract getBaseChar(frame?: AnimationFrame, position?: Position): Char;
   abstract isNavigable(): boolean;
+
+  public blocksLight(): boolean {
+    return !this.isNavigable();
+  }
+
+  public getBumpMessages(): string[] {
+    return [];
+  }
+
+  public getLight(frame?: AnimationFrame, position?: Position): TileLight | undefined {
+    void frame;
+    void position;
+    return undefined;
+  }
 
   protected isBloody = false;
   setBloody(bloody: boolean) {
