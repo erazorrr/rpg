@@ -12,19 +12,20 @@ export abstract class GameObject {
     if (!tile || tile.blocksLight()) {
       return false;
     }
-    if (this.context.getPlayer().position.equals(position)) {
-      return false;
-    }
-    if (this.context.getCharacter(position)) {
+    if (this.context.getCurrentGameLevel().getAtmosphere(position)) {
       return false;
     }
     return true;
   }
 
-  public isVisible(rootPosition: Position, targetPosition: Position, radius: number): Position[] | null {
+  public isVisible(rootPosition: Position, targetPosition: Position, radius: number, atmosphereHidesTarget = false): Position[] | null {
     if (rootPosition.equals(targetPosition)) {
       return [];
     }
+
+    const isAdjacent = rootPosition.manhattanDistanceTo(targetPosition) === 1;
+    if (!isAdjacent && this.context.getCurrentGameLevel().getAtmosphere(rootPosition)) return null;
+    if (!isAdjacent && atmosphereHidesTarget && this.context.getCurrentGameLevel().getAtmosphere(targetPosition)) return null;
 
     const distance = rootPosition.distanceTo(targetPosition);
 
@@ -32,9 +33,16 @@ export abstract class GameObject {
       return null;
     }
 
-    if (distance === 1) {
+    if (isAdjacent) {
       return [];
     }
+
+    const path = this.traceVisibility(rootPosition, targetPosition);
+    if (!path || !this.traceVisibility(targetPosition, rootPosition)) return null;
+    return path;
+  }
+
+  private traceVisibility(rootPosition: Position, targetPosition: Position): Position[] | null {
 
     let x0 = rootPosition.x;
     let y0 = rootPosition.y;

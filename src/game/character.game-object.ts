@@ -13,6 +13,19 @@ import {BackgroundColor} from "../io/background.color";
 import {ForegroundColor} from "../io/foreground.color";
 import {CharacterSave, Saveable} from "./save-data";
 import {AnimationFrame, ProjectileImpact} from "./animation";
+import {StairsDownTile} from "./tiles/stairs-down.tile";
+import {StairsUpTile} from "./tiles/stairs-up.tile";
+import {DeepEmberTile} from './tiles/deep-ember.tile';
+import {DamageType} from './damage';
+import {ShallowWaterTile} from './tiles/shallow-water.tile';
+import {SporePodTile} from './tiles/spore-pod.tile';
+import {MoldFloorTile} from './tiles/mold-floor.tile';
+import {BurningState} from './states/burning.state';
+import {PoisonedState} from './states/poisoned.state';
+import {ThornFungusTile} from './tiles/thorn-fungus.tile';
+import {SearingGrateTile} from './tiles/searing-grate.tile';
+import {EmberworksFloorTile} from './tiles/emberworks-floor.tile';
+import {Tile} from './tiles/abstract.tile';
 
 export abstract class CharacterGameObject extends GameObject implements Saveable<CharacterSave> {
   private combatLog = new Debug('combat.log');
@@ -28,14 +41,35 @@ export abstract class CharacterGameObject extends GameObject implements Saveable
 
   public states: Set<State> = new Set();
 
+  protected isObservedByPlayer(...characters: CharacterGameObject[]): boolean {
+    const player = this.context.getPlayer() as CharacterGameObject;
+    return characters.some(character => character === player || player.canSeeCharacter(character));
+  }
+
+  protected logIfObserved(message: string, ...characters: CharacterGameObject[]): void {
+    if (this.isObservedByPlayer(...characters)) this.context.log(message);
+  }
+
   tick() {
     for (const state of this.states) {
       if (state.tick() === 0) {
         this.states.delete(state);
-        this.context.log(state.getInactiveMessage(this));
+        this.logIfObserved(state.getInactiveMessage(this), this);
       } else {
         if (state.stats.damagePerTurn) {
-          this.damage(state.stats.damagePerTurn);
+          const hpBefore = this.getHp();
+          this.damage(state.stats.damagePerTurn, state.stats.damageType);
+          const event = {
+            target: this.getName(),
+            targetPosition: this.position,
+            state: state.getName(),
+            damage: hpBefore - this.getHp(),
+            targetHpAfter: this.getHp(),
+            turnsLeft: state.getTurnsLeft(),
+          };
+          this.combatLog.event('state_damage', event);
+          this.context.recordEvent?.('state_damage', event);
+          if (this.getHp() === 0) break;
         }
       }
     }
@@ -65,21 +99,27 @@ export abstract class CharacterGameObject extends GameObject implements Saveable
     return Math.floor(this.hp);
   }
 
-  damage(damage: number) {
-    if (Math.random() * 10 < damage) {
+  damage(damage: number, type: DamageType = 'physical'): number {
+    if (this.getDamageImmunities().has(type)) {
+      this.logIfObserved(`${this.getName()} is immune to ${type}!`, this);
+      return 0;
+    }
+    if (type === 'physical' && Math.random() * 10 < damage) {
       this.spreadBlood();
     }
+    const hpBefore = this.hp;
     this.hp = Math.max(0, this.hp - damage);
-    if (this.getHp() === 0) {
+    if (hpBefore > 0 && this.getHp() === 0) {
       if (this === (this.context.getPlayer() as CharacterGameObject)) {
         this.context.postGameMessage(GameMessage.die());
         this.context.log(`${this.getName()} is dead! Game over!`);
         this.context.log(`Press [Enter] to continue...`);
       } else {
         this.context.postGameMessage(GameMessage.kill(this));
-        this.context.log(`${this.getName()} is dead!`);
+        this.logIfObserved(`${this.getName()} is dead!`, this);
       }
     }
+    return hpBefore - this.hp;
   }
 
   getWisdom(withStates = true) {
@@ -143,6 +183,20 @@ export abstract class CharacterGameObject extends GameObject implements Saveable
     return Boolean(Array.from(this.states).find(s => s.stats.isUnableToMove));
   }
 
+  public isInvisible(): boolean {
+    return Array.from(this.states).some(state => state.stats.isInvisible);
+  }
+
+  public canSeeCharacter(character: CharacterGameObject): boolean {
+    if (character.isInvisible() || this.isVisible(character.position) === null) return false;
+    const isPlayerSight = this === (this.context.getPlayer() as CharacterGameObject);
+    const level = this.context.getCurrentGameLevel();
+    if (!isPlayerSight || !level.usesFogOfWar()) return true;
+    return Boolean(this.context.getCurrentMap().getTile(character.position)?.isExplored());
+  }
+
+  public noticeAttackFrom(attacker: CharacterGameObject): void { void attacker; }
+
   public canMove(p: Position): boolean {
     if (this.isImmobile()) {
       return false;
@@ -156,6 +210,58 @@ export abstract class CharacterGameObject extends GameObject implements Saveable
     return true;
   }
 
+  protected moveToPosition(position: Position, traversed: Position[] = [position]): void {
+    this.position = position;
+    for (const step of traversed) {
+      const tile = this.context.getCurrentMap().getTile(step);
+      if (tile instanceof SporePodTile) {
+        this.context.getCurrentGameLevel().emitAtmosphere(step, {
+          kind: 'fog', turns: 8, density: 2, shape: 'cross',
+        });
+        this.replaceTraversedTile(step, tile, new MoldFloorTile());
+        this.logIfObserved(`${this.getName()} ruptures a spore pod! Pale fog billows out.`, this);
+      } else if (tile instanceof ThornFungusTile) {
+        this.replaceTraversedTile(step, tile, new MoldFloorTile());
+        const poisoned = new PoisonedState(6, 1);
+        if (this.applyState(poisoned)) this.logIfObserved(poisoned.getActiveMessage(this), this);
+        this.logIfObserved(`${this.getName()} crushes a patch of thorn fungus.`, this);
+      } else if (tile instanceof SearingGrateTile) {
+        this.replaceTraversedTile(step, tile, new EmberworksFloorTile());
+        const burning = new BurningState(4, 1);
+        if (this.applyState(burning)) this.logIfObserved(burning.getActiveMessage(this), this);
+        this.logIfObserved(`The searing grate cools beneath ${this.getName()}.`, this);
+      }
+    }
+    if (!traversed.some(step => this.context.getCurrentMap().getTile(step) instanceof ShallowWaterTile)) return;
+    if (!this.removeState(BurningState.saveId)) return;
+    this.logIfObserved(`The shallow water extinguishes the flames around ${this.getName()}!`, this);
+  }
+
+  private pullToward(source: Position, maxDistance: number): number {
+    const dx = source.x - this.position.x;
+    const dy = source.y - this.position.y;
+    if ((dx === 0) === (dy === 0)) return 0;
+    const stepX = Math.sign(dx);
+    const stepY = Math.sign(dy);
+    const traversed: Position[] = [];
+    let destination = this.position;
+    const availableDistance = Math.max(0, this.position.manhattanDistanceTo(source) - 1);
+    for (let i = 0; i < Math.min(maxDistance, availableDistance); i++) {
+      const next = destination.shift(stepX, stepY);
+      if (!this.context.getCurrentMap().isNavigable(next) || !this.context.getIsFree(next)) break;
+      traversed.push(next);
+      destination = next;
+    }
+    if (traversed.length > 0) this.moveToPosition(destination, traversed);
+    return traversed.length;
+  }
+
+  private replaceTraversedTile(position: Position, previous: Tile, replacement: Tile): void {
+    replacement.setExplored(previous.isExplored());
+    replacement.setBloody(previous.getIsBloody());
+    this.context.getCurrentMap().setTile(position, replacement);
+  }
+
   abstract getBaseName(): string;
   abstract getChar(frame?: AnimationFrame): Char;
 
@@ -165,12 +271,14 @@ export abstract class CharacterGameObject extends GameObject implements Saveable
 
     let stateBackgroundColor: BackgroundColor | null = null;
     let stateForegroundColor: ForegroundColor | null = null;
+    let invisibilityForegroundColor: ForegroundColor | null = null;
     for (const state of this.states) {
       if (state.getBackgroundColor()) {
         stateBackgroundColor = state.getBackgroundColor();
       }
       if (state.getForegroundColor()) {
         stateForegroundColor = state.getForegroundColor();
+        if (state.stats.isInvisible) invisibilityForegroundColor = state.getForegroundColor();
       }
     }
 
@@ -179,7 +287,7 @@ export abstract class CharacterGameObject extends GameObject implements Saveable
       tile.isExplored() ? {
         ...this.getChar(frame),
         backgroundColor: stateBackgroundColor ? stateBackgroundColor : tile.getChar(frame, this.position).backgroundColor,
-        color: stateForegroundColor ? stateForegroundColor : this.getChar(frame).color,
+        color: invisibilityForegroundColor ?? stateForegroundColor ?? this.getChar(frame).color,
       } : tile.getChar(frame, this.position),
     );
   };
@@ -203,13 +311,21 @@ export abstract class CharacterGameObject extends GameObject implements Saveable
   }
 
   getDamageDice(): number {
+    if (this.equipment.weapon?.usesMagicForBasicAttack) {
+      return this.equipment.weapon.stats.basicDamageRoll ?? 1;
+    }
     return (this.equipment.weapon && this.equipment.weapon.stats.damageRoll) ?? 4;
   }
 
   getDamageBonus(): number {
+    if (this.equipment.weapon?.usesMagicForBasicAttack) {
+      const weaponModifier = this.equipment.weapon.stats.basicDamageBonus ?? 0;
+      const attributeModifier = Math.floor((this.getWisdom() - 10) / 4);
+      return weaponModifier + attributeModifier;
+    }
     const weaponModifier = (this.equipment.weapon && this.equipment.weapon.stats.damageBonus) ?? 0;
     const attributeModifier = this.equipment.weapon?.isRanged
-      ? Math.floor((this.getDexterity() - 10) / 4)
+      ? Math.floor((this.getDexterity() - 10) / 3)
       : Math.floor((this.getStrength() - 10) / 2);
     return attributeModifier + weaponModifier;
   }
@@ -219,9 +335,34 @@ export abstract class CharacterGameObject extends GameObject implements Saveable
   }
 
   getMagicBonus(): number {
-    const wisdomModifier = Math.floor((this.getWisdom() - 10) / 2);
+    const wisdomModifier = Math.floor((this.getWisdom() - 10) / 4);
     const weaponModifier = (this.equipment.weapon && this.equipment.weapon.stats.magicBonus) ?? 0;
     return wisdomModifier + weaponModifier;
+  }
+
+  public getLifeStealPercent(): number {
+    return this.modifiers.reduce(
+      (highest, modifier) => Math.max(highest, modifier.stats.lifeStealPercent ?? 0),
+      0,
+    );
+  }
+
+  protected getOnHitState(): State | null {
+    return null;
+  }
+
+  private drainLife(
+    damageDealt: number,
+    additionalPercent = 0,
+    target?: CharacterGameObject,
+  ): number {
+    const percent = Math.max(this.getLifeStealPercent(), additionalPercent);
+    if (damageDealt <= 0 || percent <= 0 || this.hp >= this.getMaxHp()) return 0;
+    const restored = Math.min(Math.ceil(damageDealt * percent), this.getMaxHp() - this.hp);
+    this.hp += restored;
+    const participants = target ? [this, target] : [this];
+    this.logIfObserved(`${this.getName()} drains ${restored} health.`, ...participants);
+    return restored;
   }
 
   public ATTACK_ROLL = 50;
@@ -237,21 +378,33 @@ export abstract class CharacterGameObject extends GameObject implements Saveable
     this.combatLog.log(`AC ${ac}`);
     const attackRoll = Math.ceil(Math.random() * this.ATTACK_ROLL);
     this.combatLog.log(`AttackRoll ${attackRoll}`);
-    const verb = this.equipment.weapon?.isRanged ? 'shoots' : 'hits';
+    const verb = this.equipment.weapon?.usesMagicForBasicAttack
+      ? 'zaps'
+      : this.equipment.weapon?.isRanged ? 'shoots' : 'hits';
     const didHit = Boolean(attackRoll >= ac || this.modifiers.find(m => m instanceof SpectralHitMonsterModifier));
+    let damageRoll: number | null = null;
+    let damage = 0;
     if (didHit) {
       // hit
       const dice = this.getDamageDice();
       const bonus = this.getDamageBonus();
-      const damageRoll = Math.ceil(Math.random() * dice);
+      damageRoll = Math.ceil(Math.random() * dice);
       this.combatLog.log(`DamageRoll ${damageRoll}`);
-      const damage = Math.max(damageRoll + bonus, 0);
+      damage = Math.max(damageRoll + bonus, 0);
       this.combatLog.log(`Damage ${damage}`);
       if (damage === 0) {
-        this.context.log(`${this.getName()} ${verb} ${target.getName()} for no damage!`);
+        this.logIfObserved(`${this.getName()} ${verb} ${target.getName()} for no damage!`, this, target);
       } else {
-        this.context.log(`${this.getName()} ${verb} ${target.getName()} for ${damage} damage!`);
-        target.damage(damage);
+        const damageType = this.equipment.weapon?.stats.basicDamageType ?? 'physical';
+        const damageDealt = target.damage(damage, damageType);
+        if (damageDealt > 0) {
+          this.logIfObserved(`${this.getName()} ${verb} ${target.getName()} for ${damageDealt} damage!`, this, target);
+        }
+        this.drainLife(damageDealt, 0, target);
+        const onHitState = damageDealt > 0 ? this.getOnHitState() : null;
+        if (onHitState && target.applyState(onHitState)) {
+          this.logIfObserved(onHitState.getActiveMessage(target), this, target);
+        }
       }
       if (this.equipment.weapon?.stats?.hpPerHit) {
         this.hp = Math.min(this.hp + this.equipment.weapon.stats.hpPerHit, this.getMaxHp());
@@ -261,15 +414,35 @@ export abstract class CharacterGameObject extends GameObject implements Saveable
       }
     }
     else {
-      this.context.log(`${this.getName()} ${verb} ${target.getName()} but misses!`);
+      this.logIfObserved(`${this.getName()} ${verb} ${target.getName()} but misses!`, this, target);
     }
+    if (didHit && this.isInvisible()) target.noticeAttackFrom(this);
+    const combatEvent = {
+      attacker: this.getName(),
+      actorIsPlayer: this === (this.context.getPlayer() as CharacterGameObject),
+      attackerPosition: this.position,
+      target: target.getName(),
+      targetPosition: target.position,
+      weapon: this.equipment.weapon?.getName() ?? 'unarmed',
+      ranged: Boolean(this.equipment.weapon?.isRanged),
+      armorClass: ac,
+      attackRoll,
+      hit: didHit,
+      damageRoll,
+      damage,
+      targetHpAfter: target.getHp(),
+    };
+    this.combatLog.event('weapon_attack', combatEvent);
+    this.context.recordEvent?.('combat_result', {kind: 'weapon_attack', ...combatEvent});
     if (projectilePath) {
       this.context.presentProjectile?.({
         path: projectilePath,
         projectile: {
           char: '•',
           backgroundColor: BackgroundColor.Black,
-          color: ForegroundColor.Grey50,
+          color: this.equipment.weapon?.usesMagicForBasicAttack
+            ? ForegroundColor.LightGoldenrod3
+            : ForegroundColor.Grey50,
         },
         impact: didHit ? 'hit' : 'miss',
       });
@@ -291,6 +464,9 @@ export abstract class CharacterGameObject extends GameObject implements Saveable
     if (modifier.stats.endurance) {
       this.endurance += modifier.stats.endurance;
     }
+    if (modifier.stats.enduranceMultiplier) {
+      this.endurance = Math.ceil(this.endurance * modifier.stats.enduranceMultiplier);
+    }
     if (modifier.stats.wisdom) {
       this.wisdom += modifier.stats.wisdom;
     }
@@ -311,19 +487,57 @@ export abstract class CharacterGameObject extends GameObject implements Saveable
     return 30;
   }
   public isVisible(targetPosition: Position): Position[] | null {
-    return super.isVisible(this.position, targetPosition, this.getVisibilityRadius());
+    return super.isVisible(this.position, targetPosition, this.getVisibilityRadius(), true);
   }
 
-  applyState(state: State) {
+  public canSeeTerrain(targetPosition: Position): boolean {
+    return super.isVisible(this.position, targetPosition, this.getVisibilityRadius()) !== null;
+  }
+
+  protected getDamageImmunities(): ReadonlySet<DamageType> {
+    return new Set();
+  }
+
+  protected getStateImmunities(): ReadonlySet<string> {
+    return new Set();
+  }
+
+  applyState(state: State): boolean {
+    if (
+      state.saveId === BurningState.saveId &&
+      this.context.getCurrentMap().getTile(this.position) instanceof ShallowWaterTile
+    ) {
+      this.logIfObserved(`The shallow water extinguishes the flames around ${this.getName()}!`, this);
+      return false;
+    }
+    if (this.getStateImmunities().has(state.saveId)) {
+      if (state.saveId === 'burning') this.logIfObserved(`${this.getName()} cannot burn!`, this);
+      else if (state.saveId === 'frozen') this.logIfObserved(`${this.getName()} cannot be frozen!`, this);
+      else if (state.saveId === 'poisoned') this.logIfObserved(`${this.getName()} is immune to poison!`, this);
+      else this.logIfObserved(`${this.getName()} is immune to ${state.getName()}!`, this);
+      return false;
+    }
     for (const existingState of this.states) {
       if (existingState.constructor === state.constructor || state.getIncompatibleStates().has(existingState.constructor as new () => State)) {
         this.states.delete(existingState);
       }
     }
     this.states.add(state);
+    return true;
+  }
+
+  removeState(saveId: string): State | null {
+    const state = Array.from(this.states).find(existingState => existingState.saveId === saveId);
+    if (!state) return null;
+    this.states.delete(state);
+    return state;
   }
 
   applySpell(caster: CharacterGameObject, spell: Spell) {
+    const spellWasObserved = this.isObservedByPlayer(caster, this);
+    const logSpell = (message: string): void => {
+      if (spellWasObserved) this.context.log(message);
+    };
     const projectile = spell.getProjectile();
     let projectilePath: Position[] | null = null;
     if (projectile) {
@@ -336,17 +550,55 @@ export abstract class CharacterGameObject extends GameObject implements Saveable
     if (spell.stats.state && !spell.stats.damageRoll) {
       if (!spell.stats.stateChance || Math.random() < spell.stats.stateChance) {
         const state = (spell.stats.state)();
-        this.context.log(state.getActiveMessage(this));
-        this.applyState(state);
+        if (this.applyState(state)) logSpell(state.getActiveMessage(this));
       }
     }
     if (spell.stats.restoreHp) {
       if (spell.stats.restoreHp > 0) {
-        this.context.log(`${spell.getName()} restored ${this.getName()} ${spell.stats.restoreHp} health!`);
+        logSpell(`${spell.getName()} restored ${this.getName()} ${spell.stats.restoreHp} health!`);
         this.hp = Math.min(this.getMaxHp(), this.hp + spell.stats.restoreHp);
       } else {
-        this.context.log(`${spell.getName()} drained ${-spell.stats.restoreHp} health from ${this.getName()}!`);
+        logSpell(`${spell.getName()} drained ${-spell.stats.restoreHp} health from ${this.getName()}!`);
         this.damage(-spell.stats.restoreHp);
+      }
+    }
+    if (spell.stats.removeState) {
+      const removedState = this.removeState(spell.stats.removeState.saveId);
+      if (removedState) {
+        logSpell(removedState.getInactiveMessage(this));
+      } else {
+        logSpell(`${spell.getName()} had no effect on ${this.getName()}!`);
+      }
+    }
+    if (spell.stats.atmosphere) {
+      this.context.getCurrentGameLevel().emitAtmosphere(this.position, spell.stats.atmosphere);
+      logSpell(`${spell.getName()} fills the area with ${spell.stats.atmosphere.kind}.`);
+    }
+    if (spell.stats.teleportRange) {
+      const destinations: Position[] = [];
+      const map = this.context.getCurrentMap();
+      for (let dx = -spell.stats.teleportRange; dx <= spell.stats.teleportRange; dx++) {
+        const remainingRange = spell.stats.teleportRange - Math.abs(dx);
+        for (let dy = -remainingRange; dy <= remainingRange; dy++) {
+          const destination = this.position.shift(dx, dy);
+          const tile = map.getTile(destination);
+          if (
+            destination.equals(this.position) ||
+            !map.isNavigable(destination) ||
+            !this.context.getIsFree(destination) ||
+            tile instanceof StairsDownTile ||
+            tile instanceof StairsUpTile ||
+            tile instanceof DeepEmberTile
+          ) continue;
+          destinations.push(destination);
+        }
+      }
+      if (destinations.length > 0) {
+        const destination = destinations[Math.floor(Math.random() * destinations.length)];
+        this.moveToPosition(destination);
+        logSpell(`${this.getName()} blinks away!`);
+      } else {
+        logSpell(`${spell.getName()} had no effect on ${this.getName()}!`);
       }
     }
     if (spell.stats.damageRoll && spell.stats.damageBonus) {
@@ -355,32 +607,62 @@ export abstract class CharacterGameObject extends GameObject implements Saveable
       this.combatLog.log(`AC ${ac}`);
       const attackRoll = Math.ceil(Math.random() * this.ATTACK_ROLL);
       this.combatLog.log(`AttackRoll ${attackRoll}`);
+      let damageRoll: number | null = null;
+      let damage = 0;
       if (attackRoll >= ac || caster.modifiers.find(m => m instanceof SpectralHitMonsterModifier)) {
         impact = 'hit';
         const dice = spell.stats.damageRoll + caster.getMagicDiceBonus();
         const bonus = spell.stats.damageBonus + caster.getMagicBonus();
-        const damageRoll = Math.ceil(Math.random() * dice);
+        damageRoll = Math.ceil(Math.random() * dice);
         this.combatLog.log(`DamageRoll ${damageRoll}`);
-        const damage = Math.max(damageRoll + bonus, 0);
+        damage = Math.max(damageRoll + bonus, 0);
         this.combatLog.log(`Damage ${damage}`);
+        let damageDealt = 0;
+        const damageType = spell.stats.damageType ?? 'physical';
+        const damageWasImmune = damage > 0 && this.getDamageImmunities().has(damageType);
         if (damage > 0) {
-          this.context.log(`${spell.getName()} hits ${this.getName()} for ${damage} damage!`);
-          this.damage(damage);
+          damageDealt = this.damage(damage, damageType);
+          if (!damageWasImmune) logSpell(`${spell.getName()} hits ${this.getName()} for ${damage} damage!`);
+          caster.drainLife(damageDealt, spell.stats.lifeStealPercent, this);
         } else {
-          this.context.log(`${spell.getName()} hits ${this.getName()} for no damage!`);
+          logSpell(`${spell.getName()} hits ${this.getName()} for no damage!`);
         }
 
-        if (spell.stats.state && spell.stats.stateChance) {
+        if (!damageWasImmune && spell.stats.state && spell.stats.stateChance) {
           if (Math.random() < spell.stats.stateChance) {
             const state = spell.stats.state();
-            this.context.log(state.getActiveMessage(this));
-            this.applyState(state);
+            if (this.applyState(state)) logSpell(state.getActiveMessage(this));
           }
         }
+        if (!damageWasImmune && spell.stats.pullDistance && this.getHp() > 0) {
+          const distance = this.pullToward(caster.position, spell.stats.pullDistance);
+          if (distance > 0) logSpell(`${this.getName()} is pulled ${distance} ${distance === 1 ? 'tile' : 'tiles'}!`);
+        }
+        if (caster.isInvisible()) this.noticeAttackFrom(caster);
       } else {
         impact = 'miss';
-        this.context.log(`${spell.getName()} misses ${this.getName()}!`);
+        logSpell(`${spell.getName()} misses ${this.getName()}!`);
       }
+      const combatEvent = {
+        caster: caster.getName(),
+        actorIsPlayer: caster === (this.context.getPlayer() as CharacterGameObject),
+        casterPosition: caster.position,
+        target: this.getName(),
+        targetPosition: this.position,
+        spell: spell.getName(),
+        armorClass: ac,
+        attackRoll,
+        hit: impact === 'hit',
+        damageRoll,
+        damage,
+        targetHpAfter: this.getHp(),
+        targetStates: Array.from(this.states).map(state => ({
+          name: state.getName(),
+          turnsLeft: state.getTurnsLeft(),
+        })),
+      };
+      this.combatLog.event('spell_attack', combatEvent);
+      this.context.recordEvent?.('combat_result', {kind: 'spell_attack', ...combatEvent});
     }
     if (projectile && projectilePath) {
       this.context.presentProjectile?.({path: projectilePath, projectile, impact});

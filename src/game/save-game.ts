@@ -1,6 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import type {SaveFileV1} from "./save-data";
+import type {SaveFileV2} from "./save-data";
 
 export interface SaveCodec<T> {
   serialize(): T;
@@ -23,7 +23,7 @@ export class SaveGameService {
     return fs.existsSync(this.file);
   }
 
-  public inspect(validator: (value: unknown) => asserts value is SaveFileV1): {valid: boolean; error?: string} {
+  public inspect(validator: (value: unknown) => asserts value is SaveFileV2): {valid: boolean; error?: string} {
     if (!this.exists()) return {valid: false};
     try {
       this.read(validator);
@@ -33,7 +33,7 @@ export class SaveGameService {
     }
   }
 
-  public write(data: SaveFileV1, validator: (value: unknown) => asserts value is SaveFileV1): void {
+  public write(data: SaveFileV2, validator: (value: unknown) => asserts value is SaveFileV2): void {
     validator(data);
     const directory = path.dirname(this.file);
     const temporaryFile = `${this.file}.tmp`;
@@ -52,7 +52,7 @@ export class SaveGameService {
     }
   }
 
-  public read(validator: (value: unknown) => asserts value is SaveFileV1): SaveFileV1 {
+  public read(validator: (value: unknown) => asserts value is SaveFileV2): SaveFileV2 {
     const data: unknown = JSON.parse(fs.readFileSync(this.file, "utf8"));
     validator(data);
     return data;

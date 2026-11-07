@@ -6,7 +6,7 @@ export class ChampionFocus extends ItemModifier {
 
   constructor() {
     super('great focus', {
-      magicRoll: 4,
-    }, Math.round(PRICE_PER_MAGIC_DICE_BONUS * 4), true);
+      magicRoll: 2,
+    }, Math.round(PRICE_PER_MAGIC_DICE_BONUS * 2), true);
   }
 }

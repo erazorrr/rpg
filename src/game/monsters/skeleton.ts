@@ -7,13 +7,15 @@ import {SteelModifier} from "../item-modifiers/weapon/material/steel";
 import {ChainMail} from "../items/chest/chain-mail";
 import {PlateGauntlets} from "../items/gauntlets/plate-gauntlets";
 import {PlateBoots} from "../items/boots/plate-boots";
+import {DamageType} from '../damage';
+import {PoisonedState} from '../states/poisoned.state';
 
 export class Skeleton extends Npc {
   public static readonly saveId: string = "skeleton";
 
   strength = 16;
   dexterity = 8;
-  endurance = 5;
+  endurance = 20;
 
   getShout() {
     return `${this.getName()} shrieks!`;
@@ -52,5 +54,13 @@ export class Skeleton extends Npc {
 
   getIsBloody(): boolean {
     return false;
+  }
+
+  protected getDamageImmunities(): ReadonlySet<DamageType> {
+    return new Set(['poison']);
+  }
+
+  protected getStateImmunities(): ReadonlySet<string> {
+    return new Set([PoisonedState.saveId]);
   }
 }

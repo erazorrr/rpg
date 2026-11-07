@@ -26,7 +26,6 @@ Whether it's a bug fix, feature, or idea — all contributions are welcome.
    ```
 
 ## How to Contribute
-0. You can pick ideas from [TODO.md](TODO.md)
 1. Fork and branch:
    ```bash
    git checkout -b feature/your-feature-name

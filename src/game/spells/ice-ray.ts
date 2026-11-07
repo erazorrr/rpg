@@ -6,11 +6,13 @@ import {ForegroundColor} from "../../io/foreground.color";
 
 export class IceRaySpell extends Spell {
   public static readonly saveId = "ice-ray";
+  public readonly keyBinding = 'r';
 
   constructor() {
     super(SpellTarget.Monster, {
       damageRoll: 8,
       damageBonus: 5,
+      damageType: 'frost',
       stateChance: 0.5,
       state: () => new FrozenState(10),
     }, 3);

@@ -15,7 +15,7 @@ export class WisdomState extends State {
   }
 
   getInactiveMessage(character: CharacterGameObject): string {
-    return `${character.getName()}'s extra wiseness fades away!`;
+    return `${character.getName()}'s insight fades away!`;
   }
 
   getName(): string {

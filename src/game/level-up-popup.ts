@@ -5,10 +5,14 @@ import {List} from "../io/list";
 import {Position} from "../io/position";
 import {GameMessage} from "./game-message";
 import {Interactive} from "./interactive.interface";
+import {getCenteredBounds} from './screen-layout';
 
 export class LevelUpPopup extends GameObject implements Renderable, Interactive {
+  public static readonly ATTRIBUTE_POINTS = 3;
   private attributesList: List;
-  private pointsLeft = 5;
+  private pointsLeft = LevelUpPopup.ATTRIBUTE_POINTS;
+  private containerWidth = 111;
+  private containerHeight = 21;
 
   private generateList(activeItemId = 'NOP') {
     this.attributesList = new List(
@@ -57,6 +61,7 @@ export class LevelUpPopup extends GameObject implements Renderable, Interactive 
     } else {
       this.makeUninteractive();
       this.generateList(this.attributesList.getActiveId());
+      this.resize(this.containerWidth, this.containerHeight);
       this.makeInteractive();
       this.render();
       this.context.getRenderer().flush(true);
@@ -64,21 +69,25 @@ export class LevelUpPopup extends GameObject implements Renderable, Interactive 
   }
 
   private increaseStrength() {
+    this.context.recordEvent?.('level_up_point', {attribute: 'strength'});
     this.context.getPlayer().strength++;
     this.commitPoint();
   }
 
   private increaseDexterity() {
+    this.context.recordEvent?.('level_up_point', {attribute: 'dexterity'});
     this.context.getPlayer().dexterity++;
     this.commitPoint();
   }
 
   private increaseEndurance() {
+    this.context.recordEvent?.('level_up_point', {attribute: 'endurance'});
     this.context.getPlayer().endurance++;
     this.commitPoint();
   }
 
   private increaseWisdom() {
+    this.context.recordEvent?.('level_up_point', {attribute: 'wisdom'});
     this.context.getPlayer().wisdom++;
     this.commitPoint();
   }
@@ -90,6 +99,13 @@ export class LevelUpPopup extends GameObject implements Renderable, Interactive 
 
   makeInteractive(): void {
     this.attributesList.makeInteractive(this.context.getRenderer());
+  }
+
+  resize(containerWidth: number, containerHeight: number): void {
+    this.containerWidth = containerWidth;
+    this.containerHeight = containerHeight;
+    const bounds = getCenteredBounds(containerWidth, containerHeight, 101, 16);
+    this.attributesList.setBounds(bounds.topLeft, bounds.bottomRight);
   }
 
   makeUninteractive(): void {

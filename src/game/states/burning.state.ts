@@ -9,11 +9,12 @@ export class BurningState extends State {
   constructor(turns: number, damagePerTurn: number) {
     super({
       damagePerTurn,
+      damageType: 'fire',
     }, turns);
   }
 
   getActiveMessage(character: CharacterGameObject): string {
-    return `${character.getName()} caught on fire!`;
+    return `${character.getName()} caught fire!`;
   }
 
   getInactiveMessage(character: CharacterGameObject): string {

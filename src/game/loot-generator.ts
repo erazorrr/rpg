@@ -89,10 +89,40 @@ import {ChampionHpPerHit} from "./item-modifiers/champion-hp-per-hit";
 import {Bracelet} from "./items/gauntlets/bracelet";
 import {WisdomPotion} from "./items/potions/wisdom";
 import {ChampionWisdomPotion} from "./items/potions/champion-wisdom";
+import {ThawPotion} from "./items/potions/thaw";
+import {ThawScroll} from "./items/scrolls/thaw.scroll";
+import {AntidotePotion} from './items/potions/antidote';
+import {PurgePoisonScroll} from './items/scrolls/purge-poison.scroll';
+import {VenomousTouchScroll} from './items/scrolls/venomous-touch.scroll';
+import {SmokeVeilScroll} from './items/scrolls/smoke-veil.scroll';
+import {SteamBurstScroll} from './items/scrolls/steam-burst.scroll';
+import {BlinkScroll} from './items/scrolls/blink.scroll';
+import {LifeDrainScroll} from './items/scrolls/life-drain.scroll';
+import {InvisibilityScroll} from './items/scrolls/invisibility.scroll';
+import {BOOK_CONSTRUCTORS} from "./items/books/books";
+import {Book} from "./items/books/book";
+import {VeyranSurveyMap} from './items/veyran-survey-map';
+import {CinderWand} from './items/weapons/cinder-wand';
+import {RimeWand} from './items/weapons/rime-wand';
+import {SerpentWand} from './items/weapons/serpent-wand';
+import {RecurveBow} from './items/weapons/recurve-bow';
+import {Sling} from './items/weapons/sling';
+import {Arbalest} from './items/weapons/arbalest';
+import {CompositeBow} from './items/weapons/composite-bow';
+import {PaddedCoat} from './items/chest/padded-coat';
+import {TrailBoots} from './items/boots/trail-boots';
+import {ArchersBracers} from './items/gauntlets/archers-bracers';
+import {ChampionAntiStrength} from './item-modifiers/champion-anti-strength';
+import {ChampionAntiDexterity} from './item-modifiers/champion-anti-dexterity';
+import {ChampionAntiEndurance} from './item-modifiers/champion-anti-endurance';
+import {ChampionAntiWisdom} from './item-modifiers/champion-anti-wisdom';
+import {ChampionAntiHealth} from './item-modifiers/champion-anti-health';
 
 type ItemModifierBuilder = new () => ItemModifier;
 
 export class LootGenerator extends GameObject {
+  private static readonly BOOK_DROP_PROBABILITY = 0.005;
+  private static readonly MAP_DROP_PROBABILITY = 0.01;
   private debug: Debug = new Debug('loot-generator.log');
   private readonly commonModifiers: ItemModifierBuilder[];
   private readonly strModifiers: ItemModifierBuilder[];
@@ -100,8 +130,24 @@ export class LootGenerator extends GameObject {
   private readonly endModifiers: ItemModifierBuilder[];
   private readonly magicModifiers: ItemModifierBuilder[];
   private readonly magicWeaponModifiers: ItemModifierBuilder[];
+  private readonly championAntiModifiers: ItemModifierBuilder[];
+  private readonly highTierPositiveModifiers: Set<ItemModifierBuilder>;
   private opposites: Map<ItemModifierBuilder, Set<ItemModifierBuilder>>;
   private readonly loot: Record<number, Array<Item>>;
+
+  private readonly modifierTiers: ReadonlyMap<string, number> = new Map([
+    ['copper-weapon', 1], ['copper-armor', 1],
+    ['iron-weapon', 2], ['iron-armor', 2],
+    ['steel-weapon', 3], ['steel-armor', 3],
+    ['champion-strength', 2], ['champion-dexterity', 2], ['champion-endurance', 2],
+    ['champion-health', 2], ['champion-wisdom', 2], ['champion-focus', 2], ['champion-power', 2],
+    ['champion-hp-per-hit', 2],
+    ['champion-anti-strength', 2], ['champion-anti-dexterity', 2], ['champion-anti-endurance', 2],
+    ['champion-anti-health', 2], ['champion-anti-wisdom', 2],
+    ['giant-strength', 3], ['giant-dexterity', 3], ['giant-endurance', 3],
+    ['giant-health', 3], ['giant-wisdom', 3], ['giant-focus', 3], ['giant-power', 3],
+    ['leviathan-strength', 4], ['leviathan-endurance', 4], ['leviathan-wisdom', 4],
+  ]);
 
   constructor(context: Context) {
     super(context);
@@ -129,18 +175,35 @@ export class LootGenerator extends GameObject {
       Focus, ChampionFocus, GiantFocus,
       Power, ChampionPower, GiantPower,
     ];
+    this.championAntiModifiers = [
+      ChampionAntiEndurance,
+      ChampionAntiDexterity,
+      ChampionAntiStrength,
+      ChampionAntiHealth,
+      ChampionAntiWisdom,
+    ];
+    this.highTierPositiveModifiers = new Set([
+      ChampionStrength, GiantStrength, LeviathanStrength,
+      ChampionDexterity, GiantDexterity,
+      ChampionEndurance, GiantEndurance, LeviathanEndurance,
+      ChampionHealth, GiantHealth,
+      ChampionWisdom, GiantWisdom, LeviathanWisdom,
+      ChampionFocus, GiantFocus,
+      ChampionPower, GiantPower,
+      ChampionHpPerHit,
+    ]);
     const _items: Array<[Array<new (ctx: Context) => Item>, number, ItemModifierBuilder[], ItemModifierBuilder[]]> = [
       [[ShortSword, HandAxe, GreatAxe, LongSword], 1, [CopperModifier, IronModifier, SteelModifier], [...this.commonModifiers, ...this.strModifiers, ...this.endModifiers, HpPerHit, ChampionHpPerHit]],
-      [[Bow, Crossbow], 2, [NopModifier], [...this.commonModifiers, ...this.dexModifiers]],
-      [[LeatherArmor], 1, [NopModifier], [...this.commonModifiers, ...this.dexModifiers]],
+      [[Bow, Crossbow, RecurveBow, Sling, Arbalest, CompositeBow], 1, [NopModifier], [...this.commonModifiers, ...this.dexModifiers]],
+      [[LeatherArmor, PaddedCoat], 1, [NopModifier], [...this.commonModifiers, ...this.dexModifiers]],
       [[Robe], 8, [NopModifier], [...this.magicModifiers, AntiEndurance, AntiDexterity, AntiStrength, AntiHealth, MpPerHitReceived]],
-      [[Staff, Wand], 10, [NopModifier], [...this.magicModifiers, ...this.magicWeaponModifiers]],
+      [[Staff, Wand, CinderWand, RimeWand, SerpentWand], 10, [NopModifier], [...this.magicModifiers, ...this.magicWeaponModifiers]],
       [[ChainMail, PlateMail], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], [...this.strModifiers, ...this.commonModifiers, ...this.endModifiers]],
-      [[StrengthPotion, ArmorPotion, DexterityPotion, WisdomPotion], 50, [NopModifier], []],
+      [[StrengthPotion, ArmorPotion, DexterityPotion, WisdomPotion, ThawPotion, AntidotePotion], 50, [NopModifier], []],
       [[ChampionArmorPotion, ChampionStrengthPotion, ChampionDexterityPotion, ChampionWisdomPotion], 150, [NopModifier], []],
-      [[LeatherBoots], 1, [NopModifier], [...this.commonModifiers, ...this.dexModifiers, ...this.magicModifiers]],
+      [[LeatherBoots, TrailBoots], 1, [NopModifier], [...this.commonModifiers, ...this.dexModifiers, ...this.magicModifiers]],
       [[MetalBoots, PlateBoots], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], [...this.commonModifiers, ...this.strModifiers, ...this.endModifiers]],
-      [[LeatherGauntlets], 1, [NopModifier], [...this.commonModifiers, ...this.dexModifiers, ...this.magicModifiers]],
+      [[LeatherGauntlets, ArchersBracers], 1, [NopModifier], [...this.commonModifiers, ...this.dexModifiers, ...this.magicModifiers]],
       [[Bracelet], 1, [NopModifier], [...this.magicModifiers, AntiEndurance, AntiDexterity, AntiStrength, AntiHealth]],
       [[MetalGauntlets, PlateGauntlets], 1, [CopperArmorModifier, IronArmorModifier, SteelArmorModifier], [...this.strModifiers, ...this.commonModifiers, ...this.endModifiers]],
       [[
@@ -153,10 +216,26 @@ export class LootGenerator extends GameObject {
         IceRayScroll,
         IceShardScroll,
         CatGraceScroll,
+        ThawScroll,
+        SmokeVeilScroll,
+        SteamBurstScroll,
+        BlinkScroll,
+        LifeDrainScroll,
+        InvisibilityScroll,
+        PurgePoisonScroll,
+        VenomousTouchScroll,
       ], 30, [NopModifier], []],
     ];
     this.debug.log(`Building opposites...`);
-    const allModifiers = [...this.commonModifiers, ...this.magicModifiers, ...this.magicWeaponModifiers, ...this.dexModifiers, ...this.endModifiers, ...this.strModifiers];
+    const allModifiers = [
+      ...this.commonModifiers,
+      ...this.championAntiModifiers,
+      ...this.magicModifiers,
+      ...this.magicWeaponModifiers,
+      ...this.dexModifiers,
+      ...this.endModifiers,
+      ...this.strModifiers,
+    ];
     this.opposites = allModifiers.reduce((acc, mod) => {
       acc.set(mod, new Set());
       const instance = new mod();
@@ -173,18 +252,6 @@ export class LootGenerator extends GameObject {
 
     this.debug.log(`Constructing loot...`);
     this.loot = _items.reduce((acc, [items, count, modifiers, modifiers1]) => {
-      function* pairs(array: ItemModifierBuilder[]) {
-        for (let i = 0; i < array.length; i++) {
-          yield [array[i]];
-          for (let j = 0; j < array.length; j++) {
-            if (i != j) {
-              yield [array[i], array[j]];
-            }
-          }
-        }
-        yield [];
-      }
-
       for (let i = 0; i < count; i++) {
         for (const item of items) {
           const base = new item(this.context);
@@ -197,7 +264,7 @@ export class LootGenerator extends GameObject {
             }
             acc[cost].push(res);
 
-            for (const additionalModifiers of pairs(modifiers1)) {
+            for (const additionalModifiers of this.modifierCombinations(modifiers1)) {
               if (this.hasOpposites(additionalModifiers)) {
                 continue;
               }
@@ -207,7 +274,7 @@ export class LootGenerator extends GameObject {
                 res1.applyModifier(new modifier1());
               }
               const cost1 = res1.getCost();
-              if (cost <= 0) {
+              if (cost1 <= 0) {
                 continue;
               }
               if (!acc[cost1]) {
@@ -221,6 +288,30 @@ export class LootGenerator extends GameObject {
       return acc;
     }, {});
     this.debug.log(`Constructing loot done!`);
+  }
+
+  private *modifierCombinations(array: ItemModifierBuilder[]): Generator<ItemModifierBuilder[]> {
+    for (let i = 0; i < array.length; i++) {
+      yield [array[i]];
+      for (let j = 0; j < array.length; j++) {
+        if (
+          i !== j &&
+          !(this.highTierPositiveModifiers.has(array[i]) && this.highTierPositiveModifiers.has(array[j]))
+        ) {
+          yield [array[i], array[j]];
+        }
+      }
+    }
+    yield [];
+
+    for (const positive of array) {
+      if (!this.highTierPositiveModifiers.has(positive)) {
+        continue;
+      }
+      for (const drawback of this.championAntiModifiers) {
+        yield [positive, drawback];
+      }
+    }
   }
 
   private hasOpposites(arr: ItemModifierBuilder[]): boolean {
@@ -265,43 +356,98 @@ export class LootGenerator extends GameObject {
       acc[cost].push(p);
       return acc;
     }, {} as Record<number, Potion[]>);
-  public generateLoot(cost: number): Item | null {
+  private books = BOOK_CONSTRUCTORS.map(BookConstructor => new BookConstructor(this.context));
+  public generateTreasurePrize(
+    cost: number,
+    generatedUniqueBookIds: ReadonlySet<string> = new Set(),
+    depth = 3,
+  ): Item | null {
+    return this.generateLootWithPotionPreference(cost * 1.5, generatedUniqueBookIds, false, true, depth, true);
+  }
+
+  public generateChestLoot(cost: number, preferPotions: boolean, depth = 3): Item | null {
+    return this.generateLootWithPotionPreference(cost, new Set(), preferPotions, false, depth, false);
+  }
+
+  public generateLoot(
+    cost: number,
+    generatedUniqueBookIds: ReadonlySet<string> = new Set(),
+    depth = 3,
+  ): Item | null {
+    return this.generateLootWithPotionPreference(cost, generatedUniqueBookIds, true, true, depth, false);
+  }
+
+  private itemFitsDepth(item: Item, depth: number, allowLegendaryModifiers: boolean): boolean {
+    const maximumTier = Math.max(1, Math.min(depth, 3));
+    return item.getModifiers().every(modifier => {
+      const tier = this.modifierTiers.get(modifier.saveId) ?? 1;
+      return tier <= maximumTier || allowLegendaryModifiers && depth >= 3 && tier === 4;
+    });
+  }
+
+  private generateLootWithPotionPreference(
+    cost: number,
+    generatedUniqueBookIds: ReadonlySet<string>,
+    preferPotions: boolean,
+    allowRareDrops: boolean,
+    depth: number,
+    allowLegendaryModifiers: boolean,
+  ): Item | null {
     this.debug.log(`Generating loot for ${cost}...`);
+    if (cost <= 0) {
+      this.debug.log(`Skipping loot for non-positive cost.`);
+      return null;
+    }
+    if (allowRareDrops && Math.random() < LootGenerator.BOOK_DROP_PROBABILITY) {
+      const availableBooks = this.books.filter(
+        (book: Book) => !book.isUnique || !generatedUniqueBookIds.has(book.saveId),
+      );
+      const book = availableBooks[Math.floor(Math.random() * availableBooks.length)];
+      this.debug.log(`Generated rare book ${book.getName()}!`);
+      return book.clone();
+    }
+    if (allowRareDrops && Math.random() < LootGenerator.MAP_DROP_PROBABILITY) {
+      const map = new VeyranSurveyMap(this.context);
+      this.debug.log(`Generated rare ${map.getName()}!`);
+      return map;
+    }
     let roll: number;
 
     let lookUp = this.loot;
     let possibleItems: Item[];
-    const potionsRoll = Math.random();
-    let healthPotionsCount = 0;
+    const potionsRoll = preferPotions ? Math.random() : 1;
+    const player = preferPotions ? this.context.getPlayer() : null;
     let manaPotionsCount = 0;
-    for (const item of this.context.getPlayer().inventory) {
-      if (item.stats.consumableHpReplenish) {
-        healthPotionsCount++;
-      }
-      if (item.stats.consumableMpReplenish) {
-        manaPotionsCount++;
+    if (player) {
+      for (const item of player.inventory) {
+        if (item.stats.consumableMpReplenish) {
+          manaPotionsCount++;
+        }
       }
     }
-    const playerWisdom = this.context.getPlayer().getWisdom(false);
-    const playerDexterity = this.context.getPlayer().getDexterity(false);
-    const playerStrength = this.context.getPlayer().getStrength(false);
-    let healthProbability: number;
+    const playerWisdom = player?.getWisdom(false) ?? 0;
+    const playerDexterity = player?.getDexterity(false) ?? 0;
+    const playerStrength = player?.getStrength(false) ?? 0;
+    let healthProbability = 0;
     if (playerStrength > playerWisdom && playerStrength > playerDexterity) {
-      switch (healthPotionsCount) {
-        case 0: case 1: healthProbability = 0.5; break;
-        default: healthProbability = this.HEALTH_POTION_PROBABILITY; break;
+      healthProbability = this.HEALTH_POTION_PROBABILITY;
+      if (player.hp / player.getMaxHp() < 0.33) {
+        healthProbability = 0.8;
       }
-    } else {
+    } else if (preferPotions) {
       healthProbability = this.HEALTH_POTION_PROBABILITY;
     }
-    let manaProbability: number;
+    let manaProbability = 0;
     if (playerWisdom > playerStrength && playerWisdom > playerDexterity) {
-      switch (manaPotionsCount) {
-        case 0: manaProbability = 0.8; healthProbability = 0; break;
-        case 1: manaProbability = 0.5; break;
-        default: manaProbability = this.MANA_POTION_PROBABILITY; break;
+      manaProbability = this.MANA_POTION_PROBABILITY;
+      if (player.mp / player.getMaxMp() < 0.25) {
+        if (manaPotionsCount === 0) {
+          manaProbability = 0.8; healthProbability = 0;
+        } else if (manaPotionsCount === 1) {
+          manaProbability = 0.5;
+        }
       }
-    } else {
+    } else if (preferPotions) {
       manaProbability = this.MANA_POTION_PROBABILITY;
     }
     if (potionsRoll < healthProbability) {
@@ -319,9 +465,12 @@ export class LootGenerator extends GameObject {
     this.debug.log(`Roll: ${roll}`);
     do {
       this.debug.log(`Finding items for ${roll}...`);
-      possibleItems = lookUp[roll];
+      possibleItems = lookUp[roll]?.filter(item =>
+        (preferPotions || !(item instanceof Potion)) &&
+        (lookUp !== this.loot || this.itemFitsDepth(item, depth, allowLegendaryModifiers)),
+      );
       roll--;
-    } while (roll > 0 && !possibleItems);
+    } while (roll > 0 && (!possibleItems || possibleItems.length === 0));
     if (possibleItems) {
       const item = possibleItems[Math.floor(Math.random() * possibleItems.length)];
       this.debug.log(`Generated ${item.getName()}!`);
@@ -331,7 +480,7 @@ export class LootGenerator extends GameObject {
     return null;
   }
 
-  static getLoot(cost: number) {
+  static getLoot(cost: number, depth = 3) {
     const lootGenerator = new LootGenerator({} as Context);
     const items = lootGenerator['loot'];
     const MIN_COST = lootGenerator.getMinCost(cost);
@@ -342,7 +491,7 @@ export class LootGenerator extends GameObject {
     loot['Mana potion'] = lootGenerator['MANA_POTION_PROBABILITY'];
     for (let i = MIN_COST; i <= cost; i++) {
       const p1 = 1 / (cost - MIN_COST);
-      for (const item of (items[i] ?? [])) {
+      for (const item of (items[i] ?? []).filter(item => lootGenerator.itemFitsDepth(item, depth, false))) {
         const p2 = 1 / items[i].length;
         if (!loot[item.getName()]) {
           loot[item.getName()] = 0;

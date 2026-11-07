@@ -1,6 +1,8 @@
 import {CharacterGameObject} from "./character.game-object";
 import {Spell} from "./spell";
 import {Npc} from "./npc";
+import {LootChestTile} from './tiles/loot-chest.tile';
+import {Position} from '../io/position';
 
 export enum GameMessageType {
   NewGame,
@@ -18,6 +20,11 @@ export enum GameMessageType {
   Save,
   ExitAndSave,
   DeleteInvalidSave,
+  OpenLootChest,
+  ShatterCrystal,
+  ActivatePressureValve,
+  ShatterFrostGeode,
+  ShatterAshUrn,
 }
 
 export class GameMessage {
@@ -70,4 +77,19 @@ export class GameMessage {
   static save(): GameMessage { return new GameMessage(GameMessageType.Save); }
   static exitAndSave(): GameMessage { return new GameMessage(GameMessageType.ExitAndSave); }
   static deleteInvalidSave(): GameMessage { return new GameMessage(GameMessageType.DeleteInvalidSave); }
+  static openLootChest(chest: LootChestTile, position: Position): GameMessage {
+    return new GameMessage(GameMessageType.OpenLootChest, {chest, position});
+  }
+  static shatterCrystal(position: Position): GameMessage {
+    return new GameMessage(GameMessageType.ShatterCrystal, {position});
+  }
+  static activatePressureValve(position: Position): GameMessage {
+    return new GameMessage(GameMessageType.ActivatePressureValve, {position});
+  }
+  static shatterFrostGeode(position: Position): GameMessage {
+    return new GameMessage(GameMessageType.ShatterFrostGeode, {position});
+  }
+  static shatterAshUrn(position: Position): GameMessage {
+    return new GameMessage(GameMessageType.ShatterAshUrn, {position});
+  }
 }

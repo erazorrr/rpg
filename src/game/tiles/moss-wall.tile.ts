@@ -1,0 +1,2 @@
+import {Char} from '../../io/char'; import {BackgroundColor} from '../../io/background.color'; import {ForegroundColor} from '../../io/foreground.color'; import {Tile} from './abstract.tile';
+export class MossWallTile extends Tile { static readonly saveId = 'moss-wall'; getBaseChar(): Char { return {char: '#', color: ForegroundColor.DarkSeaGreen, backgroundColor: this.isBloody ? BackgroundColor.DarkRed1 : BackgroundColor.Grey11}; } isNavigable(): boolean { return false; } }

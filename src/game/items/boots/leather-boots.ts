@@ -24,6 +24,6 @@ export class LeatherBoots extends Boots {
   }
 
   getBaseName(): string {
-    return "Leather boots";
+    return "Leather Boots";
   }
 }

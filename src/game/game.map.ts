@@ -8,6 +8,8 @@ import {MapSave, Saveable} from "./save-data";
 import {restoreTile} from "./tiles/tile.factory";
 import {AnimationFrame} from "./animation";
 import {sampleLight, strongestLight} from './tile-light';
+import {ForegroundColor} from '../io/foreground.color';
+import {BackgroundColor} from '../io/background.color';
 
 export class GameMap extends GameObject implements Renderable, Saveable<MapSave> {
   constructor(
@@ -46,7 +48,7 @@ export class GameMap extends GameObject implements Renderable, Saveable<MapSave>
     containerWidth: number,
     containerHeight: number,
   ): GameMap {
-    const tiles = data.tiles.map(column => column.map(restoreTile));
+    const tiles = data.tiles.map(column => column.map(tile => restoreTile(tile, context)));
     return new GameMap(
       context,
       tiles,
@@ -68,8 +70,10 @@ export class GameMap extends GameObject implements Renderable, Saveable<MapSave>
 
   getTopLeftCorner(): Position {
     const player = this.context.getPlayer().position;
-    const startX = Math.min(Math.max(0, Math.floor(player.x - this.containerWidth / 2)), this.width - this.containerWidth);
-    const startY = Math.min(Math.max(0, Math.floor(player.y - this.containerHeight / 2)), this.height - this.containerHeight);
+    const maxStartX = Math.max(0, this.width - this.containerWidth);
+    const maxStartY = Math.max(0, this.height - this.containerHeight);
+    const startX = Math.min(Math.max(0, Math.floor(player.x - this.containerWidth / 2)), maxStartX);
+    const startY = Math.min(Math.max(0, Math.floor(player.y - this.containerHeight / 2)), maxStartY);
     return new Position(startX, startY);
   }
 
@@ -87,10 +91,19 @@ export class GameMap extends GameObject implements Renderable, Saveable<MapSave>
     const topLeftCorner = this.getTopLeftCorner();
     const startX = topLeftCorner.x;
     const startY = topLeftCorner.y;
+    const usesFogOfWar = this.context.getCurrentGameLevel().usesFogOfWar();
 
     for (let i = startX; i < Math.min(startX + this.containerWidth, this.width); i++) {
       for (let j = startY; j < Math.min(startY + this.containerHeight, this.height); j++) {
-        renderer.put(new Position(i - startX, j - startY), this.tiles[i][j].getChar(frame, new Position(i, j)));
+        const target = new Position(i, j);
+        const tile = this.tiles[i][j];
+        const visible = tile.isExplored() && (!usesFogOfWar || this.context.getPlayer().canSeeTerrain(target));
+        const char = tile.getChar(frame, target);
+        renderer.put(new Position(i - startX, j - startY), tile.isExplored() && !visible ? {
+          ...char,
+          color: ForegroundColor.Grey37,
+          backgroundColor: BackgroundColor.Black,
+        } : char);
       }
     }
 
@@ -100,17 +113,18 @@ export class GameMap extends GameObject implements Renderable, Saveable<MapSave>
       for (let j = Math.max(0, startY - radius); j < Math.min(startY + this.containerHeight + radius, this.height); j++) {
         const position = new Position(i, j);
         const light = this.tiles[i][j].getLight(frame, position);
-        if (light && this.tiles[i][j].isExplored()) sources.push({position, light});
+        if (light) sources.push({position, light});
       }
     }
     for (let i = startX; i < Math.min(startX + this.containerWidth, this.width); i++) {
       for (let j = startY; j < Math.min(startY + this.containerHeight, this.height); j++) {
         const target = new Position(i, j);
         const tile = this.tiles[i][j];
-        if (!tile.isExplored()) continue;
+        if (!tile.isExplored() || usesFogOfWar && !this.context.getPlayer().canSeeTerrain(target)) continue;
         const samples = sources.flatMap(source => {
           const sample = sampleLight(source.light, source.position, target, tile.getIsBloody());
           if (!sample || !this.isVisible(source.position, target, source.light.radius + 1)) return [];
+          if (tile.blocksLight() && usesFogOfWar && !this.context.getPlayer().canSeeTerrain(source.position)) return [];
           return [sample];
         });
         const selected = strongestLight(samples);

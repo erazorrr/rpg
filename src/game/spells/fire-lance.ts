@@ -6,11 +6,13 @@ import {ForegroundColor} from "../../io/foreground.color";
 
 export class FireLanceSpell extends Spell {
   public static readonly saveId = "fire-lance";
+  public readonly keyBinding = 'F';
 
   constructor() {
     super(SpellTarget.Monster, {
       damageRoll: 10,
       damageBonus: 6,
+      damageType: 'fire',
       stateChance: 0.5,
       state: () => new BurningState(10, 1),
     }, 3);

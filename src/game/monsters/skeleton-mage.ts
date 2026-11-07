@@ -17,7 +17,7 @@ export class SkeletonMage extends Skeleton {
 
   strength = 10;
   dexterity = 10;
-  endurance = 3;
+  endurance = 15;
   wisdom = 8;
 
 
@@ -30,7 +30,7 @@ export class SkeletonMage extends Skeleton {
   }
 
   getBaseName(): string {
-    return 'Skeleton Mage';
+    return 'Skeleton mage';
   }
 
   getXp(): number {

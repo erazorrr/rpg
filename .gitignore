@@ -4,4 +4,4 @@ build
 .idea
 docs
 AGENTS.md
-*.log
+logs/

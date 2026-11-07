@@ -3,8 +3,9 @@ import {Context} from "./context";
 import {ItemModifier} from "./item-modifier";
 import {Char} from "../io/char";
 import {Position} from "../io/position";
-import {State} from "./state";
+import {State, StateRemoval} from "./state";
 import {ItemSave, Saveable} from "./save-data";
+import {DamageType} from './damage';
 
 export enum ItemType {
   Weapon,
@@ -15,6 +16,8 @@ export enum ItemType {
   Amulet,
   Potion,
   Scroll,
+  Book,
+  Map,
 }
 
 export type ItemStats = {
@@ -31,6 +34,9 @@ export type ItemStats = {
 
   magicRoll?: number;
   magicBonus?: number;
+  basicDamageRoll?: number;
+  basicDamageBonus?: number;
+  basicDamageType?: DamageType;
 
   strengthBonus?: number;
   dexterityBonus?: number;
@@ -40,6 +46,7 @@ export type ItemStats = {
   consumableHpReplenish?: number;
   consumableMpReplenish?: number;
   consumableState?: State;
+  consumableStateRemoval?: StateRemoval;
 };
 
 export abstract class Item extends GameObject implements Saveable<ItemSave> {
@@ -81,6 +88,8 @@ export abstract class Item extends GameObject implements Saveable<ItemSave> {
     mpPerHitReceived: 'MpPerHitRcvd',
     magicRoll: 'MgcRoll',
     magicBonus: 'MgcBonus',
+    basicDamageRoll: 'DmgRoll',
+    basicDamageBonus: 'DmgBonus',
   }
   getName() {
     const prefix = this.modifiers
@@ -102,7 +111,10 @@ export abstract class Item extends GameObject implements Saveable<ItemSave> {
         .join(' ')
         .concat(` Duration+${this.stats.consumableState.turns}`)
       : ''
-    return `${prefix ? `${prefix} `: ''}${this.getBaseName()}${suffix ? ` of ${suffix}` : ''}${params ? ` (${params})` : ''}${stateParams ? ` (${stateParams})` : ''}`;
+    const stateRemovalParams = this.stats.consumableStateRemoval
+      ? `Cures ${this.stats.consumableStateRemoval.name}`
+      : '';
+    return `${prefix ? `${prefix} `: ''}${this.getBaseName()}${suffix ? ` of ${suffix}` : ''}${params ? ` (${params})` : ''}${stateParams ? ` (${stateParams})` : ''}${stateRemovalParams ? ` (${stateRemovalParams})` : ''}`;
 
   }
 

@@ -23,7 +23,11 @@ export class GameLog implements Renderable {
     this.buffer.push(message);
   }
 
-  private printLine(renderer: Renderer, i: number, color: ForegroundColor, line: string): number {
+  finishCycle(): void {
+    this.isStale = true;
+  }
+
+  private printLine(renderer: Renderer, i: number, _: ForegroundColor, line: string): number {
     renderer.put(new Position(0, i), {
       char: '>',
       color: ForegroundColor.White,
@@ -61,6 +65,5 @@ export class GameLog implements Renderable {
     for (const line of this.buffer) {
       i = this.printLine(renderer, i, this.isStale ? ForegroundColor.Grey35 : ForegroundColor.White, line);
     }
-    this.isStale = true;
   }
 }

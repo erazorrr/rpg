@@ -1,0 +1,2 @@
+import {Char} from '../../io/char'; import {BackgroundColor} from '../../io/background.color'; import {ForegroundColor} from '../../io/foreground.color'; import {Tile} from './abstract.tile';
+export class MasonryWallTile extends Tile { static readonly saveId = 'masonry-wall'; getBaseChar(): Char { return {char: '#', color: ForegroundColor.Grey63, backgroundColor: this.isBloody ? BackgroundColor.DarkRed1 : BackgroundColor.Grey19}; } isNavigable(): boolean { return false; } }

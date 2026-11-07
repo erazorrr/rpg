@@ -12,7 +12,7 @@ export class ChampionWisdomPotion extends Potion {
   }
 
   getBaseName(): string {
-    return "Champion wisdom potion";
+    return "Champion Wisdom Potion";
   }
 
   getChar(): Char {

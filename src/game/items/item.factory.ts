@@ -39,6 +39,7 @@ import {SmallHealthPotion} from "./potions/small-health";
 import {SmallManaPotion} from "./potions/small-mana";
 import {StrengthPotion} from "./potions/strength";
 import {WisdomPotion} from "./potions/wisdom";
+import {ThawPotion} from "./potions/thaw";
 import {BloodSacrificeScroll} from "./scrolls/blood-sacrifice.scroll";
 import {CatGraceScroll} from "./scrolls/cat-grace.scroll";
 import {EmpowerScroll} from "./scrolls/empower.scroll";
@@ -50,27 +51,58 @@ import {HealScroll} from "./scrolls/heal.scroll";
 import {IceRayScroll} from "./scrolls/ice-ray.scroll";
 import {IceShardScroll} from "./scrolls/ice-shard.scroll";
 import {MinorHealScroll} from "./scrolls/minor-heal.scroll";
+import {ThawScroll} from "./scrolls/thaw.scroll";
+import {SmokeVeilScroll} from './scrolls/smoke-veil.scroll';
+import {SteamBurstScroll} from './scrolls/steam-burst.scroll';
+import {BlinkScroll} from './scrolls/blink.scroll';
+import {LifeDrainScroll} from './scrolls/life-drain.scroll';
+import {AntidotePotion} from './potions/antidote';
+import {PurgePoisonScroll} from './scrolls/purge-poison.scroll';
+import {VenomousTouchScroll} from './scrolls/venomous-touch.scroll';
+import {BOOK_CONSTRUCTORS} from "./books/books";
+import {LightGoesFirstBook} from "./books/light-goes-first";
+import {VeyranSurveyMap} from './veyran-survey-map';
+import {CinderWand} from './weapons/cinder-wand';
+import {RimeWand} from './weapons/rime-wand';
+import {SerpentWand} from './weapons/serpent-wand';
+import {RecurveBow} from './weapons/recurve-bow';
+import {Sling} from './weapons/sling';
+import {Arbalest} from './weapons/arbalest';
+import {CompositeBow} from './weapons/composite-bow';
+import {PaddedCoat} from './chest/padded-coat';
+import {TrailBoots} from './boots/trail-boots';
+import {ArchersBracers} from './gauntlets/archers-bracers';
+import {InvisibilityScroll} from './scrolls/invisibility.scroll';
 
 type ItemConstructor = (new (context: Context) => Item) & {readonly saveId: string};
 
 const itemConstructors: ItemConstructor[] = [
-  ShortSword, LongSword, HandAxe, GreatAxe, Bow, Crossbow, Staff, Wand,
-  LeatherArmor, ChainMail, PlateMail, Robe,
-  LeatherBoots, MetalBoots, PlateBoots,
-  LeatherGauntlets, MetalGauntlets, PlateGauntlets, Bracelet,
+  ShortSword, LongSword, HandAxe, GreatAxe,
+  Bow, Crossbow, RecurveBow, Sling, Arbalest, CompositeBow, Staff,
+  Wand, CinderWand, RimeWand, SerpentWand,
+  LeatherArmor, PaddedCoat, ChainMail, PlateMail, Robe,
+  LeatherBoots, TrailBoots, MetalBoots, PlateBoots,
+  LeatherGauntlets, ArchersBracers, MetalGauntlets, PlateGauntlets, Bracelet,
   ArmorPotion, ChampionArmorPotion, ChampionDexterityPotion,
   ChampionHealthPotion, ChampionManaPotion, ChampionStrengthPotion,
   ChampionWisdomPotion, DexterityPotion, GiantHealthPotion, GiantManaPotion,
   HealthPotion, LargeHealthPotion, LargeManaPotion, ManaPotion,
-  SmallHealthPotion, SmallManaPotion, StrengthPotion, WisdomPotion,
+  AntidotePotion, SmallHealthPotion, SmallManaPotion, StrengthPotion, ThawPotion, WisdomPotion,
   BloodSacrificeScroll, CatGraceScroll, EmpowerScroll, FireBoltScroll,
   FireLanceScroll, FortifyScroll, FreezeScroll, HealScroll, IceRayScroll,
-  IceShardScroll, MinorHealScroll,
+  IceShardScroll, MinorHealScroll, ThawScroll,
+  SmokeVeilScroll, SteamBurstScroll, BlinkScroll, LifeDrainScroll, PurgePoisonScroll, VenomousTouchScroll,
+  InvisibilityScroll,
+  LightGoesFirstBook,
+  ...BOOK_CONSTRUCTORS,
+  VeyranSurveyMap,
 ];
 
 const constructors = Object.fromEntries(
   itemConstructors.map(Constructor => [Constructor.saveId, Constructor]),
 ) as Record<string, ItemConstructor>;
+
+export const knownItemSaveIds = new Set(Object.keys(constructors));
 
 export function restoreItem(context: Context, data: ItemSave): Item {
   const Constructor = constructors[data.kind];

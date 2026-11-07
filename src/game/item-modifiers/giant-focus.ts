@@ -6,7 +6,7 @@ export class GiantFocus extends ItemModifier {
 
   constructor() {
     super('legendary focus', {
-      magicRoll: 6,
-    }, Math.round(PRICE_PER_MAGIC_DICE_BONUS * 6), true);
+      magicRoll: 3,
+    }, Math.round(PRICE_PER_MAGIC_DICE_BONUS * 3), true);
   }
 }

@@ -3,21 +3,15 @@ import {GameObject} from "./abstract.game-object";
 import {Position} from "../io/position";
 import {ForegroundColor} from "../io/foreground.color";
 import {BackgroundColor} from "../io/background.color";
+import {getOrderRank} from './order-rank';
 
 export class LevelBar extends GameObject implements Renderable {
     render(): void {
       let i = 0;
+      const player = this.context.getPlayer();
       const label = 'LVL:       ';
-      for (const char of label) {
-        this.context.getRenderer().put(new Position(i, 2), {
-          char,
-          color: ForegroundColor.White,
-          backgroundColor: BackgroundColor.Black,
-        });
-        i++;
-      }
-      const rest = this.context.getPlayer().level + '';
-      for (const char of rest) {
+      const value = `${player.level} ${getOrderRank(player.level)}`;
+      for (const char of label + value) {
         this.context.getRenderer().put(new Position(i, 2), {
           char,
           color: ForegroundColor.White,

@@ -19,6 +19,7 @@ export interface Context {
   getItem(position: Position): Item | undefined;
   buildPath(start: Position, end: Position, maxRadius: number, map?: GameMap): Position[];
   log(message: string): void;
+  recordEvent?(event: string, data?: Record<string, unknown>): void;
   destroyNpc(npc: CharacterGameObject): void;
   getCurrentGameLevel(): Level;
   presentProjectile?(projectile: ProjectilePresentation): void;

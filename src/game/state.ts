@@ -2,6 +2,7 @@ import {CharacterGameObject} from "./character.game-object";
 import {ForegroundColor} from "../io/foreground.color";
 import {BackgroundColor} from "../io/background.color";
 import {Saveable, StateSave} from "./save-data";
+import {DamageType} from './damage';
 
 export type StateStats = {
   damageRoll?: number;
@@ -17,8 +18,15 @@ export type StateStats = {
   wisdomBonus?: number;
 
   damagePerTurn?: number;
+  damageType?: DamageType;
 
   isUnableToMove?: boolean;
+  isInvisible?: boolean;
+};
+
+export type StateRemoval = {
+  saveId: string;
+  name: string;
 };
 
 export abstract class State implements Saveable<StateSave> {

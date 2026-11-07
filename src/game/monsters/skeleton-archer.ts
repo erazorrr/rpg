@@ -13,7 +13,7 @@ export class SkeletonArcher extends Skeleton {
 
   strength = 10;
   dexterity = 12;
-  endurance = 4;
+  endurance = 15;
 
   getChar(): Char {
     return {

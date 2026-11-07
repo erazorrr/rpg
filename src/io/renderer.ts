@@ -30,6 +30,12 @@ export class Renderer {
     process.stdout.write(`\x1b[?25h`);
   }
 
+  clear(): void {
+    buffer = {};
+    prevBuffer = {};
+    process.stdout.write(`\x1b[2J\x1b[H`);
+  }
+
   put(position: Position, c: Char): void {
     this.moveCursor(position);
     this.setStyle(c.color, c.backgroundColor);

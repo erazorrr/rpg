@@ -15,6 +15,11 @@ import {ChampionHpPerHit} from "./champion-hp-per-hit";
 import {ChampionPower} from "./champion-power";
 import {ChampionStrength} from "./champion-strength";
 import {ChampionWisdom} from "./champion-wisdom";
+import {ChampionAntiDexterity} from "./champion-anti-dexterity";
+import {ChampionAntiEndurance} from "./champion-anti-endurance";
+import {ChampionAntiHealth} from "./champion-anti-health";
+import {ChampionAntiStrength} from "./champion-anti-strength";
+import {ChampionAntiWisdom} from "./champion-anti-wisdom";
 import {Dexterity} from "./dexterity";
 import {Endurance} from "./endurance";
 import {Focus} from "./focus";
@@ -58,6 +63,11 @@ const modifierConstructors: ItemModifierConstructor[] = [
   ChampionPower,
   ChampionStrength,
   ChampionWisdom,
+  ChampionAntiDexterity,
+  ChampionAntiEndurance,
+  ChampionAntiHealth,
+  ChampionAntiStrength,
+  ChampionAntiWisdom,
   Dexterity,
   Endurance,
   Focus,

@@ -13,7 +13,7 @@ export class Ogre extends Npc {
 
   strength = 14;
   dexterity = 6;
-  endurance = 5;
+  endurance = 20;
   wisdom = 2;
 
   getCowardice(): number {
@@ -29,7 +29,7 @@ export class Ogre extends Npc {
   }
 
   getBaseName(): string {
-    return 'Orge';
+    return 'Ogre';
   }
 
   getXp(): number {

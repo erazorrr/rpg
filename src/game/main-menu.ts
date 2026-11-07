@@ -6,8 +6,12 @@ import {Position} from "../io/position";
 import {GameMessage} from "./game-message";
 import {Field} from "../io/field";
 import {Context} from "./context";
+import {getCenteredBounds} from './screen-layout';
 
 export class MainMenu extends GameObject implements Renderable, Interactive {
+  private containerWidth = 41;
+  private containerHeight = 16;
+
   constructor(context: Context, private tlPosition: Position, private brCorner: Position) {
     super(context);
   }
@@ -18,6 +22,14 @@ export class MainMenu extends GameObject implements Renderable, Interactive {
 
   public setRBPosition(position: Position): void {
     this.field.setRBPosition(position);
+  }
+
+  public resize(width: number, height: number): void {
+    this.containerWidth = width;
+    this.containerHeight = height;
+    this.field.setBounds(new Position(0, 0), new Position(width - 1, height - 1));
+    const bounds = getCenteredBounds(width, height, 31, 10, 0);
+    this.mainMenu.setBounds(bounds.topLeft, bounds.bottomRight);
   }
 
   private field = new Field(
@@ -61,6 +73,7 @@ export class MainMenu extends GameObject implements Renderable, Interactive {
     entries.push({id: 'new', label: 'New game', onSelect: () => this.context.postGameMessage(GameMessage.newGame())});
     entries.push({id: 'exit', label: 'Exit', onSelect: () => this.context.postGameMessage(GameMessage.exit())});
     this.mainMenu = new List('', entries, new Position(10, 5), new Position(40, 15), false);
+    this.resize(this.containerWidth, this.containerHeight);
   }
 
   makeInteractive(): void {

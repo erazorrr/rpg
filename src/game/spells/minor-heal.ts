@@ -2,6 +2,7 @@ import {Spell, SpellTarget} from "../spell";
 
 export class MinorHealSpell extends Spell {
   public static readonly saveId = "minor-heal";
+  public readonly keyBinding = 'h';
 
   constructor() {
     super(SpellTarget.Self, {

@@ -24,6 +24,6 @@ export class LeatherGauntlets extends Gauntlets {
   }
 
   getBaseName(): string {
-    return "Leather gauntlets";
+    return "Leather Gauntlets";
   }
 }

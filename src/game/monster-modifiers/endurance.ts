@@ -4,6 +4,6 @@ export class EnduranceMonsterModifier extends MonsterModifier {
   public static readonly saveId = "endurance";
 
   constructor() {
-    super('Grunt', {endurance: 6}, 2.5, false);
+    super('Grunt', {enduranceMultiplier: 1.5}, 1.75, false);
   }
 }

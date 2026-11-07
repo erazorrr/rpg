@@ -4,6 +4,7 @@ import {Saveable, TileSave} from "../save-data";
 import {AnimationFrame} from "../animation";
 import {Position} from "../../io/position";
 import {BackgroundColor} from "../../io/background.color";
+import {AtmosphereEmission} from '../atmosphere';
 
 export type TileLight = {
   radius: number;
@@ -30,9 +31,27 @@ export abstract class Tile implements Saveable<TileSave> {
     return [];
   }
 
+  public getStepMessages(): string[] {
+    return [];
+  }
+
+  private stepMessagesShown = false;
+
+  public hasShownStepMessages(): boolean {
+    return this.stepMessagesShown;
+  }
+
+  public markStepMessagesShown(): void {
+    this.stepMessagesShown = true;
+  }
+
   public getLight(frame?: AnimationFrame, position?: Position): TileLight | undefined {
     void frame;
     void position;
+    return undefined;
+  }
+
+  public getAtmosphereSource(): {period: number; maxNearby: number; emission: AtmosphereEmission} | undefined {
     return undefined;
   }
 
@@ -71,6 +90,7 @@ export abstract class Tile implements Saveable<TileSave> {
       kind: this.saveId,
       explored: this.explored,
       bloody: this.isBloody,
+      stepMessagesShown: this.stepMessagesShown,
     };
   }
 }

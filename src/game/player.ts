@@ -1,4 +1,4 @@
-import {Position, SerializedPosition} from "../io/position";
+import {Position} from "../io/position";
 import {ForegroundColor} from "../io/foreground.color";
 import {BackgroundColor} from "../io/background.color";
 import {Char} from "../io/char";
@@ -28,13 +28,29 @@ import {restoreItem} from "./items/item.factory";
 import {restoreSpell} from "./spells/spell.factory";
 import {restoreState} from "./state.factory";
 import {
+  getDungeonBiomeAmbienceMessage,
   getDungeonBiomeDiscoveryMessage,
   getDungeonBiomeForFloor,
 } from "./dungeon-generation/dungeon-biomes";
 import {DungeonBiome} from "./dungeon-generation/dungeon-layout";
+import {LootChestTile} from './tiles/loot-chest.tile';
+import {CrystalClusterTile} from './tiles/crystal-cluster.tile';
+import {PressureValveTile} from './tiles/pressure-valve.tile';
+import {getOrderRank} from './order-rank';
+import {DeepEmberTile} from './tiles/deep-ember.tile';
+import {FrostGeodeTile} from './tiles/frost-geode.tile';
+import {AshUrnTile} from './tiles/ash-urn.tile';
+import {LightGoesFirstBook} from './items/books/light-goes-first';
+import {FrozenState} from './states/frozen.state';
 
 export class Player extends CharacterGameObject implements Interactive {
+  private static readonly INITIAL_AMBIENCE_COOLDOWN = 20;
+  private static readonly AMBIENCE_COOLDOWN = 35;
+  private static readonly AMBIENCE_CHANCE = .008;
+
   private inputEmitter = new InputEmitter();
+  private movedSinceLastExplore = false;
+  private biomeAmbienceCooldown = Player.INITIAL_AMBIENCE_COOLDOWN;
 
   public level = 1;
   public xp = 0;
@@ -61,8 +77,13 @@ export class Player extends CharacterGameObject implements Interactive {
   public addXp(xp: number): void {
     this.xp += xp;
     if (this.xp >= this.nextLevelXp()) {
+      const previousRank = getOrderRank(this.level);
       this.level++;
       this.context.log(`${this.getName()} reached level ${this.level}!`);
+      const rank = getOrderRank(this.level);
+      if (rank !== previousRank) {
+        this.context.log(`The Order recognizes you as ${rank === 'Initiate' ? 'an' : 'a'} ${rank}.`);
+      }
       this.context.postGameMessage(GameMessage.startLevelUp());
     }
   }
@@ -77,11 +98,25 @@ export class Player extends CharacterGameObject implements Interactive {
   }
 
   private moveTo(targetPosition: Position): void {
-    if (this.context.getCharacter(targetPosition)) {
-      this.attack(this.context.getCharacter(targetPosition));
+    const target = this.context.getCharacter(targetPosition);
+    if (target) {
+      this.context.recordEvent?.('player_action', {
+        action: 'bump_attack',
+        from: this.position,
+        targetPosition,
+        target: target.getName(),
+        weapon: this.equipment.weapon?.getName() ?? 'unarmed',
+      });
+      this.attack(target);
       this.context.tick();
     } else if (this.canMove(targetPosition)) {
-      this.position = targetPosition;
+      this.context.recordEvent?.('player_action', {
+        action: 'move',
+        from: this.position,
+        to: targetPosition,
+      });
+      this.moveToPosition(targetPosition);
+      this.movedSinceLastExplore = true;
       if (this.context.getItem(targetPosition)) {
         this.context.log(`${this.getName()} sees ${this.context.getItem(targetPosition).getName()}. [p] to pick it up.`);
       }
@@ -89,14 +124,64 @@ export class Player extends CharacterGameObject implements Interactive {
         this.context.log(`${this.getName()} sees the stairs down. [Enter] to descend.`);
       }
       if (this.context.getCurrentMap().getTile(targetPosition) instanceof StairsUpTile) {
-        this.context.log(`${this.getName()} sees the stairs down. [Enter] to ascend.`);
+        this.context.log(`${this.getName()} sees the stairs up. [Enter] to ascend.`);
+      }
+      if (this.context.getCurrentMap().getTile(targetPosition) instanceof DeepEmberTile) {
+        this.context.log(`The Deep Ember burns in its cradle. [Enter] to recover it.`);
       }
       this.context.tick();
     } else {
       const tile = this.context.getCurrentMap().getTile(targetPosition);
+      if (tile instanceof LootChestTile) {
+        this.context.postGameMessage(GameMessage.openLootChest(tile, targetPosition));
+        return;
+      }
+      if (tile instanceof CrystalClusterTile) {
+        this.context.postGameMessage(GameMessage.shatterCrystal(targetPosition));
+        return;
+      }
+      if (tile instanceof PressureValveTile) {
+        this.context.postGameMessage(GameMessage.activatePressureValve(targetPosition));
+        return;
+      }
+      if (tile instanceof FrostGeodeTile) {
+        this.context.postGameMessage(GameMessage.shatterFrostGeode(targetPosition));
+        return;
+      }
+      if (tile instanceof AshUrnTile) {
+        this.context.postGameMessage(GameMessage.shatterAshUrn(targetPosition));
+        return;
+      }
+      if (Array.from(this.states).some(state => state.saveId === FrozenState.saveId)) {
+        this.context.recordEvent?.('player_action', {
+          action: 'struggle_frozen',
+          from: this.position,
+          attempted: targetPosition,
+        });
+        this.context.log(`${this.getName()} struggles against the ice!`);
+        this.context.tick();
+        return;
+      }
+      this.context.recordEvent?.('player_action', {
+        action: 'blocked_move',
+        from: this.position,
+        attempted: targetPosition,
+      });
       for (const message of tile?.getBumpMessages() ?? []) {
         this.context.log(message);
       }
+    }
+  }
+
+  protected moveToPosition(position: Position, traversed: Position[] = [position]): void {
+    super.moveToPosition(position, traversed);
+    for (const step of traversed) {
+      const tile = this.context.getCurrentMap().getTile(step);
+      if (!tile || tile.hasShownStepMessages()) continue;
+      const messages = tile.getStepMessages();
+      if (!messages.length) continue;
+      tile.markStepMessagesShown();
+      for (const message of messages) this.context.log(message);
     }
   }
 
@@ -151,6 +236,7 @@ export class Player extends CharacterGameObject implements Interactive {
     new Wand(this.context)
       .applyModifier(new AntiStrength())
       .applyModifier(new AntiDexterity()),
+    new LightGoesFirstBook(this.context),
   ];
   public equipment: Equipment = {
     weapon: (this.inventory[0] as Weapon),
@@ -160,38 +246,10 @@ export class Player extends CharacterGameObject implements Interactive {
     return true;
   }
 
-  private debugRenderTracings() {
-    const map = this.context.getCurrentMap();
-    setTimeout(() => {
-      const alreadyRendered: Set<SerializedPosition> = new Set();
-      for (let dx = -this.getVisibilityRadius(); dx <= this.getVisibilityRadius(); dx++) {
-        for (let dy = -this.getVisibilityRadius(); dy <= this.getVisibilityRadius(); dy++) {
-          const targetPosition = this.position.shift(dx, dy);
-          const tile = map.getTile(targetPosition);
-          if (this.context.getPlayer() && tile && Math.floor(this.context.getPlayer().position.manhattanDistanceTo(targetPosition)) === 10) {
-            const visibilityPath = this.isVisible(targetPosition);
-            const backgroundColor = Math.floor(Math.random() * 255);
-            const color = Math.floor(Math.random() * 255);
-            if (visibilityPath && !visibilityPath.find(_p => alreadyRendered.has(_p.serialize()))) {
-              for (const p of visibilityPath) {
-                this.context.getRenderer().put(new Position(p.x - map.getTopLeftCorner().x, p.y - map.getTopLeftCorner().y), {
-                  char: 'X',
-                  backgroundColor,
-                  color,
-                });
-                alreadyRendered.add(p.serialize());
-              }
-            }
-          }
-        }
-      }
-      this.context.getRenderer().flush(true);
-    }, 300);
-  }
-
   public explore() {
     const map = this.context.getCurrentMap();
     const visibleBiomes = new Set<DungeonBiome>();
+    let discoveredBiome = false;
 
     for (let dx = -this.getVisibilityRadius(); dx <= this.getVisibilityRadius(); dx++) {
       for (let dy = -this.getVisibilityRadius(); dy <= this.getVisibilityRadius(); dy++) {
@@ -200,7 +258,7 @@ export class Player extends CharacterGameObject implements Interactive {
 
         if (tile && !tile.isExplored()) {
           if (this.position.manhattanDistanceTo(targetPosition) <= this.getVisibilityRadius()) {
-            if (this.isVisible(targetPosition)) {
+            if (this.canSeeTerrain(targetPosition)) {
               tile.setExplored(true);
               const biome = getDungeonBiomeForFloor(tile);
               if (biome) visibleBiomes.add(biome);
@@ -213,9 +271,29 @@ export class Player extends CharacterGameObject implements Interactive {
     const level = this.context.getCurrentGameLevel();
     for (const biome of visibleBiomes) {
       if (level.discoverDungeonBiome(biome)) {
+        discoveredBiome = true;
         this.context.log(getDungeonBiomeDiscoveryMessage(biome));
       }
     }
+    this.considerDungeonBiomeAmbience(discoveredBiome);
+  }
+
+  private considerDungeonBiomeAmbience(discoveredBiome: boolean): void {
+    if (!this.movedSinceLastExplore) return;
+    this.movedSinceLastExplore = false;
+
+    const level = this.context.getCurrentGameLevel();
+    const biome = getDungeonBiomeForFloor(level.map.getTile(this.position));
+    if (!biome || discoveredBiome || level.getNpcs().some(npc => this.canSeeCharacter(npc))) return;
+
+    if (this.biomeAmbienceCooldown > 0) {
+      this.biomeAmbienceCooldown--;
+      return;
+    }
+    if (Math.random() >= Player.AMBIENCE_CHANCE) return;
+
+    this.context.log(getDungeonBiomeAmbienceMessage(biome));
+    this.biomeAmbienceCooldown = Player.AMBIENCE_COOLDOWN;
   }
 
   public knownSpells: Set<Spell> = new Set([

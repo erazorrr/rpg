@@ -8,7 +8,7 @@ export type ItemSave = {
 export type StateSave = {
   kind: string;
   turns: number;
-  stats: Record<string, number | boolean | undefined>;
+  stats: Record<string, number | boolean | string | undefined>;
 };
 
 export type CharacterSave = {
@@ -28,6 +28,15 @@ export type TileSave = {
   explored: boolean;
   bloody: boolean;
   inscriptionId?: string;
+  statueVariantId?: string;
+  bumpDescriptionId?: string;
+  stepDescriptionId?: string;
+  stepMessagesShown?: boolean;
+  lootChest?: {
+    rarity: 'sturdy' | 'reinforced' | 'gilded';
+    items: ItemSave[];
+  };
+  pressureValveSpent?: boolean;
 };
 
 export type MapSave = {
@@ -42,6 +51,11 @@ export type NpcSave = CharacterSave & {
   previousAction: number;
   modifiers: string[];
   treasure?: {cost: number; timer: number; started: boolean};
+  lastSeenPlayerPosition?: PositionSave;
+  healer?: {charges: number};
+  warlock?: {id: string; summonsRemaining: number};
+  familiar?: {ownerId: string};
+  mechanism?: {cycle: number};
 };
 
 export type PlayerSave = CharacterSave & {
@@ -54,15 +68,26 @@ export type PlayerSave = CharacterSave & {
 
 export type LevelSave = {
   levelNo: number;
+  atmosphereTurn: number;
   map: MapSave;
   npcs: NpcSave[];
   items: Array<{position: PositionSave; item: ItemSave}>;
+  atmosphere: Array<{
+    position: PositionSave;
+    kind: 'smoke' | 'steam' | 'fog';
+    turnsLeft: number;
+    density: 1 | 2 | 3;
+    drift: 'up' | 'down' | 'left' | 'right';
+    driftIn: number;
+    fresh?: boolean;
+  }>;
 };
 
-export interface SaveFileV1 {
+export interface SaveFileV2 {
   format: "rpg-save";
-  version: 1;
+  version: 2;
   currentLevelIndex: number;
+  generatedUniqueBookIds: string[];
   player: PlayerSave;
   levels: LevelSave[];
 }

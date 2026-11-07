@@ -3,6 +3,7 @@ import {ArmorState} from "../states/armor.state";
 
 export class FortifyOtherSpell extends Spell {
   public static readonly saveId = "fortify-other";
+  public readonly keyBinding = 'o';
 
   constructor() {
     super(SpellTarget.Monster, {

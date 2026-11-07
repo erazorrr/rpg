@@ -23,6 +23,11 @@ export class Field extends Renderer implements Renderable  {
     this.rbPosition = position;
   }
 
+  public setBounds(ltPosition: Position, rbPosition: Position): void {
+    this.ltPosition = ltPosition;
+    this.rbPosition = rbPosition;
+  }
+
   private color: ForegroundColor = ForegroundColor.White;
   private backgroundColor: BackgroundColor = BackgroundColor.Black;
   private LTC: Char = {
@@ -55,6 +60,16 @@ export class Field extends Renderer implements Renderable  {
     color: this.color,
     backgroundColor: this.backgroundColor,
   };
+
+  public setBorderColor(color: ForegroundColor): void {
+    this.color = color;
+    this.LTC = {...this.LTC, color};
+    this.RTC = {...this.RTC, color};
+    this.LBC = {...this.LBC, color};
+    this.RBC = {...this.RBC, color};
+    this.H = {...this.H, color};
+    this.V = {...this.V, color};
+  }
 
   put(position: Position, c: Char) {
     const targetPosition = position.shift(this.ltPosition.x + 1, this.ltPosition.y + 1);

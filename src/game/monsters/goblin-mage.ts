@@ -4,6 +4,7 @@ import {BackgroundColor} from "../../io/background.color";
 import {Goblin} from "./goblin";
 import {Spell} from "../spell";
 import {FireBoltSpell} from "../spells/fire-bolt";
+import {SmokeVeilSpell} from '../spells/smoke-veil';
 
 export class GoblinMage extends Goblin {
   public static readonly saveId: string = "goblin-mage";
@@ -16,7 +17,7 @@ export class GoblinMage extends Goblin {
   getChar(): Char {
     return {
       char: 'g',
-      color: ForegroundColor.BlueViolet,
+      color: ForegroundColor.Orchid1,
       backgroundColor: BackgroundColor.Green,
     };
   }
@@ -37,6 +38,12 @@ export class GoblinMage extends Goblin {
     weapon: undefined,
     chest: undefined,
   };
+
+  protected getSelfSpell(): Spell | null {
+    const player = this.context.getPlayer();
+    const threatened = this.hp <= this.getMaxHp() * .6 || this.position.manhattanDistanceTo(player.position) <= 4;
+    return threatened && !this.gameLevel.getAtmosphere(this.position) ? new SmokeVeilSpell() : null;
+  }
 
   getSpellLogic(): {
     buffs: Array<Spell>;

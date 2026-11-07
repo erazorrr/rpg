@@ -6,6 +6,9 @@ import {DexterityState} from "./states/dexterity.state";
 import {FrozenState} from "./states/frozen.state";
 import {StrengthState} from "./states/strength.state";
 import {WisdomState} from "./states/wisdom.state";
+import {PoisonedState} from './states/poisoned.state';
+import {InvisibilityState} from './states/invisibility.state';
+import {VeilFatigueState} from './states/veil-fatigue.state';
 
 type StateType = {readonly saveId: string};
 type StateRegistration = {
@@ -22,8 +25,11 @@ const stateRegistrations: StateRegistration[] = [
   {type: BurningState, create: data => new BurningState(data.turns, stat(data, "damagePerTurn"))},
   {type: DexterityState, create: data => new DexterityState(data.turns, stat(data, "dexterityBonus"))},
   {type: FrozenState, create: data => new FrozenState(data.turns)},
+  {type: InvisibilityState, create: data => new InvisibilityState(data.turns)},
+  {type: PoisonedState, create: data => new PoisonedState(data.turns, stat(data, "damagePerTurn"))},
   {type: StrengthState, create: data => new StrengthState(data.turns, stat(data, "strengthBonus"))},
   {type: WisdomState, create: data => new WisdomState(data.turns, stat(data, "wisdomBonus"))},
+  {type: VeilFatigueState, create: data => new VeilFatigueState(data.turns)},
 ];
 
 const registrations = new Map<string, StateRegistration>();
@@ -33,6 +39,8 @@ for (const registration of stateRegistrations) {
   }
   registrations.set(registration.type.saveId, registration);
 }
+
+export const knownStateSaveIds = new Set(registrations.keys());
 
 export function restoreState(data: StateSave): State {
   const registration = registrations.get(data.kind);

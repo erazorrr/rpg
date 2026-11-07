@@ -6,6 +6,7 @@ import {List} from "../io/list";
 import {Npc} from "./npc";
 import {GameMessage} from "./game-message";
 import {Position} from "../io/position";
+import {getCenteredBounds} from './screen-layout';
 
 export class SelectTarget extends GameObject implements Interactive, Renderable {
   private list: List;
@@ -14,10 +15,13 @@ export class SelectTarget extends GameObject implements Interactive, Renderable 
     return this.context.postGameMessage(GameMessage.selectTarget(npc));
   }
 
-  constructor(context: Context) {
+  constructor(context: Context, maxRange?: number) {
     super(context);
     const items: Array<{id: string, label: string, onSelect: () => void}> = this.context.getCurrentGameLevel().getNpcs()
-      .filter(npc => this.context.getPlayer().isVisible(npc.position))
+      .filter(npc => (
+        this.context.getPlayer().canSeeCharacter(npc) &&
+        (maxRange === undefined || this.context.getPlayer().position.manhattanDistanceTo(npc.position) <= maxRange)
+      ))
       .sort((npcA, npcB) => {
         const distanceA = this.context.getPlayer().position.distanceTo(npcA.position);
         const distanceB = this.context.getPlayer().position.distanceTo(npcB.position);
@@ -28,11 +32,24 @@ export class SelectTarget extends GameObject implements Interactive, Renderable 
         label: `${npc.getName()} (${this.context.getPlayer().position.manhattanDistanceTo(npc.position)} tiles away)`,
         onSelect: this.onSelect.bind(this, npc),
       })));
-    this.list = new List('Select target', items, new Position(10, 5), new Position(110, 20));
+    this.list = new List(
+      'Select target',
+      items,
+      new Position(10, 5),
+      new Position(110, 20),
+      true,
+      undefined,
+      'No targets available.',
+    );
   }
 
   makeInteractive(): void {
     this.list.makeInteractive(this.context.getRenderer());
+  }
+
+  resize(containerWidth: number, containerHeight: number): void {
+    const bounds = getCenteredBounds(containerWidth, containerHeight, 101, 16);
+    this.list.setBounds(bounds.topLeft, bounds.bottomRight);
   }
 
   makeUninteractive(): void {

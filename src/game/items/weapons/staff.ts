@@ -16,8 +16,8 @@ export class Staff extends Weapon {
   }
 
   private static baseStats = {
-    magicRoll: 6,
-    magicBonus: 3,
+    magicRoll: 4,
+    magicBonus: 4,
   };
 
   constructor(context: Context) {

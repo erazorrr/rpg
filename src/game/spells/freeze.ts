@@ -3,6 +3,7 @@ import {FrozenState} from "../states/frozen.state";
 
 export class FreezeSpell extends Spell {
   public static readonly saveId = "freeze";
+  public readonly keyBinding = 'z';
 
   constructor() {
     super(SpellTarget.Monster, {

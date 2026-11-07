@@ -3,6 +3,7 @@ import {StrengthState} from "../states/strength.state";
 
 export class EmpowerOtherSpell extends Spell {
   public static readonly saveId = "empower-other";
+  public readonly keyBinding = 'e';
 
   constructor() {
     super(SpellTarget.Monster, {

@@ -5,7 +5,7 @@ export class ChampionWisdom extends ItemModifier {
   public static readonly saveId = "champion-wisdom";
 
   constructor() {
-    super('apprentice wisdom', {
+    super('champion wisdom', {
       wisdomBonus: 4,
     }, Math.round(PRICE_PER_WISDOM * 4), true);
   }

@@ -6,7 +6,7 @@ import {Player} from "./player";
 import {Position} from "../io/position";
 import {MainMenu} from "./main-menu";
 import {GameMessage, GameMessageType} from "./game-message";
-import {Npc} from "./npc";
+import {Action, Npc} from "./npc";
 import {GameLog} from "./game-log";
 import {HealthBar} from "./health-bar";
 import {LevelBar} from "./level-bar";
@@ -14,7 +14,7 @@ import {XpBar} from "./xp-bar";
 import {Item} from "./item";
 import {Context} from "./context";
 import {Inventory} from "./inventory";
-import {InputEmitter} from "../io/input.emitter";
+import {InputEmitter, setInputSuspended} from "../io/input.emitter";
 import {InputEvent} from "../io/input.event";
 import {Weapon} from "./items/weapons/weapon";
 import {Chest} from "./items/chest/chest";
@@ -29,7 +29,6 @@ import {StairsDownTile} from "./tiles/stairs-down.tile";
 import {StairsUpTile} from "./tiles/stairs-up.tile";
 import {LevelUpPopup} from "./level-up-popup";
 import {State} from "./state";
-import {ExitTile} from "./tiles/exit.tile";
 import {MagicBar} from "./magic-bar";
 import {SpellBook} from "./spell-book";
 import {Spell, SpellTarget} from "./spell";
@@ -41,6 +40,32 @@ import {SaveGameService} from "./save-game";
 import {List} from "../io/list";
 import {performance} from "node:perf_hooks";
 import {AnimationFrame, ProjectileEffect, ProjectilePresentation} from "./animation";
+import {DeepEmberTile} from './tiles/deep-ember.tile';
+import {EmberGuardian} from './monsters/ember-guardian';
+import {getAtmosphereChar} from './atmosphere';
+import {Book} from "./items/books/book";
+import {BookPopup} from "./book-popup";
+import {Debug} from "../debug";
+import {ForegroundColor} from "../io/foreground.color";
+import {BackgroundColor} from '../io/background.color';
+import {StatueTile} from './tiles/statue.tile';
+import {StatueInscriptionId} from './tiles/statue-inscriptions';
+import {VeyranSurveyMap} from './items/veyran-survey-map';
+import {TreasureGoblin} from './monsters/treasure-goblin';
+import {LootChestTile} from './tiles/loot-chest.tile';
+import {CrystalClusterTile} from './tiles/crystal-cluster.tile';
+import {CaveFloorTile} from './tiles/cave-floor.tile';
+import {PressureValveTile} from './tiles/pressure-valve.tile';
+import {FrostGeodeTile} from './tiles/frost-geode.tile';
+import {AshUrnTile} from './tiles/ash-urn.tile';
+import {FlagstoneFloorTile} from './tiles/flagstone-floor.tile';
+import {FrozenState} from './states/frozen.state';
+import {
+  calculateScreenLayout,
+  MIN_TERMINAL_COLUMNS,
+  MIN_TERMINAL_ROWS,
+  ScreenLayout,
+} from './screen-layout';
 
 export class Game {
   private static readonly PAUSE_MENU_WIDTH = 50;
@@ -49,6 +74,7 @@ export class Game {
   private state = GameState.Menu;
   private renderer = new Renderer();
   private inputEmitter = new InputEmitter();
+  private screenLayout: ScreenLayout = calculateScreenLayout(process.stdout.columns, process.stdout.rows);
 
   private player: Player | null = null;
 
@@ -57,6 +83,7 @@ export class Game {
   private selectTarget: SelectTarget | null = null;
   private levelUpWindow: LevelUpPopup | null = null;
   private pauseMenu: List | null = null;
+  private bookPopup: BookPopup | null = null;
   private saveFile = new SaveGameService();
   private saveCodec = new GameSaveCodec();
 
@@ -73,6 +100,8 @@ export class Game {
   private projectileBatchComplete: (() => void) | null = null;
 
   private gameLog: GameLog = new GameLog(30);
+  private telemetry = new Debug('telemetry.jsonl');
+  private turnNumber = 0;
 
   private levels: Level[] = [];
   private currentLevelIndex: number = 0;
@@ -80,20 +109,33 @@ export class Game {
     return this.levels[this.currentLevelIndex];
   }
 
+  private getUsedStatueInscriptions(): Set<StatueInscriptionId> {
+    const used = new Set<StatueInscriptionId>();
+    for (const level of this.levels) {
+      for (let x = 0; x < level.map.width; x++) {
+        for (let y = 0; y < level.map.height; y++) {
+          const tile = level.map.getTile(new Position(x, y));
+          if (tile instanceof StatueTile) used.add(tile.inscriptionId);
+        }
+      }
+    }
+    return used;
+  }
+
   private gameField = new Field(
-    'RPG',
-    new Position(0, 0),
-    new Position(process.stdout.columns - 31, process.stdout.rows - 1),
+    'Emberdeep',
+    this.screenLayout.game.topLeft,
+    this.screenLayout.game.bottomRight,
   );
   private menuField =  new Field(
     'Menu',
-    new Position(process.stdout.columns - 30, 0),
-    new Position(process.stdout.columns - 1, process.stdout.rows - 21),
+    this.screenLayout.menu.topLeft,
+    this.screenLayout.menu.bottomRight,
   );
   private logField =  new Field(
     'Log',
-    new Position(process.stdout.columns - 30, process.stdout.rows - 20),
-    new Position(process.stdout.columns - 1, process.stdout.rows - 1),
+    this.screenLayout.log.topLeft,
+    this.screenLayout.log.bottomRight,
   );
 
   private playerStats = new PlayerStats(this.generateMenuFieldContext());
@@ -109,6 +151,7 @@ export class Game {
       buildPath: this.buildPath.bind(this),
       getCharacter: this.getCharacterAt.bind(this),
       log: this.gameLog.log.bind(this.gameLog),
+      recordEvent: this.recordTelemetry.bind(this),
       getItem: (position: Position) => this.getCurrentLevel()?.getItem(position),
       destroyNpc: this.destroyNpc.bind(this),
       getCurrentGameLevel: () => this.getCurrentLevel(),
@@ -130,33 +173,40 @@ export class Game {
     buildPath: this.buildPath.bind(this),
     getCharacter: this.getCharacterAt.bind(this),
     log: this.gameLog.log.bind(this.gameLog),
+    recordEvent: this.recordTelemetry.bind(this),
     getItem: (position: Position) => this.getCurrentLevel()?.getItem(position),
     destroyNpc: this.destroyNpc.bind(this),
     getCurrentGameLevel: () => this.getCurrentLevel(),
-  }, new Position(0, 0), new Position(process.stdout.columns - 1, process.stdout.rows - 1));
+  }, this.screenLayout.fullScreen.topLeft, this.screenLayout.fullScreen.bottomRight);
 
   constructor() {
-    process.stdout.on('resize', () => {
-      this.gameField.setRBPosition(new Position(process.stdout.columns - 31, process.stdout.rows - 1));
+    setInputSuspended(!this.screenLayout.isSupported);
+    process.stdout.on('resize', () => this.resize());
+  }
 
-      this.menuField.setLTPosition(new Position(process.stdout.columns - 30, 0));
-      this.menuField.setRBPosition(new Position(process.stdout.columns - 1, process.stdout.rows - 21));
+  private resize(): void {
+    this.screenLayout = calculateScreenLayout(process.stdout.columns, process.stdout.rows);
+    setInputSuspended(!this.screenLayout.isSupported);
+    this.renderer.clear();
+    if (!this.screenLayout.isSupported) {
+      this.render(false, false);
+      return;
+    }
 
-      this.logField.setLTPosition(new Position(process.stdout.columns - 30, process.stdout.rows - 20));
-      this.logField.setRBPosition(new Position(process.stdout.columns - 1, process.stdout.rows - 1));
+    this.gameField.setBounds(this.screenLayout.game.topLeft, this.screenLayout.game.bottomRight);
+    this.menuField.setBounds(this.screenLayout.menu.topLeft, this.screenLayout.menu.bottomRight);
+    this.logField.setBounds(this.screenLayout.log.topLeft, this.screenLayout.log.bottomRight);
+    this.mainMenu.setLTPosition(this.screenLayout.fullScreen.topLeft);
+    this.mainMenu.setRBPosition(this.screenLayout.fullScreen.bottomRight);
+    this.centerPauseMenu();
 
-      this.mainMenu.setRBPosition(new Position(process.stdout.columns - 1, process.stdout.rows - 1));
+    this.levelGenerator.setContainerSize(this.gameField.getWidth(), this.gameField.getHeight());
+    for (const level of this.levels) {
+      level.map.setContainerSize(this.gameField.getWidth(), this.gameField.getHeight());
+    }
 
-      this.centerPauseMenu();
-
-      this.levelGenerator.setContainerSize(this.gameField.getWidth(), this.gameField.getHeight());
-
-      for (const level of this.levels) {
-        level.map.setContainerSize(this.gameField.getWidth(), this.gameField.getHeight());
-      }
-
-      this.render(false);
-    });
+    this.resizeActiveOverlays();
+    this.render(false, false);
   }
 
   private destroyNpc(npc: Npc) {
@@ -179,11 +229,13 @@ export class Game {
     return this.gameFinished;
   }
 
+  private generatedUniqueBookIds = new Set<string>();
   private lootGenerator = new LootGenerator(this.generateGameObjectContext());
   private receiveGameMessage(message: GameMessage): void {
     switch (message.type) {
       case GameMessageType.StartLevelUp:
         this.levelUpWindow = new LevelUpPopup(this.generateGameObjectContext());
+        this.resizeActiveOverlays();
         this.levelUpWindow.makeInteractive();
         this.player?.makeUninteractive();
         this.render();
@@ -225,18 +277,57 @@ export class Game {
         break;
       case GameMessageType.Kill: {
         const target = (message.payload as {character: Npc}).character;
-        this.player.addXp(target.getXp() * target.getMultiplier());
-        this.gameLog.log(`Earned ${target.getXp()} XP!`);
+        const xpReward = target.getXpReward();
+        this.recordTelemetry('kill', {
+          target: target.getName(),
+          position: target.position,
+          xp: xpReward,
+        });
+        const deathAtmosphere = target.getDeathAtmosphere();
+        if (deathAtmosphere) this.getCurrentLevel().emitAtmosphere(target.position, deathAtmosphere);
+        this.player.addXp(xpReward);
+        this.gameLog.log(`Earned ${xpReward} XP!`);
         this.getCurrentLevel()?.removeNpc(target);
-        const item = this.lootGenerator.generateLoot(target.getLootCost());
-        if (item) {
+        const lootRolls = target instanceof TreasureGoblin
+          ? [
+            () => this.lootGenerator.generateTreasurePrize(
+              target.getLootCost(),
+              this.generatedUniqueBookIds,
+              this.currentLevelIndex,
+            ),
+            () => this.lootGenerator.generateLoot(
+              target.getLootCost(),
+              this.generatedUniqueBookIds,
+              this.currentLevelIndex,
+            ),
+          ]
+          : [() => this.lootGenerator.generateLoot(
+            target.getLootCost(),
+            this.generatedUniqueBookIds,
+            this.currentLevelIndex,
+          )];
+        if (target instanceof TreasureGoblin) {
+          this.gameLog.log(`${target.getName()} spills its hoard!`);
+        }
+        for (const rollLoot of lootRolls) {
+          const item = rollLoot();
+          if (!item) continue;
           if (this.dropLoot(item, target.position)) {
+            if (item instanceof Book && item.isUnique) {
+              this.generatedUniqueBookIds.add(item.saveId);
+            }
             this.gameLog.log(`${target.getName()} dropped ${item.getName()}!`);
           }
         }
         break;
       }
       case GameMessageType.Die:
+        this.recordTelemetry('game_over', {
+          outcome: 'death',
+          snapshot: this.buildTelemetrySnapshot(),
+        });
+        this.bookPopup?.makeUninteractive();
+        this.bookPopup = null;
         if (this.inventory) {
           this.inventory.makeUninteractive();
           this.inventory = null;
@@ -270,9 +361,106 @@ export class Game {
           }
           this.player.inventory.push(item);
           this.getCurrentLevel()?.removeItem(this.player.position);
-          this.gameLog.log(`Picked ${item.getName()}. [i] to open inventory`);
+          this.recordTelemetry('inventory_change', {
+            action: 'pick_up',
+            item: item.getName(),
+            stats: item.stats,
+            position: this.player.position,
+          });
+          this.gameLog.log(`Picked up ${item.getName()}. [i] to open inventory.`);
           this.render();
         }
+        break;
+      }
+      case GameMessageType.OpenLootChest: {
+        const {chest, position} = message.payload as {chest: LootChestTile; position: Position};
+        if (chest.getItems().length === 0) {
+          this.gameLog.log(`The ${chest.getName().toLowerCase()} is empty.`);
+          this.render();
+          break;
+        }
+        this.gameLog.log(`${this.player.getName()} opens the ${chest.getName().toLowerCase()}. Loot spills out!`);
+        this.recordTelemetry('open_loot_chest', {chest: chest.getName(), position});
+        while (chest.getItems().length > 0) {
+          const item = chest.getItems()[0];
+          if (!this.dropLoot(item, position)) {
+            this.gameLog.log(`There is no room for the rest of the chest's loot.`);
+            break;
+          }
+          chest.takeItem(0);
+          this.gameLog.log(`${chest.getName()} dropped ${item.getName()}!`);
+        }
+        this.render();
+        break;
+      }
+      case GameMessageType.ShatterCrystal: {
+        const {position} = message.payload as {position: Position};
+        const cluster = this.getCurrentLevel().map.getTile(position);
+        if (!(cluster instanceof CrystalClusterTile)) break;
+        const floor = new CaveFloorTile();
+        floor.setExplored(cluster.isExplored());
+        floor.setBloody(cluster.getIsBloody());
+        this.getCurrentLevel().map.setTile(position, floor);
+        this.gameLog.log(`${this.player.getName()} shatters the brittle crystal cluster.`);
+        this.recordTelemetry('terrain_interaction', {kind: 'crystal-cluster', position});
+        this.tick();
+        break;
+      }
+      case GameMessageType.ActivatePressureValve: {
+        const {position} = message.payload as {position: Position};
+        const valve = this.getCurrentLevel().map.getTile(position);
+        if (!(valve instanceof PressureValveTile)) break;
+        if (valve.isSpent()) {
+          this.gameLog.log(`The pressure valve has already vented.`);
+          this.render();
+          break;
+        }
+        valve.activate();
+        this.getCurrentLevel().emitAtmosphere(position, {
+          kind: 'steam', turns: 4, density: 2, shape: 'cross',
+        });
+        this.gameLog.log(`${this.player.getName()} opens the valve. Steam bursts across the room!`);
+        this.recordTelemetry('terrain_interaction', {kind: 'pressure-valve', position});
+        this.tick();
+        break;
+      }
+      case GameMessageType.ShatterFrostGeode: {
+        const {position} = message.payload as {position: Position};
+        const geode = this.getCurrentLevel().map.getTile(position);
+        if (!(geode instanceof FrostGeodeTile)) break;
+        const floor = new CaveFloorTile();
+        floor.setExplored(geode.isExplored());
+        floor.setBloody(geode.getIsBloody());
+        this.getCurrentLevel().map.setTile(position, floor);
+        const affected = [position, position.up(), position.right(), position.down(), position.left()];
+        for (const targetPosition of affected) {
+          const character = this.getCharacterAt(targetPosition);
+          if (!character) continue;
+          const frozen = new FrozenState(2);
+          if (
+            character.applyState(frozen) &&
+            (character === this.player || this.player.canSeeCharacter(character))
+          ) this.gameLog.log(frozen.getActiveMessage(character));
+        }
+        this.gameLog.log(`${this.player.getName()} shatters the frost geode. Rime bursts outward!`);
+        this.recordTelemetry('terrain_interaction', {kind: 'frost-geode', position});
+        this.tick();
+        break;
+      }
+      case GameMessageType.ShatterAshUrn: {
+        const {position} = message.payload as {position: Position};
+        const urn = this.getCurrentLevel().map.getTile(position);
+        if (!(urn instanceof AshUrnTile)) break;
+        const floor = new FlagstoneFloorTile();
+        floor.setExplored(urn.isExplored());
+        floor.setBloody(urn.getIsBloody());
+        this.getCurrentLevel().map.setTile(position, floor);
+        this.getCurrentLevel().emitAtmosphere(position, {
+          kind: 'smoke', turns: 7, density: 3, shape: 'cross',
+        });
+        this.gameLog.log(`${this.player.getName()} shatters the ash urn. Choking smoke billows out!`);
+        this.recordTelemetry('terrain_interaction', {kind: 'ash-urn', position});
+        this.tick();
         break;
       }
       case GameMessageType.SelectSpell: {
@@ -284,6 +472,12 @@ export class Game {
         }
         switch (spell.target) {
           case SpellTarget.Self:
+            this.recordTelemetry('player_action', {
+              action: 'cast_self_spell',
+              spell: spell.getName(),
+              mpCost: spell.getMPCost(),
+              position: this.player.position,
+            });
             this.player.applySpell(this.player, spell);
             this.player.makeInteractive();
             this.player.spendMP(spell.getMPCost());
@@ -291,7 +485,8 @@ export class Game {
             break;
           case SpellTarget.Monster: {
             this.selectedSpell = spell;
-            this.selectTarget = new SelectTarget(this.generateGameObjectContext());
+            this.selectTarget = new SelectTarget(this.generateGameObjectContext(), spell.stats.range);
+            this.resizeActiveOverlays();
             this.selectTarget.makeInteractive();
             break;
           }
@@ -309,6 +504,20 @@ export class Game {
           }
 
           const npc = (message.payload as { npc: Npc }).npc;
+          if (!this.player.canSeeCharacter(npc)) {
+            this.gameLog.log(`${this.player.getName()} cannot see ${npc.getName()}!`);
+            this.selectTarget?.makeUninteractive();
+            this.selectTarget = null;
+            this.player.makeInteractive();
+            this.render();
+            break;
+          }
+          this.recordTelemetry('player_action', {
+            action: 'ranged_attack',
+            target: npc.getName(),
+            targetPosition: npc.position,
+            weapon: this.player.equipment.weapon.getName(),
+          });
           this.selectTarget?.makeUninteractive();
           this.selectTarget = null;
           this.render();
@@ -319,6 +528,30 @@ export class Game {
           break;
         }
         const npc = (message.payload as { npc: Npc }).npc;
+        if (!this.player.canSeeCharacter(npc)) {
+          this.gameLog.log(`${this.player.getName()} cannot see ${npc.getName()}!`);
+          this.selectTarget?.makeUninteractive();
+          this.selectTarget = null;
+          this.selectedSpell = null;
+          this.player.makeInteractive();
+          this.render();
+          break;
+        }
+        if (
+          this.selectedSpell.stats.range !== undefined &&
+          this.player.position.manhattanDistanceTo(npc.position) > this.selectedSpell.stats.range
+        ) {
+          this.gameLog.log(`${this.selectedSpell.getName()} cannot reach ${npc.getName()}!`);
+          this.render();
+          break;
+        }
+        this.recordTelemetry('player_action', {
+          action: 'cast_targeted_spell',
+          target: npc.getName(),
+          targetPosition: npc.position,
+          spell: this.selectedSpell.getName(),
+          mpCost: this.selectedSpell.getMPCost(),
+        });
         this.selectTarget?.makeUninteractive();
         this.selectTarget = null;
         this.render();
@@ -334,6 +567,12 @@ export class Game {
   }
 
   private dropItem(item: Item): void {
+    this.recordTelemetry('inventory_change', {
+      action: 'drop',
+      item: item.getName(),
+      stats: item.stats,
+      position: this.player.position,
+    });
     this.player.inventory = this.player.inventory.filter(i => i !== item);
     this.dropLoot(item, this.player.position);
     for (const [key, value] of Object.entries(this.player.equipment)) {
@@ -347,13 +586,13 @@ export class Game {
     if (this.player.mp > this.player.getMaxMp()) {
       this.player.mp = this.player.getMaxMp();
     }
-    this.gameLog.log(`Dropped ${item.getName()}`);
+    this.gameLog.log(`Dropped ${item.getName()}.`);
   }
 
   private findPositionForLoot(position: Position): Position | null {
     let targetPosition = position;
-    if (this.getCurrentLevel()?.getItem(targetPosition)) {
-      // tile has an item already
+    if (this.getCurrentLevel()?.getItem(targetPosition) || !this.getCurrentLevel()?.map.isNavigable(targetPosition)) {
+      // tile has an item already or cannot hold one
       targetPosition = null;
       outer: for (let range = 1; range < 10; range++) {
         for (let i = position.x - range; i <= position.x + range; i++) {
@@ -405,7 +644,7 @@ export class Game {
     this.projectileBatchComplete = onComplete;
     this.suspendPresentationInputs();
     this.scheduleEffectFrame();
-    this.render();
+    this.render(true, false);
   }
 
   private suspendPresentationInputs(): void {
@@ -415,6 +654,7 @@ export class Game {
     this.selectTarget?.makeUninteractive();
     this.levelUpWindow?.makeUninteractive();
     this.pauseMenu?.makeUninteractive();
+    this.bookPopup?.makeUninteractive();
   }
 
   private scheduleEffectFrame(): void {
@@ -430,7 +670,7 @@ export class Game {
         const onComplete = this.projectileBatchComplete;
         this.projectileBatchComplete = null;
         try {
-          this.render();
+          this.render(true, false);
         } finally {
           onComplete?.();
         }
@@ -445,7 +685,8 @@ export class Game {
   private finishActionPresentation(): void {
     this.isPresentingAction = false;
     if (this.state === GameState.Game && !this.gameFinished) {
-      if (this.inventory) this.inventory.makeInteractive();
+      if (this.bookPopup) this.bookPopup.makeInteractive();
+      else if (this.inventory) this.inventory.makeInteractive();
       else if (this.spellBook) this.spellBook.makeInteractive();
       else if (this.selectTarget) this.selectTarget.makeInteractive();
       else if (this.levelUpWindow) this.levelUpWindow.makeInteractive();
@@ -494,24 +735,128 @@ export class Game {
     this.renderScheduled = true;
     setImmediate(() => {
       this.renderScheduled = false;
-      this.render();
+      this.render(true, false);
     });
   }
 
-  private tick(unlockAfterPresentation = false) {
+  private recordTelemetry(event: string, data: Record<string, unknown> = {}): void {
+    const belongsToNextTurn = event === 'player_action' ||
+      (event === 'combat_result' && data.actorIsPlayer === true);
+    this.telemetry.event(event, {
+      turn: this.turnNumber + (belongsToNextTurn ? 1 : 0),
+      floor: this.currentLevelIndex,
+      ...data,
+    });
+  }
+
+  private buildTelemetrySnapshot(): Record<string, unknown> | null {
+    const player = this.player;
     const level = this.getCurrentLevel();
+    if (!player || !level) return null;
+    const threats = level.getNpcs().map(npc => {
+      const visible = player.canSeeCharacter(npc);
+      const action = npc.getPreviousAction();
+      return {
+        name: npc.getName(),
+        position: npc.position,
+        hp: npc.getHp(),
+        maxHp: npc.getMaxHp(),
+        distance: npc.position.manhattanDistanceTo(player.position),
+        visible,
+        active: action !== Action.Nothing,
+        action: Action[action],
+        ranged: Boolean(npc.equipment.weapon?.isRanged),
+        caster: Boolean(npc.getSpellLogic()?.attack.length),
+        states: Array.from(npc.states).map(state => ({
+          name: state.getName(),
+          turnsLeft: state.getTurnsLeft(),
+        })),
+      };
+    }).filter(threat => threat.visible || threat.active);
+    const visibleThreats = threats.filter(threat => threat.visible);
+    const activeThreats = threats.filter(threat => threat.active);
+    const openNeighbours = [
+      player.position.up(),
+      player.position.right(),
+      player.position.down(),
+      player.position.left(),
+    ].filter(position => level.map.isNavigable(position)).length;
+    return {
+      player: {
+        position: player.position,
+        hp: player.getHp(),
+        maxHp: player.getMaxHp(),
+        mp: Math.floor(player.mp),
+        maxMp: player.getMaxMp(),
+        level: player.level,
+        xp: player.xp,
+        attributes: {
+          strength: player.getStrength(),
+          dexterity: player.getDexterity(),
+          endurance: player.getEndurance(),
+          wisdom: player.getWisdom(),
+        },
+        armorClass: player.getAC(),
+        speed: player.getSpeed(),
+        states: Array.from(player.states).map(state => ({
+          name: state.getName(),
+          turnsLeft: state.getTurnsLeft(),
+        })),
+        equipment: Object.fromEntries(Object.entries(player.equipment).map(([slot, item]) => [slot, item ? {
+          name: item.getName(),
+          stats: item.stats,
+        } : null])),
+        inventory: player.inventory.map(item => ({name: item.getName(), stats: item.stats})),
+        knownSpells: Array.from(player.knownSpells).map(spell => spell.getName()),
+      },
+      terrain: {
+        tile: level.map.getTile(player.position)?.constructor.name,
+        openNeighbours,
+        isChokePoint: openNeighbours <= 2,
+        atmosphere: level.getAtmosphere(player.position) ?? null,
+        groundItem: level.getItem(player.position)?.getName() ?? null,
+      },
+      threatSummary: {
+        visible: visibleThreats.length,
+        active: activeThreats.length,
+        adjacent: visibleThreats.filter(threat => threat.distance === 1).length,
+        visibleRanged: visibleThreats.filter(threat => threat.ranged).length,
+        visibleCasters: visibleThreats.filter(threat => threat.caster).length,
+      },
+      threats,
+    };
+  }
+
+  private tick(unlockAfterPresentation = false) {
+    const playerBeforeNpcPhase = this.player ? {
+      position: this.player.position,
+      hp: this.player.getHp(),
+      mp: Math.floor(this.player.mp),
+    } : null;
+    this.turnNumber++;
+    const level = this.getCurrentLevel();
+    if (!this.gameFinished) level?.tickAtmosphere();
     if (level) {
-      for (const npc of level.getNpcs()) {
+      for (const npc of [...level.getNpcs()]) {
         npc.tick();
         if (this.gameFinished) break;
       }
     }
     if (!this.gameFinished) this.player.tick();
     if (this.gameFinished) {
+      this.recordTelemetry('turn', {
+        playerBeforeNpcPhase,
+        outcome: 'game-finished',
+        snapshot: this.buildTelemetrySnapshot(),
+      });
       this.pendingProjectiles = [];
       this.render();
       return;
     }
+    this.recordTelemetry('turn', {
+      playerBeforeNpcPhase,
+      snapshot: this.buildTelemetrySnapshot(),
+    });
     if (this.pendingProjectiles.length > 0) {
       this.isPresentingAction = true;
       this.player.makeUninteractive();
@@ -524,6 +869,8 @@ export class Game {
 
   start() {
     this.renderer.hideCursor();
+    this.renderer.clear();
+    if (this.screenLayout.isSupported) this.resizeActiveOverlays();
     this.goToMainMenu();
   }
 
@@ -547,6 +894,8 @@ export class Game {
 
   private returnToMainMenu() {
     this.player = null;
+    this.bookPopup?.makeUninteractive();
+    this.bookPopup = null;
     if (this.inventory) {
       this.inventory.makeUninteractive();
       this.inventory = null;
@@ -566,23 +915,22 @@ export class Game {
     this.levelUpWindow = null;
     this.levels = [];
     this.currentLevelIndex = 0;
+    this.generatedUniqueBookIds.clear();
     this.gameLog.clear();
     this.inputEmitter.clear(this);
     this.goToMainMenu();
   }
 
   private buildInventory(): Inventory {
-    let defaultActiveIndex = 0;
+    let activeItem: Item | undefined;
+    let fallbackActiveIndex = 0;
     if (this.inventory) {
-      const currentItem = this.inventory.getSelectedItem();
-      if (currentItem) {
-        const currentItemIndex = this.player.inventory.findIndex(i => i === currentItem);
-        if (currentItemIndex !== -1) {
-          defaultActiveIndex = currentItemIndex;
-        }
-      }
+      activeItem = this.inventory.getSelectedItem();
+      fallbackActiveIndex = this.inventory.getSelectedIndex();
     }
-    return new Inventory(this.generateGameObjectContext(), defaultActiveIndex);
+    const inventory = new Inventory(this.generateGameObjectContext(), activeItem, fallbackActiveIndex);
+    inventory.resize(this.gameField.getWidth(), this.gameField.getHeight());
+    return inventory;
   }
 
   private generateGameObjectContext(): Context {
@@ -596,6 +944,7 @@ export class Game {
       buildPath: this.buildPath.bind(this),
       getCharacter: this.getCharacterAt.bind(this),
       log: this.gameLog.log.bind(this.gameLog),
+      recordEvent: this.recordTelemetry.bind(this),
       getItem: (position: Position) => this.getCurrentLevel()?.getItem(position),
       destroyNpc: this.destroyNpc.bind(this),
       getCurrentGameLevel: () => this.getCurrentLevel(),
@@ -614,29 +963,43 @@ export class Game {
     buildPath: this.buildPath.bind(this),
     getCharacter: this.getCharacterAt.bind(this),
     log: this.gameLog.log.bind(this.gameLog),
+    recordEvent: this.recordTelemetry.bind(this),
     getItem: (position: Position) => this.getCurrentLevel()?.getItem(position),
     destroyNpc: this.destroyNpc.bind(this),
     getCurrentGameLevel: () => this.getCurrentLevel(),
     presentProjectile: this.queueProjectile.bind(this),
   }, this.gameField.getWidth(), this.gameField.getHeight());
-  private newGame(restored?: {player: Player, levels: Level[], currentLevelIndex: number}) {
+  private newGame(restored?: {
+    player: Player;
+    levels: Level[];
+    currentLevelIndex: number;
+    generatedUniqueBookIds: Set<string>;
+  }) {
     this.gameFinished = false;
+    this.turnNumber = 0;
     this.mainMenu?.makeUninteractive();
 
     if (restored) {
       this.player = restored.player;
       this.levels = restored.levels;
       this.currentLevelIndex = restored.currentLevelIndex;
+      this.generatedUniqueBookIds = restored.generatedUniqueBookIds;
     } else {
+      this.generatedUniqueBookIds.clear();
       this.levels.push(this.levelGenerator.generateLevel(0));
       this.player = new Player(this.generateGameObjectContext(), this.getCurrentLevel().map.getInitialPosition());
       this.player.explore();
     }
 
     this.player.makeInteractive();
+    this.recordTelemetry('game_start', {
+      restored: Boolean(restored),
+      snapshot: this.buildTelemetrySnapshot(),
+    });
 
     this.inputEmitter.on(InputEvent.I, this, () => {
       if (this.isPresentingAction) return;
+      if (this.bookPopup) return;
       if (this.inventory) {
         this.closeInventory();
         this.render();
@@ -649,12 +1012,13 @@ export class Game {
       this.inventory = this.buildInventory();
       this.player?.makeUninteractive();
       this.inventory.makeInteractive();
-      this.gameLog.log(`[Enter] to equip/unequip or consume, [d] to drop, [Escape] to exit inventory`);
+      this.gameLog.log(`[Enter] to equip/unequip, consume, or read; [d] to drop; [Escape] to exit inventory`);
       this.render();
     });
 
     this.inputEmitter.on(InputEvent.D, this, () => {
       if (this.isPresentingAction) return;
+      if (this.bookPopup) return;
       if (this.inventory) {
         const item = this.inventory.getSelectedItem();
         if (item) {
@@ -672,6 +1036,7 @@ export class Game {
       if (this.isGameFinished() || this.spellBook || this.inventory || this.levelUpWindow || this.selectTarget) {
         return;
       }
+      this.recordTelemetry('player_action', {action: 'wait', position: this.player.position});
       this.tick();
     });
 
@@ -685,17 +1050,23 @@ export class Game {
 
     this.inputEmitter.on(InputEvent.A, this, () => {
       if (this.isPresentingAction) return;
+      if (this.selectTarget && !this.selectedSpell) {
+        this.closeTargetSelection();
+        this.render();
+        return;
+      }
       if (this.isGameFinished() || this.spellBook || this.inventory || this.levelUpWindow || this.selectTarget) {
         return;
       }
       if (!this.player.equipment.weapon?.isRanged) {
-        this.gameLog.log(`You need an equip ranged weapon to perform ranged attack`);
+        this.gameLog.log(`You need an equipped ranged weapon to perform a ranged attack.`);
         this.render();
         return;
       }
 
       this.player?.makeUninteractive();
       this.selectTarget = new SelectTarget(this.generateGameObjectContext());
+      this.resizeActiveOverlays();
       this.selectTarget.makeInteractive();
       this.render();
     });
@@ -704,22 +1075,56 @@ export class Game {
       if (this.isPresentingAction) return;
       if (this.gameFinished) {
         this.returnToMainMenu();
+      } else if (this.bookPopup) {
+        this.closeBook();
+        this.render();
       } else if (this.inventory) {
         const item = this.inventory.getSelectedItem();
         if (item) {
           const equippedSlot = Object.entries(this.player.equipment).find(([, value]) => value === item)?.[0];
-          if (equippedSlot) {
+          if (item instanceof VeyranSurveyMap) {
+            this.gameLog.log(`You study the ${item.getBaseName()}.`);
+            const revealed = item.reveal();
+            if (revealed === 0) {
+              this.gameLog.log(`Its faded markings reveal nothing you have not already seen.`);
+              this.render();
+              return;
+            }
+            this.recordTelemetry('player_action', {
+              action: 'read_map',
+              item: item.getName(),
+              revealedTiles: revealed,
+            });
+            this.gameLog.log(`Its faded markings reveal part of Emberdeep.`);
+            this.player.inventory = this.player.inventory.filter(i => i !== item);
+          } else if (item instanceof Book) {
+            this.recordTelemetry('player_action', {action: 'read_book', item: item.getName()});
+            this.openBook(item);
+            this.tick();
+            return;
+          } else if (equippedSlot) {
+            this.recordTelemetry('inventory_change', {
+              action: 'unequip',
+              slot: equippedSlot,
+              item: item.getName(),
+              stats: item.stats,
+            });
             this.player.equipment[equippedSlot] = undefined;
           } else {
             if (item instanceof Weapon) {
+              this.recordTelemetry('inventory_change', {action: 'equip', slot: 'weapon', item: item.getName(), stats: item.stats});
               this.player.equipment.weapon = item;
             } else if (item instanceof Chest) {
+              this.recordTelemetry('inventory_change', {action: 'equip', slot: 'chest', item: item.getName(), stats: item.stats});
               this.player.equipment.chest = item;
             } else if (item instanceof Boots) {
+              this.recordTelemetry('inventory_change', {action: 'equip', slot: 'boots', item: item.getName(), stats: item.stats});
               this.player.equipment.boots = item;
             } else if (item instanceof Gauntlets || item instanceof Bracelet) {
+              this.recordTelemetry('inventory_change', {action: 'equip', slot: 'gauntlets', item: item.getName(), stats: item.stats});
               this.player.equipment.gauntlets = item;
             } else if (item instanceof Potion) {
+              this.recordTelemetry('player_action', {action: 'drink_potion', item: item.getName(), stats: item.stats});
               this.gameLog.log(`You drank ${item.getName()}`);
               for (const [stat, value] of Object.entries(item.stats)) {
                 switch (stat) {
@@ -732,9 +1137,20 @@ export class Game {
                     this.gameLog.log(`You gained ${value} MP!`);
                     break;
                   case 'consumableState':
-                    this.player.applyState(value as State);
-                    this.gameLog.log((value as State).getActiveMessage(this.player));
+                    if (this.player.applyState(value as State)) {
+                      this.gameLog.log((value as State).getActiveMessage(this.player));
+                    }
                     break;
+                  case 'consumableStateRemoval': {
+                    const stateRemoval = value as {saveId: string};
+                    const removedState = this.player.removeState(stateRemoval.saveId);
+                    if (removedState) {
+                      this.gameLog.log(removedState.getInactiveMessage(this.player));
+                    } else {
+                      this.gameLog.log(`${item.getBaseName()} had no effect!`);
+                    }
+                    break;
+                  }
                   default:
                     break;
                 }
@@ -747,6 +1163,11 @@ export class Game {
                 this.render();
                 return;
               }
+              this.recordTelemetry('player_action', {
+                action: 'learn_spell',
+                item: item.getName(),
+                spell: spell.getName(),
+              });
               this.player.knownSpells.add(spell);
               this.gameLog.log(`${this.player.getName()} learned ${spell.getName()}!`);
               this.player.inventory = this.player.inventory.filter(i => i !== item);
@@ -770,35 +1191,40 @@ export class Game {
       } else if (this.spellBook || this.selectTarget) {
         // TODO
         // do nothing
+      } else if (this.levelUpWindow) {
+        return;
       } else if (this.getCurrentLevel().map.getTile(this.player.position) instanceof StairsDownTile) {
+        const fromFloor = this.currentLevelIndex;
         if (this.currentLevelIndex === this.levels.length - 1 && this.levels.length < this.MAX_DUNGEON_LEVEL + 1) {
-          this.levels.push(this.levelGenerator.generateLevel(this.levels.length, this.levels[this.levels.length - 1]));
-          if (this.levels.length === this.MAX_DUNGEON_LEVEL + 1) {
-            const position = this.levels[this.levels.length - 1].findTile(StairsDownTile);
-            this.levels[this.levels.length - 1].map.setTile(position, new ExitTile());
-          }
+          this.levels.push(this.levelGenerator.generateLevel(
+            this.levels.length,
+            this.levels[this.levels.length - 1],
+            this.getUsedStatueInscriptions(),
+          ));
         }
         this.currentLevelIndex++;
+        this.recordTelemetry('floor_transition', {direction: 'down', fromFloor, toFloor: this.currentLevelIndex});
         this.player.explore();
         if (this.currentLevelIndex === 1) {
-          this.gameLog.log(`${this.player.getName()} has never seen such a dark place before!`);
+          this.gameLog.log(`You descend into Lantern Site Seven. Below, it is called Emberdeep.`);
         }
         this.render();
       } else if (this.getCurrentLevel().map.getTile(this.player.position) instanceof StairsUpTile) {
+        const fromFloor = this.currentLevelIndex;
         this.currentLevelIndex--;
+        this.recordTelemetry('floor_transition', {direction: 'up', fromFloor, toFloor: this.currentLevelIndex});
         if (this.currentLevelIndex === 0) {
           this.gameLog.log(`Bright light hurts ${this.player.getName()}'s eyes!`);
         }
         this.render();
-      } else if (this.getCurrentLevel().map.getTile(this.player.position) instanceof ExitTile) {
-        this.gameFinished = true;
-        try { this.saveFile.delete(); } catch (e) { this.gameLog.log(`Could not delete save: ${e instanceof Error ? e.message : e}`); }
-        this.gameLog.log(`You win! Your score is ${this.player.xp}!`);
-        this.gameLog.log(`Press [Enter] to continue...`);
-        this.player?.makeUninteractive();
-        this.render();
-        this.stopPresentationClock();
-        this.cancelProjectiles();
+      } else if (this.getCurrentLevel().map.getTile(this.player.position) instanceof DeepEmberTile) {
+        const guardianLives = this.getCurrentLevel().getNpcs().some(npc => npc instanceof EmberGuardian);
+        if (guardianLives) {
+          this.gameLog.log(`The Ember guardian's will seals the relic to its cradle.`);
+          this.render();
+        } else {
+          this.finishVictory();
+        }
       }
     });
 
@@ -806,6 +1232,9 @@ export class Game {
       if (this.isPresentingAction) return;
       if (this.pauseMenu) {
         this.closePauseMenu();
+      } else if (this.bookPopup) {
+        this.closeBook();
+        this.render();
       } else if (this.inventory) {
         this.closeInventory();
         this.render();
@@ -813,10 +1242,7 @@ export class Game {
         this.closeSpellBook();
         this.render();
       } else if (this.selectTarget) {
-        this.selectTarget.makeUninteractive();
-        this.player.makeInteractive();
-        this.selectTarget = null;
-        this.gameLog.clear();
+        this.closeTargetSelection();
         this.render();
       } else if (!this.levelUpWindow && !this.gameFinished) {
         this.openPauseMenu();
@@ -836,8 +1262,9 @@ export class Game {
       }
       this.player?.makeUninteractive();
       this.spellBook = new SpellBook(this.generateGameObjectContext());
+      this.resizeActiveOverlays();
       this.spellBook.makeInteractive();
-      this.gameLog.log(`[Enter] to select a spell, [Escape] to exit spell book`);
+      this.gameLog.log(`[spell key] or [Enter] to cast, [Escape] to exit spell book`);
       this.render();
     });
 
@@ -845,7 +1272,10 @@ export class Game {
       this.gameLog.clear();
       this.gameLog.log(`Game restored.`);
     } else {
-      this.gameLog.log(`${this.player.getName()} found himself in an unknown place.`);
+      this.gameLog.log(`You are a novice of the Order of the Lantern.`);
+      this.gameLog.log(`Your charge is Lantern Site Seven, called Emberdeep below.`);
+      this.gameLog.log(`Creatures from the Deep threaten the nearby villages.`);
+      this.gameLog.log(`Recover the Deep Ember from the lowest depth.`);
       this.displayHelp();
     }
 
@@ -855,11 +1285,43 @@ export class Game {
     this.render();
   }
 
+  private finishVictory(): void {
+    this.gameFinished = true;
+    this.recordTelemetry('game_over', {
+      outcome: 'victory',
+      snapshot: this.buildTelemetrySnapshot(),
+    });
+    try { this.saveFile.delete(); } catch (e) { this.gameLog.log(`Could not delete save: ${e instanceof Error ? e.message : e}`); }
+    this.gameLog.clear();
+    this.gameLog.log(`You raise the Deep Ember from its ancient cradle.`);
+    this.gameLog.log(`Its warmth fades from the stone, and Emberdeep begins to die.`);
+    this.gameLog.log(`The villages are safe. Another darkness has been extinguished.`);
+    this.gameLog.log(`The Order will be pleased.`);
+    this.gameLog.log(`Your score is ${this.player.xp}. Press [Enter] to continue...`);
+    this.player?.makeUninteractive();
+    this.render();
+    this.stopPresentationClock();
+    this.cancelProjectiles();
+  }
+
   private closeInventory() {
     this.inventory?.makeUninteractive();
     this.player.makeInteractive();
     this.inventory = null;
     this.gameLog.clear();
+  }
+
+  private openBook(book: Book): void {
+    this.inventory?.makeUninteractive();
+    this.bookPopup = new BookPopup(this.generateGameObjectContext(), book);
+    this.resizeActiveOverlays();
+    this.bookPopup.makeInteractive();
+  }
+
+  private closeBook(): void {
+    this.bookPopup?.makeUninteractive();
+    this.bookPopup = null;
+    this.inventory?.makeInteractive();
   }
 
   private openPauseMenu(): void {
@@ -875,10 +1337,10 @@ export class Game {
   }
 
   private getCenteredPauseMenuBounds(): [Position, Position] {
-    const width = Math.min(Game.PAUSE_MENU_WIDTH, process.stdout.columns);
-    const height = Math.min(Game.PAUSE_MENU_HEIGHT, process.stdout.rows);
-    const left = Math.floor((process.stdout.columns - width) / 2);
-    const top = Math.floor((process.stdout.rows - height) / 2);
+    const width = Math.min(Game.PAUSE_MENU_WIDTH, this.screenLayout.columns);
+    const height = Math.min(Game.PAUSE_MENU_HEIGHT, this.screenLayout.rows);
+    const left = Math.floor((this.screenLayout.columns - width) / 2);
+    const top = Math.floor((this.screenLayout.rows - height) / 2);
 
     return [
       new Position(left, top),
@@ -890,8 +1352,18 @@ export class Game {
     if (!this.pauseMenu) return;
 
     const [topLeft, bottomRight] = this.getCenteredPauseMenuBounds();
-    this.pauseMenu.setLTPosition(topLeft);
-    this.pauseMenu.setRBPosition(bottomRight);
+    this.pauseMenu.setBounds(topLeft, bottomRight);
+  }
+
+  private resizeActiveOverlays(): void {
+    const width = this.gameField.getWidth();
+    const height = this.gameField.getHeight();
+    this.mainMenu.resize(this.screenLayout.columns, this.screenLayout.rows);
+    this.inventory?.resize(width, height);
+    this.spellBook?.resize(width, height);
+    this.selectTarget?.resize(width, height);
+    this.levelUpWindow?.resize(width, height);
+    this.bookPopup?.resize(width, height);
   }
 
   private closePauseMenu(): void {
@@ -904,7 +1376,12 @@ export class Game {
   private saveCurrentGame(exitAfterSave: boolean): void {
     if (!this.player || this.gameFinished) return;
     try {
-      const data = this.saveCodec.serialize(this.player, this.levels, this.currentLevelIndex);
+      const data = this.saveCodec.serialize(
+        this.player,
+        this.levels,
+        this.currentLevelIndex,
+        this.generatedUniqueBookIds,
+      );
       this.saveFile.write(data, this.saveCodec.validate.bind(this.saveCodec));
       this.gameLog.log('Game saved.');
       if (exitAfterSave) this.exit();
@@ -940,6 +1417,14 @@ export class Game {
     this.gameLog.clear();
   }
 
+  private closeTargetSelection(): void {
+    this.selectTarget?.makeUninteractive();
+    this.selectTarget = null;
+    this.selectedSpell = null;
+    this.player.makeInteractive();
+    this.gameLog.clear();
+  }
+
   private displayHelp() {
     this.gameLog.log(`Use arrows to move, [Space] to skip turn.`);
     this.gameLog.log(`Walk on the enemy to attack. Use [a] to perform ranged attack.`);
@@ -971,7 +1456,7 @@ export class Game {
         char = effect.impact === 'hit' ? '*' : effect.impact === 'miss' ? '.' : effect.projectile.char;
       }
       const tile = map.getTile(worldPosition);
-      if (!tile?.isExplored()) continue;
+      if (!tile?.isExplored() || this.player.isVisible(worldPosition) === null) continue;
       this.gameField.put(
         new Position(worldPosition.x - topLeft.x, worldPosition.y - topLeft.y),
         {
@@ -984,6 +1469,13 @@ export class Game {
   }
 
   private renderGame(frame: AnimationFrame) {
+    const borderColor = this.player.getHp() <= this.player.getMaxHp() * .25
+      ? ForegroundColor.Red
+      : ForegroundColor.White;
+    this.gameField.setBorderColor(borderColor);
+    this.menuField.setBorderColor(borderColor);
+    this.logField.setBorderColor(borderColor);
+
     this.gameField.render(this.renderer);
     this.menuField.render(this.renderer);
     this.logField.render(this.renderer);
@@ -997,16 +1489,28 @@ export class Game {
     this.playerStats.render();
 
     const level = this.getCurrentLevel();
+    const usesFogOfWar = level.usesFogOfWar();
     level.map.render(this.gameField, frame);
     for (const [serializedPosition, item] of level.getItemsAndPositions()) {
-      item.renderAt(Position.deserialize(serializedPosition));
+      const position = Position.deserialize(serializedPosition);
+      if ((!usesFogOfWar || this.player.canSeeTerrain(position)) && !level.getAtmosphere(position)) item.renderAt(position);
+    }
+    for (const npc of level.getNpcs()) {
+      if ((!usesFogOfWar && !npc.isInvisible()) || this.player.canSeeCharacter(npc)) npc.render(frame);
+    }
+    const topLeft = level.map.getTopLeftCorner();
+    for (const [serializedPosition, atmosphere] of level.getAtmosphereAndPositions()) {
+      const position = Position.deserialize(serializedPosition);
+      if (!this.player.canSeeTerrain(position)) continue;
+      const tile = level.map.getTile(position);
+      this.gameField.put(position.shift(-topLeft.x, -topLeft.y), {
+        ...getAtmosphereChar(atmosphere, frame.frame),
+        backgroundColor: tile.getChar(frame, position).backgroundColor,
+      });
     }
     this.player.render(frame);
-    for (const npc of level.getNpcs()) {
-      npc.render(frame);
-    }
     this.renderTransientEffects(frame);
-    if (this.inventory) {
+    if (this.inventory && !this.bookPopup) {
       this.inventory.render();
     }
     if (this.levelUpWindow) {
@@ -1021,12 +1525,20 @@ export class Game {
     if (this.pauseMenu) {
       this.pauseMenu.render(this.renderer);
     }
+    if (this.bookPopup) {
+      this.bookPopup.render();
+    }
   }
 
-  private render(isBuffered = true) {
+  private render(isBuffered = true, finishLogCycle = true) {
     if (this.isRendering) return;
     this.isRendering = true;
     try {
+      if (!this.screenLayout.isSupported) {
+        this.renderTerminalTooSmall();
+        this.renderer.flush(isBuffered);
+        return;
+      }
       switch (this.state) {
         case GameState.Game:
           this.renderGame(this.getAnimationFrame());
@@ -1036,9 +1548,31 @@ export class Game {
           break;
       }
       this.renderer.flush(isBuffered);
+      if (finishLogCycle) this.gameLog.finishCycle();
     } finally {
       this.isRendering = false;
     }
+  }
+
+  private renderTerminalTooSmall(): void {
+    const lines = [
+      'Terminal too small',
+      `Required: ${MIN_TERMINAL_COLUMNS} x ${MIN_TERMINAL_ROWS}`,
+      `Current: ${this.screenLayout.columns} x ${this.screenLayout.rows}`,
+      'Resize the terminal to continue. Ctrl-C exits.',
+    ].slice(0, this.screenLayout.rows);
+    const firstRow = Math.max(0, Math.floor((this.screenLayout.rows - lines.length) / 2));
+    lines.forEach((line, index) => {
+      const visibleLine = line.slice(0, this.screenLayout.columns);
+      const left = Math.max(0, Math.floor((this.screenLayout.columns - visibleLine.length) / 2));
+      for (let offset = 0; offset < visibleLine.length; offset++) {
+        this.renderer.put(new Position(left + offset, firstRow + index), {
+          char: visibleLine[offset],
+          color: index === 0 ? ForegroundColor.Yellow : ForegroundColor.White,
+          backgroundColor: BackgroundColor.Black,
+        });
+      }
+    });
   }
 
   // A* pathfinding: returns a path of Position[] from 'from' to 'to', or [] if no path.

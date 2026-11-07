@@ -3,6 +3,7 @@ import {DexterityState} from "../states/dexterity.state";
 
 export class CatGraceSpell extends Spell {
   public static readonly saveId = "cat-grace";
+  public readonly keyBinding = 'g';
 
   constructor() {
     super(SpellTarget.Self, {

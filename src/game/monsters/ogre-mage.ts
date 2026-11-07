@@ -6,13 +6,15 @@ import {Spell} from "../spell";
 import {FireBoltSpell} from "../spells/fire-bolt";
 import {EmpowerOtherSpell} from "../spells/empower-other";
 import {FortifyOtherSpell} from "../spells/fortify-other";
+import {SteamBurstSpell} from '../spells/steam-burst';
+import {BlinkSpell} from '../spells/blink';
 
 export class OgreMage extends Ogre {
   public static readonly saveId: string = "ogre-mage";
 
   strength = 12;
   wisdom = 2;
-  endurance = 3;
+  endurance = 15;
 
   getChar(): Char {
     return {
@@ -23,7 +25,7 @@ export class OgreMage extends Ogre {
   }
 
   getBaseName(): string {
-    return 'Orge Mage';
+    return 'Ogre mage';
   }
 
   getXp(): number {
@@ -40,12 +42,18 @@ export class OgreMage extends Ogre {
     gauntlets: undefined,
   };
 
+  protected getSelfSpell(): Spell | null {
+    const player = this.context.getPlayer();
+    const threatened = this.position.manhattanDistanceTo(player.position) <= 2;
+    return threatened && Math.random() < .25 ? new BlinkSpell() : null;
+  }
+
   getSpellLogic(): {
     buffs: Array<Spell>;
     attack: Array<Spell>
   } | null {
     return {
-      attack: [new FireBoltSpell()],
+      attack: [new FireBoltSpell(), new SteamBurstSpell()],
       buffs: [new EmpowerOtherSpell(), new FortifyOtherSpell()],
     }
   }

@@ -1,17 +1,16 @@
 import {InputEvent} from "./input.event";
 
-process.stdin.setRawMode(true);
-process.stdin.resume();
-process.stdin.setEncoding('utf8');
-
 let escTimeout: NodeJS.Timeout | null = null;
+let inputSuspended = false;
+const queue: Map<InputEvent, Array<(s?: string) => void>> = new Map();
 
-process.stdin.on('data', (_key) => {
+const handleInput = (_key: string | Buffer): void => {
   const key = _key.toString();
   if (key === '\u0003') { // Ctrl+C
     process.stdout.write('\x1b[?25h'); // Show cursor before exit
     process.exit();
   }
+  if (inputSuspended) return;
 
   switch (key) {
     case '\x1b[A': queue.get(InputEvent.ARROW_UP)?.forEach(c => c(key)); break;
@@ -32,6 +31,10 @@ process.stdin.on('data', (_key) => {
     default:
   }
 
+  if (/^[\x20-\x7e]$/.test(key)) {
+    queue.get(InputEvent.CHARACTER)?.forEach(c => c(key));
+  }
+
   if (key === '\x1b') {
     if (escTimeout) clearTimeout(escTimeout);
     escTimeout = setTimeout(() => {
@@ -42,9 +45,20 @@ process.stdin.on('data', (_key) => {
   } else {
     if (escTimeout) clearTimeout(escTimeout);
   }
-});
+};
 
-const queue: Map<InputEvent, Array<(s?: string) => void>> = new Map();
+export function setInputSuspended(suspended: boolean): void {
+  inputSuspended = suspended;
+  if (suspended && escTimeout) {
+    clearTimeout(escTimeout);
+    escTimeout = null;
+  }
+}
+
+process.stdin.setRawMode(true);
+process.stdin.resume();
+process.stdin.setEncoding('utf8');
+process.stdin.on('data', handleInput);
 
 export class InputEmitter {
   private static instance: InputEmitter;
@@ -68,7 +82,8 @@ export class InputEmitter {
 
   clear(o: object) {
     for (const event of queue.keys()) {
-      queue.set(event, queue.get(event).filter(c => !this.mapping.get(o).has(c)));
+      queue.set(event, queue.get(event).filter(c => !this.mapping.get(o)?.has(c)));
     }
+    this.mapping.delete(o);
   }
 }

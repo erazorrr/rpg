@@ -13,7 +13,7 @@ export class TreasureGoblin extends Npc {
 
   strength = 6;
   dexterity = 10;
-  endurance = 3;
+  endurance = 5;
 
   private timer = 40;
   private timerStarted = false;
@@ -41,14 +41,14 @@ export class TreasureGoblin extends Npc {
     if (this.timerStarted) {
       this.timer--;
       if (this.timer == 0) {
-        this.context.log(`${this.getName()} disappeared!`);
+        this.logIfObserved(`${this.getName()} disappeared!`, this);
         this.context.destroyNpc(this);
       } else if (this.timer <= 10 || this.timer % 5 === 0) {
-        this.context.log(`${this.getName()} will disappear in ${this.timer} turns!`);
+        this.logIfObserved(`${this.getName()} will disappear in ${this.timer} turns!`, this);
       }
-    } else if (this.isActive() && this.context.getPlayer().isVisible(this.position)) {
+    } else if (this.isActive() && this.context.getPlayer().canSeeCharacter(this)) {
       this.timerStarted = true;
-      this.context.log(`${this.getName()} saw you! He will disappear in ${this.timer} turns!`);
+      this.logIfObserved(`${this.getName()} saw you and will disappear in ${this.timer} turns!`, this);
     }
     super.tick();
   }

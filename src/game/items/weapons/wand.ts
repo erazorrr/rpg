@@ -16,15 +16,27 @@ export class Wand extends Weapon {
   }
 
   private static baseStats = {
-    magicRoll: 4,
+    magicRoll: 1,
     magicBonus: 2,
+    basicDamageRoll: 2,
+    basicDamageBonus: 1,
+    basicDamageType: 'arcane' as const,
   };
 
   constructor(context: Context) {
-    super(context, {...Wand.baseStats}, Math.round(PRICE_PER_MAGIC_DICE_BONUS * Wand.baseStats.magicRoll + PRICE_PER_MAGIC_BONUS * Wand.baseStats.magicBonus));
+    super(
+      context,
+      {...Wand.baseStats},
+      Math.round(
+        PRICE_PER_MAGIC_DICE_BONUS * Wand.baseStats.magicRoll +
+        PRICE_PER_MAGIC_BONUS * Wand.baseStats.magicBonus +
+        PRICE_PER_MAGIC_DICE_BONUS * Wand.baseStats.basicDamageRoll),
+      true,
+      true,
+    );
   }
 
   getBaseName(): string {
-    return "Wand";
+    return "Apprentice Wand";
   }
 }

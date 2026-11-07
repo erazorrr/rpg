@@ -4,6 +4,7 @@ import {EnduranceMonsterModifier} from "./endurance";
 import {SpectralHitMonsterModifier} from "./spectral-hit";
 import {StrengthMonsterModifier} from "./strength";
 import {WisdomMonsterModifier} from "./wisdom";
+import {VampiricMonsterModifier} from './vampiric';
 
 type MonsterModifierConstructor = (new () => MonsterModifier) & {readonly saveId: string};
 
@@ -13,6 +14,7 @@ const modifierConstructors: MonsterModifierConstructor[] = [
   SpectralHitMonsterModifier,
   StrengthMonsterModifier,
   WisdomMonsterModifier,
+  VampiricMonsterModifier,
 ];
 
 const constructors = new Map<string, MonsterModifierConstructor>();
